@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../core/app_version.dart';
 import '../data/app_preferences.dart';
 import '../providers/moi_provider.dart';
 import 'components.dart';
@@ -99,7 +100,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         content: Text(description, style: const TextStyle(fontSize: 15)),
         actions: [
@@ -211,7 +212,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 Card(
                   color: theme.colorScheme.surfaceVariant,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     child: Column(
@@ -317,7 +318,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 Card(
                   color: theme.colorScheme.surfaceVariant,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     child: Column(
@@ -327,7 +328,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _settingLabel('Measurement Duration (seconds)', 'The amount of time in seconds the sensor records motion data for each measurement cycle.'),
+                              _settingLabel('Measurement Duration\n(seconds)', 'The amount of time in seconds the sensor records motion data for each measurement cycle.'),
                               NumberWheelPicker(
                                 value: uiState.measuringDuration,
                                 range: durationRange,
@@ -345,7 +346,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _settingLabel('Wait After Measurement (seconds)', 'The cooldown delay in seconds after a measurement completes before the system is ready for the next reading.'),
+                              _settingLabel('Wait After Measurement\n(seconds)', 'The cooldown delay in seconds after a measurement completes before the system is ready for the next reading.'),
                               NumberWheelPicker(
                                 value: uiState.waitDuration,
                                 range: waitRange,
@@ -440,7 +441,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _settingLabel('Preparation Time (seconds)', 'A countdown period in seconds after tapping Start before the device begins arming and detecting oscillations.'),
+                              _settingLabel('Preparation Time\n(seconds)', 'A countdown period in seconds after tapping Start before the device begins arming and detecting oscillations.'),
                               NumberWheelPicker(
                                 value: uiState.preparationTime.toDouble(),
                                 range: prepRange,
@@ -531,7 +532,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: theme.colorScheme.primary,
                             foregroundColor: theme.colorScheme.onPrimary,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                           ),
                           icon: const Icon(Icons.upload_file, size: 18),
                           label: const Text('Export', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
@@ -571,7 +572,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: theme.colorScheme.primary,
                             foregroundColor: theme.colorScheme.onPrimary,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                           ),
                           icon: const Icon(Icons.download_for_offline, size: 18),
                           label: const Text('Import', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
@@ -604,6 +605,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                     ),
                   ],
+                ),
+
+                const SizedBox(height: 28),
+
+                Center(
+                  child: Text(
+                    AppVersion.fullVersionNote,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 24),

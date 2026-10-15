@@ -124,7 +124,7 @@ class _EstimateDetailScreenState extends ConsumerState<EstimateDetailScreen> {
 
                         Card(
                           color: theme.colorScheme.surfaceVariant,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             child: Column(
@@ -195,7 +195,7 @@ class _EstimateDetailScreenState extends ConsumerState<EstimateDetailScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: theme.colorScheme.primary,
                               foregroundColor: theme.colorScheme.onPrimary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                             ),
                             onPressed: () {
                               final mVal = double.tryParse(m) ?? 0.0;

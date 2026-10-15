@@ -173,7 +173,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 14),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.surfaceVariant,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(18),
                             border: Border.all(color: theme.colorScheme.primary.withOpacity(0.4)),
                           ),
                           child: Row(
@@ -200,9 +200,13 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                           return [
                             PopupMenuItem<String>(
                               value: 'NONE',
+                              height: 38,
+                              padding: EdgeInsets.zero,
                               child: Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                height: 38,
+                                alignment: Alignment.centerLeft,
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
                                 color: isNone ? selectedBg : null,
                                 child: Text(
                                   'None',
@@ -216,9 +220,13 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                             PopupMenuItem<String>(
                               value: 'PICKLEBALL',
                               enabled: uiState.pickleballTareOffset > 0,
+                              height: 38,
+                              padding: EdgeInsets.zero,
                               child: Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                height: 38,
+                                alignment: Alignment.centerLeft,
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
                                 color: isPB ? selectedBg : null,
                                 child: Text(
                                   uiState.pickleballTareOffset > 0 ? 'Pickleball Adapter' : 'PB-Tare Adapter First',
@@ -232,9 +240,13 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                             PopupMenuItem<String>(
                               value: 'TWIST',
                               enabled: uiState.twistTareOffset > 0,
+                              height: 38,
+                              padding: EdgeInsets.zero,
                               child: Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                height: 38,
+                                alignment: Alignment.centerLeft,
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
                                 color: isTW ? selectedBg : null,
                                 child: Text(
                                   uiState.twistTareOffset > 0 ? 'Twist Weight Adapter' : 'TW-Tare Adapter First',
@@ -251,14 +263,14 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                     ),
                     const SizedBox(width: 8),
                     InkWell(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(18),
                       onTap: () => notifier.selectEditingAttributesGroup(widget.groupId),
                       child: Container(
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
                           color: theme.colorScheme.primary,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(18),
                         ),
                         alignment: Alignment.center,
                         child: Text(
@@ -323,7 +335,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                     children: [
                       if (swMeasurements.isNotEmpty) ...[
                         Text(
-                          'Swing Weight (SW)',
+                          'Swing Weight (kg·cm²)',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -342,6 +354,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                             resolution: uiState.moiUnitsResolution,
                             periodResolution: uiState.periodUnitsResolution,
                             averageVal: uiState.currentSWAverage,
+                            hideUnits: true,
                             fitThreshold: uiState.fitResidualExclusion,
                             margin: uiState.swMargin,
                             trimLast: uiState.trimLastCycle,
@@ -379,7 +392,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                       ],
                       if (twMeasurements.isNotEmpty) ...[
                         Text(
-                          'Twist Weight (TW)',
+                          'Twist Weight (kg·cm²)',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -398,6 +411,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                             resolution: uiState.moiUnitsResolution,
                             periodResolution: uiState.periodUnitsResolution,
                             averageVal: uiState.currentTWAverage,
+                            hideUnits: true,
                             fitThreshold: uiState.fitResidualExclusion,
                             margin: uiState.twMargin,
                             trimLast: uiState.trimLastCycle,

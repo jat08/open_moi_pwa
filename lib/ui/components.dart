@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/page_typography.dart';
 import '../data/models.dart';
 import '../logic/oscillation_detector.dart';
 import '../providers/moi_provider.dart';
@@ -14,6 +15,7 @@ class DynamicTitleText extends StatelessWidget {
   final double maxFontSize;
   final FontWeight fontWeight;
   final Color color;
+  final int maxLines;
 
   const DynamicTitleText({
     super.key,
@@ -21,13 +23,17 @@ class DynamicTitleText extends StatelessWidget {
     this.maxFontSize = 20,
     this.fontWeight = FontWeight.bold,
     this.color = Colors.black,
+    this.maxLines = 2,
   });
 
   @override
   Widget build(BuildContext context) {
+    final typo = PageTypography.of(context);
+    final targetSize = typo.cardTitleSize(maxFontSize);
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        double fontSize = maxFontSize;
+        double fontSize = targetSize;
         final style = TextStyle(
           fontSize: fontSize,
           fontWeight: fontWeight,
@@ -36,11 +42,11 @@ class DynamicTitleText extends StatelessWidget {
 
         TextPainter textPainter = TextPainter(
           text: TextSpan(text: text, style: style),
-          maxLines: 1,
+          maxLines: maxLines,
           textDirection: Directionality.maybeOf(context) ?? ui.TextDirection.ltr,
-        )..layout();
+        )..layout(maxWidth: constraints.maxWidth);
 
-        while ((textPainter.didExceedMaxLines || textPainter.width > constraints.maxWidth) && fontSize > 11) {
+        while ((textPainter.didExceedMaxLines || textPainter.height > (fontSize * 1.35 * maxLines)) && fontSize > 11) {
           fontSize -= 0.5;
           textPainter = TextPainter(
             text: TextSpan(
@@ -51,19 +57,20 @@ class DynamicTitleText extends StatelessWidget {
                 color: color,
               ),
             ),
-            maxLines: 1,
+            maxLines: maxLines,
             textDirection: Directionality.maybeOf(context) ?? ui.TextDirection.ltr,
-          )..layout();
+          )..layout(maxWidth: constraints.maxWidth);
         }
 
         return Text(
           text,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          maxLines: maxLines,
+          softWrap: true,
           style: TextStyle(
             fontSize: fontSize,
             fontWeight: fontWeight,
             color: color,
+            height: 1.15,
           ),
         );
       },
@@ -87,7 +94,7 @@ class DeleteConfirmationDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       title: Text(title, style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
       content: Text(text, style: TextStyle(color: theme.colorScheme.onSurface)),
       actions: [
@@ -100,7 +107,7 @@ class DeleteConfirmationDialog extends StatelessWidget {
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
           onPressed: () {
             Navigator.of(context).pop();
@@ -145,7 +152,7 @@ class _RenameDialogState extends State<RenameDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       title: const Text('Rename'),
       content: TextField(
         controller: _controller,
@@ -160,7 +167,7 @@ class _RenameDialogState extends State<RenameDialog> {
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
           onPressed: () {
             final text = _controller.text.trim();
@@ -200,7 +207,7 @@ class SelectionTopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
@@ -239,6 +246,7 @@ class MeasurementItem extends StatelessWidget {
   final int index;
   final bool showType;
   final bool isPeriod;
+  final bool hideUnits;
   final double fitThreshold;
   final double margin;
   final bool trimLast;
@@ -256,6 +264,7 @@ class MeasurementItem extends StatelessWidget {
     this.index = 0,
     this.showType = true,
     this.isPeriod = false,
+    this.hideUnits = false,
     this.fitThreshold = 1.0,
     this.margin = 0.07,
     this.trimLast = true,
@@ -296,7 +305,7 @@ class MeasurementItem extends StatelessWidget {
 
     final valueText = isPeriod
         ? '${avgMeasured.toStringAsFixed(periodResolution)}s'
-        : '${value.toStringAsFixed(resolution)} kg·cm²';
+        : (hideUnits ? value.toStringAsFixed(resolution) : '${value.toStringAsFixed(resolution)} kg·cm²');
 
     final typeMarking = measurement.moi >= 40 ? 'SW' : 'TW';
 
@@ -311,14 +320,14 @@ class MeasurementItem extends StatelessWidget {
       elevation: 0,
       color: containerColor,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(18),
         side: selected ? BorderSide(color: theme.colorScheme.primary, width: 2) : BorderSide.none,
       ),
       margin: const EdgeInsets.symmetric(vertical: 1.5),
       child: InkWell(
         onTap: onClick,
         onLongPress: onLongClick,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(18),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           child: Row(
@@ -336,7 +345,7 @@ class MeasurementItem extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                   decoration: BoxDecoration(
                     color: measurement.moi >= 40 ? theme.colorScheme.primary : theme.colorScheme.secondary,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     typeMarking,
@@ -498,7 +507,7 @@ class MeasurementControlButton extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             ),
             child: const Text('Start Measurement', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           );
@@ -542,7 +551,7 @@ class MeasurementControlButton extends StatelessWidget {
       height: 48,
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(18)),
       child: content,
     );
   }
@@ -581,6 +590,8 @@ class SummaryHeaderLarge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final typo = PageTypography.of(context);
+
     final hasSW = avgSW > 0;
     final swVal = hasSW ? avgSW.toStringAsFixed(moiResolution) : 'No Data';
     final swTol = hasSW ? '± ${stdDevSW.toStringAsFixed(moiResolution)} kg·cm²' : '';
@@ -599,134 +610,209 @@ class SummaryHeaderLarge extends StatelessWidget {
       bpTol = (stdDevBP != null && stdDevBP! > 0) ? '± ${stdDevBP!.toStringAsFixed(moiResolution)} cm' : 'cm';
     }
 
-    return Card(
-      elevation: 0,
-      color: theme.colorScheme.surfaceVariant,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final halfWidth = (constraints.maxWidth - 48) / 2.0;
+        final valueFontSize = typo.computeUnifiedSize(
+          texts: [swVal, twVal],
+          maxFontSize: 36.0,
+          maxWidth: halfWidth,
+          fontWeight: FontWeight.bold,
+        );
+
+        return Card(
+          elevation: 0,
+          color: theme.colorScheme.surfaceVariant,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Column(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Swing Weight', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.primary, letterSpacing: 0.5)),
-                      const SizedBox(height: 4),
-                      GestureDetector(
-                        onLongPress: () {
-                          Clipboard.setData(ClipboardData(text: avgSW.toStringAsFixed(moiResolution)));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Copied SW: ${avgSW.toStringAsFixed(moiResolution)}')),
-                          );
-                        },
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(swVal, style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: theme.colorScheme.primary, height: 1.1)),
-                            if (hasSW) ...[
-                              const SizedBox(height: 4),
-                              Text(swTol, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.primary.withOpacity(0.85), height: 1.1)),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onLongPress: () {
-                          if (hasSW) {
-                            Clipboard.setData(ClipboardData(text: avgPeriodSW.toStringAsFixed(periodResolution)));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Copied Period SW: ${avgPeriodSW.toStringAsFixed(periodResolution)}')),
-                            );
-                          }
-                        },
-                        child: Text(
-                          periodSWText,
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: theme.colorScheme.outline, height: 1.1),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 1,
-                  height: 110,
-                  color: theme.colorScheme.outline.withOpacity(0.3),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Twist Weight', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, letterSpacing: 0.5)),
-                      const SizedBox(height: 4),
-                      GestureDetector(
-                        onLongPress: () {
-                          Clipboard.setData(ClipboardData(text: avgTW.toStringAsFixed(moiResolution)));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Copied TW: ${avgTW.toStringAsFixed(moiResolution)}')),
-                          );
-                        },
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(twVal, style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, height: 1.1)),
-                            if (hasTW) ...[
-                              const SizedBox(height: 4),
-                              Text(twTol, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary.withOpacity(0.85), height: 1.1)),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onLongPress: () {
-                          if (hasTW) {
-                            Clipboard.setData(ClipboardData(text: avgPeriodTW.toStringAsFixed(periodResolution)));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Copied Period TW: ${avgPeriodTW.toStringAsFixed(periodResolution)}')),
-                            );
-                          }
-                        },
-                        child: Text(
-                          periodTWText,
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: theme.colorScheme.outline, height: 1.1),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (bpVal != null) ...[
-              Divider(height: 20, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
-              GestureDetector(
-                onLongPress: () {
-                  Clipboard.setData(ClipboardData(text: calculatedBP!.toStringAsFixed(moiResolution)));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Copied BP: ${calculatedBP!.toStringAsFixed(moiResolution)}')),
-                  );
-                },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Balance Point: ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.colorScheme.outline)),
-                    Text(bpVal, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
-                    if (bpTol != null) ...[
-                      const SizedBox(width: 4),
-                      Text(bpTol, style: TextStyle(fontSize: 15, color: theme.colorScheme.outline)),
-                    ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Swing Weight', style: TextStyle(fontSize: typo.cardTitleSize(17), fontWeight: FontWeight.bold, color: theme.colorScheme.primary, letterSpacing: 0.5)),
+                          const SizedBox(height: 4),
+                          GestureDetector(
+                            onLongPress: () {
+                              Clipboard.setData(ClipboardData(text: avgSW.toStringAsFixed(moiResolution)));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Copied SW: ${avgSW.toStringAsFixed(moiResolution)}')),
+                              );
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    swVal,
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    style: TextStyle(
+                                      fontSize: valueFontSize,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.primary,
+                                      height: 1.1,
+                                    ),
+                                  ),
+                                ),
+                                if (hasSW) ...[
+                                  const SizedBox(height: 4),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      swTol,
+                                      style: TextStyle(
+                                        fontSize: typo.cardTitleSize(17),
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.primary.withOpacity(0.85),
+                                        height: 1.1,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onLongPress: () {
+                              if (hasSW) {
+                                Clipboard.setData(ClipboardData(text: avgPeriodSW.toStringAsFixed(periodResolution)));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Copied Period SW: ${avgPeriodSW.toStringAsFixed(periodResolution)}')),
+                                );
+                              }
+                            },
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                periodSWText,
+                                style: TextStyle(fontSize: typo.subtextSize(15), fontWeight: FontWeight.w500, color: theme.colorScheme.outline, height: 1.1),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 110,
+                      color: theme.colorScheme.outline.withOpacity(0.3),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Twist Weight', style: TextStyle(fontSize: typo.cardTitleSize(17), fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, letterSpacing: 0.5)),
+                          const SizedBox(height: 4),
+                          GestureDetector(
+                            onLongPress: () {
+                              Clipboard.setData(ClipboardData(text: avgTW.toStringAsFixed(moiResolution)));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Copied TW: ${avgTW.toStringAsFixed(moiResolution)}')),
+                              );
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    twVal,
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    style: TextStyle(
+                                      fontSize: valueFontSize,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.secondary,
+                                      height: 1.1,
+                                    ),
+                                  ),
+                                ),
+                                if (hasTW) ...[
+                                  const SizedBox(height: 4),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      twTol,
+                                      style: TextStyle(
+                                        fontSize: typo.cardTitleSize(17),
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.secondary.withOpacity(0.85),
+                                        height: 1.1,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onLongPress: () {
+                              if (hasTW) {
+                                Clipboard.setData(ClipboardData(text: avgPeriodTW.toStringAsFixed(periodResolution)));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Copied Period TW: ${avgPeriodTW.toStringAsFixed(periodResolution)}')),
+                                );
+                              }
+                            },
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                periodTWText,
+                                style: TextStyle(fontSize: typo.subtextSize(15), fontWeight: FontWeight.w500, color: theme.colorScheme.outline, height: 1.1),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ],
-          ],
-        ),
-      ),
+                if (bpVal != null) ...[
+                  Divider(height: 20, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                  GestureDetector(
+                    onLongPress: () {
+                      Clipboard.setData(ClipboardData(text: calculatedBP!.toStringAsFixed(moiResolution)));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Copied BP: ${calculatedBP!.toStringAsFixed(moiResolution)}')),
+                      );
+                    },
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Balance Point: ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.colorScheme.outline)),
+                          Text(bpVal, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                          if (bpTol != null) ...[
+                            const SizedBox(width: 4),
+                            Text(bpTol, style: TextStyle(fontSize: 15, color: theme.colorScheme.outline)),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -744,6 +830,7 @@ class SingleSummaryHeader extends StatelessWidget {
   final bool showTolerance;
   final bool inlineToleranceWithUnits;
   final String? expectedNote;
+  final VoidCallback? onInfoClick;
 
   const SingleSummaryHeader({
     super.key,
@@ -762,11 +849,10 @@ class SingleSummaryHeader extends StatelessWidget {
     this.onInfoClick,
   });
 
-  final VoidCallback? onInfoClick;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final typo = PageTypography.of(context);
     final res = isPeriod ? periodResolution : moiResolution;
     final unit1 = isPeriod ? 's' : 'kg·cm²';
 
@@ -787,98 +873,138 @@ class SingleSummaryHeader extends StatelessWidget {
             : '$val1 $unit1')
         : 'No Data';
 
-    return Card(
-      elevation: 0,
-      color: theme.colorScheme.surfaceVariant,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final halfWidth = (constraints.maxWidth - 48) / (fullLabel2 != null ? 2.0 : 1.0);
+        final valueFontSize = typo.computeUnifiedSize(
+          texts: [inlineToleranceWithUnits ? inlineVal1 : val1, if (fullLabel2 != null) val2],
+          maxFontSize: inlineToleranceWithUnits ? 24.0 : 36.0,
+          maxWidth: halfWidth,
+          fontWeight: FontWeight.bold,
+        );
+
+        return Card(
+          elevation: 0,
+          color: theme.colorScheme.surfaceVariant,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Column(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(fullLabel1, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.primary, letterSpacing: 0.5)),
-                      const SizedBox(height: 4),
-                      GestureDetector(
-                        onLongPress: () {
-                          Clipboard.setData(ClipboardData(text: val1));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Copied $fullLabel1: $val1')),
-                          );
-                        },
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(fullLabel1, style: TextStyle(fontSize: typo.cardTitleSize(17), fontWeight: FontWeight.bold, color: theme.colorScheme.primary, letterSpacing: 0.5)),
+                          const SizedBox(height: 4),
+                          GestureDetector(
+                            onLongPress: () {
+                              Clipboard.setData(ClipboardData(text: val1));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Copied $fullLabel1: $val1')),
+                              );
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    inlineToleranceWithUnits ? inlineVal1 : val1,
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    style: TextStyle(
+                                      fontSize: valueFontSize,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.primary,
+                                      height: 1.1,
+                                    ),
+                                  ),
+                                ),
+                                if (!inlineToleranceWithUnits && hasVal1) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    tol1,
+                                    style: TextStyle(fontSize: typo.cardTitleSize(17), fontWeight: FontWeight.bold, color: theme.colorScheme.primary.withOpacity(0.85), height: 1.1),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (fullLabel2 != null) ...[
+                      Container(
+                        width: 1,
+                        height: 80,
+                        color: theme.colorScheme.outline.withOpacity(0.3),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              inlineToleranceWithUnits ? inlineVal1 : val1,
-                              style: TextStyle(
-                                fontSize: inlineToleranceWithUnits ? 24 : 36,
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.primary,
-                                height: 1.1,
+                            Text(fullLabel2!, style: TextStyle(fontSize: typo.cardTitleSize(17), fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, letterSpacing: 0.5)),
+                            const SizedBox(height: 4),
+                            GestureDetector(
+                              onLongPress: () {
+                                Clipboard.setData(ClipboardData(text: val2));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Copied $fullLabel2: $val2')),
+                                );
+                              },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    val2,
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    style: TextStyle(
+                                      fontSize: valueFontSize,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.secondary,
+                                      height: 1.1,
+                                    ),
+                                  ),
+                                ),
+                                  if (hasVal2) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      tol2,
+                                      style: TextStyle(fontSize: typo.cardTitleSize(17), fontWeight: FontWeight.bold, color: theme.colorScheme.secondary.withOpacity(0.85), height: 1.1),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ),
-                            if (!inlineToleranceWithUnits && hasVal1) ...[
-                              const SizedBox(height: 4),
-                              Text(tol1, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.primary.withOpacity(0.85), height: 1.1)),
-                            ],
                           ],
                         ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
-                if (fullLabel2 != null) ...[
-                  Container(
-                    width: 1,
-                    height: 80,
-                    color: theme.colorScheme.outline.withOpacity(0.3),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(fullLabel2!, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, letterSpacing: 0.5)),
-                        const SizedBox(height: 4),
-                        GestureDetector(
-                          onLongPress: () {
-                            Clipboard.setData(ClipboardData(text: val2));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Copied $fullLabel2: $val2')),
-                            );
-                          },
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(val2, style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, height: 1.1)),
-                              if (hasVal2) ...[
-                                const SizedBox(height: 4),
-                                Text(tol2, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary.withOpacity(0.85), height: 1.1)),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
             if (expectedNote != null && expectedNote!.isNotEmpty) ...[
               Divider(height: 20, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Text(
-                      expectedNote!,
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.outline),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        expectedNote!,
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.outline),
+                      ),
                     ),
                   ),
                   if (onInfoClick != null) ...[
@@ -891,7 +1017,7 @@ class SingleSummaryHeader extends StatelessWidget {
                         height: 42,
                         decoration: BoxDecoration(
                           color: theme.colorScheme.primary,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         alignment: Alignment.center,
                         child: Text(
@@ -914,6 +1040,8 @@ class SingleSummaryHeader extends StatelessWidget {
           ],
         ),
       ),
+    );
+      },
     );
   }
 }
@@ -954,11 +1082,13 @@ class EstimationInputField extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface),
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(width: 8),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
                 width: inputWidth,
@@ -972,10 +1102,10 @@ class EstimationInputField extends StatelessWidget {
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: theme.colorScheme.surface,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                    contentPadding: const EdgeInsets.only(left: 6, right: 6, top: 0, bottom: 0),
                     prefixIcon: locked ? Icon(Icons.lock, size: 18, color: theme.colorScheme.outline) : null,
-                    prefixIconConstraints: locked ? const BoxConstraints(minWidth: 32, minHeight: 0) : null,
+                    prefixIconConstraints: locked ? const BoxConstraints(minWidth: 28, minHeight: 0) : null,
                   ),
                   onChanged: onValueChange,
                 ),
@@ -1022,17 +1152,22 @@ class UnitPicklist extends StatelessWidget {
       child: Container(
         width: width,
         height: 38,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 6),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              current,
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  current,
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                ),
+              ),
             ),
             const SizedBox(width: 2),
             Icon(Icons.keyboard_arrow_down, size: 16, color: theme.colorScheme.primary),
@@ -1046,13 +1181,14 @@ class UnitPicklist extends StatelessWidget {
           final isSelected = u == current;
           return PopupMenuItem<String>(
             value: u,
+            height: 38,
+            padding: EdgeInsets.zero,
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected ? selectedBg : null,
-                borderRadius: BorderRadius.circular(6),
-              ),
+              height: 38,
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              color: isSelected ? selectedBg : null,
               child: Text(
                 u,
                 style: TextStyle(
@@ -1093,10 +1229,15 @@ class TypeSelector extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface),
-              overflow: TextOverflow.ellipsis,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                label,
+                style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface),
+                maxLines: 2,
+                softWrap: true,
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -1104,21 +1245,24 @@ class TypeSelector extends StatelessWidget {
             initialValue: current,
             onSelected: onSelect,
             child: Container(
-              width: width,
+              constraints: BoxConstraints(maxWidth: width),
               height: 38,
               padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Text(
-                      current,
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-                      overflow: TextOverflow.ellipsis,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        current,
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                      ),
                     ),
                   ),
                   Icon(Icons.keyboard_arrow_down, size: 16, color: theme.colorScheme.primary),
@@ -1132,13 +1276,14 @@ class TypeSelector extends StatelessWidget {
                 final isSelected = o == current;
                 return PopupMenuItem<String>(
                   value: o,
+                  height: 38,
+                  padding: EdgeInsets.zero,
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? selectedBg : null,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
+                    height: 38,
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    color: isSelected ? selectedBg : null,
                     child: Text(
                       o,
                       style: TextStyle(
@@ -1180,28 +1325,45 @@ class ReadOnlySettingField extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Text(label, style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface)),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                label,
+                style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface),
+                maxLines: 2,
+                softWrap: true,
+              ),
+            ),
           ),
+          const SizedBox(width: 8),
           GestureDetector(
             onLongPress: onLongClick,
             child: Container(
-              width: width,
+              constraints: BoxConstraints(maxWidth: width),
               height: 38,
               padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Icon(Icons.lock, size: 18, color: theme.colorScheme.outline),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        value,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -1245,7 +1407,7 @@ class NumberWheelPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(14),
       onTap: () {
         showDialog(
           context: context,
@@ -1293,7 +1455,7 @@ class ItemWheelPicker<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(14),
       onTap: () {
         showDialog(
           context: context,
@@ -1370,7 +1532,7 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
     final primaryBlue = isDark ? theme.colorScheme.primary : const Color(0xFF2B9DF0);
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       backgroundColor: dialogBg,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -1391,7 +1553,7 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: wheelBg,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(18),
               ),
               child: Stack(
                 alignment: Alignment.center,
@@ -1469,7 +1631,7 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                 ),
                 onPressed: () {
@@ -1539,7 +1701,7 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
     final primaryBlue = isDark ? theme.colorScheme.primary : const Color(0xFF2B9DF0);
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       backgroundColor: dialogBg,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -1560,7 +1722,7 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: wheelBg,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(18),
               ),
               child: Stack(
                 alignment: Alignment.center,
@@ -1638,7 +1800,7 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                 ),
                 onPressed: () {
@@ -1681,7 +1843,7 @@ class SortDialog extends StatelessWidget {
     return StatefulBuilder(
       builder: (context, setState) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           title: const Text('Sort By'),
           content: Column(
             mainAxisSize: MainAxisSize.min,

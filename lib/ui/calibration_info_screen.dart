@@ -112,7 +112,7 @@ class _CalibrationInfoScreenState extends ConsumerState<CalibrationInfoScreen> {
 
                 Card(
                   color: theme.colorScheme.surfaceVariant,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -152,7 +152,7 @@ class _CalibrationInfoScreenState extends ConsumerState<CalibrationInfoScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
                       foregroundColor: theme.colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                     ),
                     onPressed: () {
                       final val = double.tryParse(_controller.text);

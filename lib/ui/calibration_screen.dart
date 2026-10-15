@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/page_typography.dart';
 import '../data/models.dart';
 import '../logic/moi_calculator.dart';
 import '../providers/moi_provider.dart';
@@ -117,25 +119,34 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                       padding: const EdgeInsets.only(top: 8, bottom: 6),
                       child: Row(
                         children: [
-                          Text(
-                            'Device Calibration',
-                            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                          ),
-                          const Spacer(),
-                          Container(
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primary,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: TextButton.icon(
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                foregroundColor: theme.colorScheme.onPrimary,
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Calibration',
+                                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
                               ),
-                              icon: const Icon(Icons.nfc, size: 22),
-                              label: const Text('Read NFC', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              onPressed: () => notifier.setNfcScanning(true),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            fit: FlexFit.loose,
+                            child: Container(
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary,
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: TextButton.icon(
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                  foregroundColor: theme.colorScheme.onPrimary,
+                                ),
+                                icon: const Icon(Icons.nfc, size: 20),
+                                label: const Text('Read NFC', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                onPressed: () => notifier.setNfcScanning(true),
+                              ),
                             ),
                           ),
                         ],
@@ -194,7 +205,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
 
                     Card(
                       color: theme.colorScheme.surfaceVariant,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         child: Column(
@@ -202,28 +213,37 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Object A (kg·cm²)', style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface)),
-                                SizedBox(
-                                  width: 140,
-                                  height: 38,
-                                  child: TextField(
-                                    controller: _knownAController,
-                                    style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    textAlign: TextAlign.end,
-                                    decoration: InputDecoration(
-                                      filled: true,
-                                      fillColor: theme.colorScheme.surface,
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                                Expanded(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text('Object A (kg·cm²)', style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface)),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Container(
+                                    constraints: const BoxConstraints(maxWidth: 130),
+                                    height: 38,
+                                    child: TextField(
+                                      controller: _knownAController,
+                                      style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      textAlign: TextAlign.end,
+                                      decoration: InputDecoration(
+                                        filled: true,
+                                        fillColor: theme.colorScheme.surface,
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                                      ),
+                                      onChanged: (val) {
+                                        final d = double.tryParse(val);
+                                        if (d != null) {
+                                          notifier.prefs.saveKnownObjectAInertia(d);
+                                          notifier.loadPreferences();
+                                        }
+                                      },
                                     ),
-                                    onChanged: (val) {
-                                      final d = double.tryParse(val);
-                                      if (d != null) {
-                                        notifier.prefs.saveKnownObjectAInertia(d);
-                                        notifier.loadPreferences();
-                                      }
-                                    },
                                   ),
                                 ),
                               ],
@@ -232,28 +252,37 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Object B (kg·cm²)', style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface)),
-                                SizedBox(
-                                  width: 140,
-                                  height: 38,
-                                  child: TextField(
-                                    controller: _knownBController,
-                                    style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    textAlign: TextAlign.end,
-                                    decoration: InputDecoration(
-                                      filled: true,
-                                      fillColor: theme.colorScheme.surface,
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                                Expanded(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text('Object B (kg·cm²)', style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface)),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Container(
+                                    constraints: const BoxConstraints(maxWidth: 130),
+                                    height: 38,
+                                    child: TextField(
+                                      controller: _knownBController,
+                                      style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      textAlign: TextAlign.end,
+                                      decoration: InputDecoration(
+                                        filled: true,
+                                        fillColor: theme.colorScheme.surface,
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                                      ),
+                                      onChanged: (val) {
+                                        final d = double.tryParse(val);
+                                        if (d != null) {
+                                          notifier.prefs.saveKnownObjectBInertia(d);
+                                          notifier.loadPreferences();
+                                        }
+                                      },
                                     ),
-                                    onChanged: (val) {
-                                      final d = double.tryParse(val);
-                                      if (d != null) {
-                                        notifier.prefs.saveKnownObjectBInertia(d);
-                                        notifier.loadPreferences();
-                                      }
-                                    },
                                   ),
                                 ),
                               ],
@@ -270,15 +299,15 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
 
                     Card(
                       color: theme.colorScheme.surfaceVariant,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         child: Column(
                           children: [
                             ReadOnlySettingField(
-                              label: 'Spring Constant (kg·cm/rad)',
+                              label: 'Spring Constant\n(kg·cm/rad)',
                               value: displayKappa,
-                              width: 160,
+                              width: 130,
                               onLongClick: () {
                                 if (uiState.isCalibrated) {
                                   final numStr = (uiState.deviceKappa / MomentOfInertiaCalculator.kappaConversion).toString();
@@ -289,9 +318,9 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                             ),
                             Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
                             ReadOnlySettingField(
-                              label: 'Device Inertia (kg·cm²)',
+                              label: 'Device Inertia\n(kg·cm²)',
                               value: displayI,
-                              width: 160,
+                              width: 130,
                               onLongClick: () {
                                 if (uiState.isCalibrated) {
                                   final numStr = uiState.deviceInertia.toString();
@@ -480,11 +509,11 @@ class CalibrationObjectCard extends StatelessWidget {
       return Card(
         elevation: 0,
         color: theme.colorScheme.surfaceVariant,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         margin: const EdgeInsets.symmetric(vertical: 1.0),
         child: InkWell(
           onTap: onClick,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(18),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
             child: Column(
@@ -528,112 +557,124 @@ class CalibrationObjectCard extends StatelessWidget {
 
     final moiValues = filtered.map((m) => m.moi).toList();
     final avgMoi = moiValues.isNotEmpty ? moiValues.reduce((a, b) => a + b) / moiValues.length : 0.0;
-    double moiStdDev = 0.0;
-    if (moiValues.length > 1) {
-      final variance = moiValues.map((v) => pow(v - avgMoi, 2)).reduce((a, b) => a + b) / moiValues.length;
-      moiStdDev = sqrt(variance);
-    }
 
     final moiStr = moiValues.isNotEmpty && avgMoi > 0
         ? avgMoi.toStringAsFixed(moiResolution)
         : 'No Data';
+
+    final fullPeriodStr = 'Period: $periodStr';
+    final fullMoiStr = 'MOI: $moiStr';
 
     final metaStr = 'Readings: ${measurements.length}';
 
     final swBg = isDark ? const Color(0xFF172836) : const Color(0xFFE8F4FD);
     final twBg = isDark ? const Color(0xFF0F2E2B) : const Color(0xFFE0F2F1);
 
-    return Card(
-      elevation: 0,
-      color: theme.colorScheme.surfaceVariant,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.symmetric(vertical: 1.5),
-      child: InkWell(
-        onTap: onClick,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
+    final typo = PageTypography.of(context);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final halfWidth = (constraints.maxWidth - 28) / 2.0;
+        final valueFontSize = typo.computeUnifiedSize(
+          texts: [fullPeriodStr, fullMoiStr],
+          maxFontSize: 16.0,
+          maxWidth: halfWidth,
+          fontWeight: FontWeight.bold,
+        );
+
+        return Card(
+          elevation: 0,
+          color: theme.colorScheme.surfaceVariant,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          margin: const EdgeInsets.symmetric(vertical: 1.5),
+          child: InkWell(
+            onTap: onClick,
+            borderRadius: BorderRadius.circular(18),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: DynamicTitleText(
-                      text: title,
-                      maxFontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DynamicTitleText(
+                          text: title,
+                          maxFontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 24,
+                        color: theme.colorScheme.outline,
+                      ),
+                    ],
                   ),
-                  Icon(
-                    Icons.chevron_right,
-                    size: 24,
-                    color: theme.colorScheme.outline,
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: swBg,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Text('Period: ', style: TextStyle(fontSize: valueFontSize * 0.88, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                              Expanded(
+                                child: Text(
+                                  periodStr,
+                                  style: TextStyle(fontSize: valueFontSize, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: twBg,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Text('MOI: ', style: TextStyle(fontSize: valueFontSize * 0.88, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary)),
+                              Expanded(
+                                child: Text(
+                                  moiStr,
+                                  style: TextStyle(fontSize: valueFontSize, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 1),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      metaStr,
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.outline, height: 1.0),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 2),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: swBg,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Text('Period: ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
-                          Expanded(
-                            child: Text(
-                              periodStr,
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: twBg,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Text('MOI: ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary)),
-                          Expanded(
-                            child: Text(
-                              moiStr,
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 1),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  metaStr,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.outline, height: 1.0),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

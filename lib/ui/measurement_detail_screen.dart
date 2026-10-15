@@ -100,7 +100,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
                       children: [
                         Card(
                           color: theme.colorScheme.surfaceVariant,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             child: Column(
@@ -202,7 +202,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
 
                             return Card(
                               color: theme.colorScheme.surfaceVariant,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                 child: Column(
@@ -378,7 +378,7 @@ class OscillationGraph extends StatelessWidget {
       padding: const EdgeInsets.only(top: 12, left: 8, right: 8, bottom: 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         children: [
