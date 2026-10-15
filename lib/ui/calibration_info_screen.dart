@@ -107,13 +107,39 @@ class _CalibrationInfoScreenState extends ConsumerState<CalibrationInfoScreen> {
 
                 const SizedBox(height: 16),
 
-                TextField(
-                  controller: _controller,
-                  style: TextStyle(color: theme.colorScheme.onSurface),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: label,
-                    border: const OutlineInputBorder(),
+                Text('Expected Target Values', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                const SizedBox(height: 6),
+
+                Card(
+                  color: theme.colorScheme.surfaceVariant,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _controller,
+                          style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 16),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: theme.colorScheme.surface,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -126,7 +152,7 @@ class _CalibrationInfoScreenState extends ConsumerState<CalibrationInfoScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
                       foregroundColor: theme.colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () {
                       final val = double.tryParse(_controller.text);

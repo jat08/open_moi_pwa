@@ -17,10 +17,10 @@ class AppColors {
     onSecondary: Colors.white,                          // #FFFFFF
     secondaryContainer: Color(0xFFB2DFDB),
     onSecondaryContainer: Color(0xFF00201A),
-    surface: Colors.white,                              // #FFFFFF
+    surface: const Color(0xFFF4F8FC),                     // Soft Light Surface for Input Fields
     onSurface: Colors.black,                            // #000000
-    surfaceVariant: Color(0xFFF0F7FF),                  // Soft Light Blue Card Background
-    onSurfaceVariant: Color(0xFF40484C),
+    surfaceVariant: Colors.white,                       // White Card Background
+    onSurfaceVariant: const Color(0xFF40484C),
     outline: Color(0xFF70787D),
     error: Color(0xFFB3261E),
     onError: Colors.white,

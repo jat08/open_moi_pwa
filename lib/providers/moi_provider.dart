@@ -93,6 +93,7 @@ class UiState {
   final String? nfcStatus;
 
   final String? importError;
+  final int activeTab;
 
   UiState({
     this.detectorState = OscillationState.WRONG_ORIENTATION,
@@ -161,6 +162,7 @@ class UiState {
     this.nfcEnabled = true,
     this.nfcStatus,
     this.importError,
+    this.activeTab = 0,
   });
 
   UiState copyWith({
@@ -230,6 +232,7 @@ class UiState {
     bool? nfcEnabled,
     String? Function()? nfcStatus,
     String? Function()? importError,
+    int? activeTab,
   }) {
     return UiState(
       detectorState: detectorState ?? this.detectorState,
@@ -298,6 +301,7 @@ class UiState {
       nfcEnabled: nfcEnabled ?? this.nfcEnabled,
       nfcStatus: nfcStatus != null ? nfcStatus() : this.nfcStatus,
       importError: importError != null ? importError() : this.importError,
+      activeTab: activeTab ?? this.activeTab,
     );
   }
 }
@@ -587,6 +591,24 @@ class MoiNotifier extends StateNotifier<UiState> {
       currentCalibrationPeriodAverage: stats.average,
       currentCalibrationPeriodStdDev: stats.stdDev,
     );
+  }
+
+  void setTab(int index) {
+    state = state.copyWith(
+      activeTab: index,
+      selectedGroupId: () => null,
+      selectedCalibrationTarget: () => null,
+      selectedEstimationGroupId: () => null,
+      selectedMeasurement: () => null,
+      editingAttributesGroupId: () => null,
+      currentAttributeGroup: () => null,
+      editingExpectedValueTarget: () => null,
+      calibrationTarget: CalibrationTarget.NONE,
+    );
+  }
+
+  void navigateToCalibrate() {
+    setTab(2);
   }
 
   void setSearchQuery(String query) {
@@ -1109,13 +1131,7 @@ class MoiNotifier extends StateNotifier<UiState> {
       final value = _extractNumber(record);
       if (value == null) continue;
 
-      if (clean.startsWith('OBJAT') || clean.startsWith('OBJECTAT')) {
-        await _prefs.saveExpectedValue('OBJECT_A', value);
-        updated = true;
-      } else if (clean.startsWith('OBJBT') || clean.startsWith('OBJECTBT')) {
-        await _prefs.saveExpectedValue('OBJECT_B', value);
-        updated = true;
-      } else if (clean.startsWith('OBJA') || clean.startsWith('OBJECTA')) {
+      if (clean.startsWith('OBJA') || clean.startsWith('OBJECTA')) {
         await _prefs.saveKnownObjectAInertia(value);
         updated = true;
       } else if (clean.startsWith('OBJB') || clean.startsWith('OBJECTB')) {

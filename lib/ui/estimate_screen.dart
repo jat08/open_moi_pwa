@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../data/models.dart';
@@ -16,6 +17,40 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
   Set<int> selectedIds = {};
   bool isSelectionMode = false;
 
+  void _showNewGroupDialog(BuildContext context, UiState uiState, MoiNotifier notifier) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final controller = TextEditingController(text: 'Estimation ${uiState.estimationGroups.length + 1}');
+        return AlertDialog(
+          title: const Text('New Estimation Group'),
+          content: TextField(
+            controller: controller,
+            maxLength: 40,
+            decoration: const InputDecoration(labelText: 'Group Name'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                notifier.addEstimationGroup(controller.text);
+                setState(() {
+                  selectedIds.clear();
+                  isSelectionMode = false;
+                });
+              },
+              child: const Text('Create'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final uiState = ref.watch(moiProvider);
@@ -23,13 +58,39 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
     final theme = Theme.of(context);
 
     return PopScope(
-      canPop: !isSelectionMode,
-      onPopInvoked: (didPop) {
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
         if (isSelectionMode) {
           setState(() {
             selectedIds.clear();
             isSelectionMode = false;
           });
+        } else {
+          final shouldExit = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Exit OpenMOI?'),
+              content: const Text('Are you sure you want to exit the app?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('No'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Yes'),
+                ),
+              ],
+            ),
+          );
+          if (shouldExit == true) {
+            SystemNavigator.pop();
+          }
         }
       },
       child: Scaffold(
@@ -41,61 +102,38 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 8, bottom: 8),
-                  child: Text(
-                    'Estimations',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Estimations',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: TextButton.icon(
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            foregroundColor: theme.colorScheme.onPrimary,
+                          ),
+                          icon: const Icon(Icons.add, size: 22),
+                          label: const Text('New', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          onPressed: () => _showNewGroupDialog(context, uiState, notifier),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
-                // Search & Sort Bar
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 44,
-                        child: TextField(
-                          onChanged: (query) => notifier.setEstimationSearchQuery(query),
-                          style: TextStyle(color: theme.colorScheme.onSurface),
-                          decoration: InputDecoration(
-                            hintText: 'Search estimations...',
-                            hintStyle: TextStyle(color: theme.colorScheme.outline, fontSize: 15),
-                            prefixIcon: Icon(Icons.search, color: theme.colorScheme.primary, size: 22),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(4),
-                              borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(4),
-                              borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: Icon(Icons.swap_vert, size: 36, color: theme.colorScheme.primary),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (ctx) => SortDialog(
-                            currentType: uiState.sortType,
-                            currentDirection: uiState.sortDirection,
-                            onApply: (type, dir) => notifier.setSortOrder(type, dir),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-
-                if (isSelectionMode) ...[
-                  const SizedBox(height: 8),
+                if (isSelectionMode)
                   SelectionTopBar(
                     count: selectedIds.length,
                     isAllSelected: selectedIds.length >= uiState.estimationGroups.length && uiState.estimationGroups.isNotEmpty,
@@ -121,10 +159,66 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                         isSelectionMode = false;
                       });
                     },
+                  )
+                else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 46,
+                          child: TextField(
+                            onChanged: (query) => notifier.setEstimationSearchQuery(query),
+                            style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15),
+                            decoration: InputDecoration(
+                              hintText: 'Search estimations...',
+                              hintStyle: TextStyle(color: theme.colorScheme.outline, fontSize: 15),
+                              prefixIcon: Icon(Icons.search, color: theme.colorScheme.primary, size: 22),
+                              filled: true,
+                              fillColor: theme.colorScheme.surfaceVariant,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceVariant,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          icon: Icon(Icons.swap_vert, size: 24, color: theme.colorScheme.primary),
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => SortDialog(
+                                currentType: uiState.sortType,
+                                currentDirection: uiState.sortDirection,
+                                onApply: (type, dir) => notifier.setSortOrder(type, dir),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                ],
 
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
 
                 Expanded(
                   child: uiState.estimationGroups.isEmpty
@@ -168,45 +262,6 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
             ),
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          backgroundColor: theme.colorScheme.primary,
-          child: Icon(Icons.add, color: theme.colorScheme.onPrimary, size: 28),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (ctx) {
-                final controller = TextEditingController(text: 'Estimation ${uiState.estimationGroups.length + 1}');
-                return AlertDialog(
-                  title: const Text('New Estimation Group'),
-                  content: TextField(
-                    controller: controller,
-                    maxLength: 40,
-                    decoration: const InputDecoration(labelText: 'Group Name'),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(ctx).pop();
-                        notifier.addEstimationGroup(controller.text);
-                        setState(() {
-                          selectedIds.clear();
-                          isSelectionMode = false;
-                        });
-                      },
-                      child: const Text('Create'),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-        ),
       ),
     );
   }
@@ -231,107 +286,112 @@ class EstimationGroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final swStdDev = group.type == 'Pickleball Paddle' ? group.resultSW * 0.014 : 0.0;
-    final twStdDev = group.type == 'Pickleball Paddle' ? group.resultTW * 0.039 : 0.0;
+    final isDark = theme.brightness == Brightness.dark;
 
-    final swText = swStdDev > 0
-        ? '${group.resultSW.toStringAsFixed(resolution)} ± ${swStdDev.toStringAsFixed(resolution)} kg·cm²'
-        : '${group.resultSW.toStringAsFixed(resolution)} kg·cm²';
+    final swText = group.resultSW <= 0
+        ? 'No Data'
+        : group.resultSW.toStringAsFixed(resolution);
 
-    final twText = twStdDev > 0
-        ? '${group.resultTW.toStringAsFixed(resolution)} ± ${twStdDev.toStringAsFixed(resolution)} kg·cm²'
-        : '${group.resultTW.toStringAsFixed(resolution)} kg·cm²';
+    final twText = group.resultTW <= 0
+        ? 'No Data'
+        : group.resultTW.toStringAsFixed(resolution);
 
-    final timeStr = DateFormat('h:mm a').format(DateTime.fromMillisecondsSinceEpoch(group.timestamp));
-    final dateStr = DateFormat('M/d/yy').format(DateTime.fromMillisecondsSinceEpoch(group.timestamp));
+    final dateStr = DateFormat('M/d/yy    •    h:mm a').format(DateTime.fromMillisecondsSinceEpoch(group.timestamp));
+    final metaStr = '${group.type}    •    $dateStr';
+
+    final swBg = isDark ? const Color(0xFF172836) : const Color(0xFFE8F4FD);
+    final twBg = isDark ? const Color(0xFF0F2E2B) : const Color(0xFFE0F2F1);
 
     return Card(
       elevation: 0,
       color: selected ? theme.colorScheme.primaryContainer : theme.colorScheme.surfaceVariant,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         side: selected ? BorderSide(color: theme.colorScheme.primary, width: 2) : BorderSide.none,
       ),
-      margin: const EdgeInsets.symmetric(vertical: 1.0),
+      margin: const EdgeInsets.symmetric(vertical: 2.5),
       child: InkWell(
         onTap: onClick,
         onLongPress: onLongClick,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              DynamicTitleText(
-                text: group.name,
-                maxFontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-              ),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'SW: ',
-                              style: TextStyle(fontSize: 13, color: theme.colorScheme.outline, height: 1.1),
-                            ),
-                            TextSpan(
-                              text: swText,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.primary,
-                                height: 1.1,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'TW: ',
-                              style: TextStyle(fontSize: 13, color: theme.colorScheme.outline, height: 1.1),
-                            ),
-                            TextSpan(
-                              text: twText,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.secondary,
-                                height: 1.1,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  Expanded(
+                    child: DynamicTitleText(
+                      text: group.name,
+                      maxFontSize: 19,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        timeStr,
-                        style: TextStyle(fontSize: 10.5, color: theme.colorScheme.outline, height: 1.1),
-                      ),
-                      Text(
-                        dateStr,
-                        style: TextStyle(fontSize: 10.5, color: theme.colorScheme.outline, height: 1.1),
-                      ),
-                    ],
+                  Icon(
+                    Icons.chevron_right,
+                    size: 24,
+                    color: theme.colorScheme.outline,
                   ),
                 ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: swBg,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Text('EST. SW: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                          Expanded(
+                            child: Text(
+                              swText,
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: twBg,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Text('EST. TW: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary)),
+                          Expanded(
+                            child: Text(
+                              twText,
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 3),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  metaStr,
+                  style: TextStyle(fontSize: 12, color: theme.colorScheme.outline, height: 1.0),
+                ),
               ),
             ],
           ),

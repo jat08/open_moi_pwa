@@ -5,6 +5,8 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'data/app_preferences.dart';
 import 'providers/moi_provider.dart';
+import 'ui/calibration_detail_screen.dart';
+import 'ui/calibration_info_screen.dart';
 import 'ui/calibration_screen.dart';
 import 'ui/estimate_detail_screen.dart';
 import 'ui/estimate_screen.dart';
@@ -67,8 +69,6 @@ class OpenMOIApp extends ConsumerWidget {
   }
 }
 
-
-
 class MainNavigationScaffold extends ConsumerStatefulWidget {
   const MainNavigationScaffold({super.key});
 
@@ -101,8 +101,12 @@ class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold>
       body = GroupDetailScreen(groupId: uiState.selectedGroupId!);
     } else if (uiState.selectedEstimationGroupId != null && uiState.currentEstimationGroup != null) {
       body = EstimateDetailScreen(group: uiState.currentEstimationGroup!);
+    } else if (uiState.selectedCalibrationTarget != null) {
+      body = CalibrationDetailScreen(target: uiState.selectedCalibrationTarget!);
+    } else if (uiState.editingExpectedValueTarget != null) {
+      body = CalibrationInfoScreen(target: uiState.editingExpectedValueTarget!);
     } else {
-      switch (_currentIndex) {
+      switch (uiState.activeTab) {
         case 0:
           body = const MeasureScreen();
           break;
@@ -120,87 +124,34 @@ class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold>
       }
     }
 
-    final notifier = ref.read(moiProvider.notifier);
-
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-
-        if (!showBottomBar) {
-          if (uiState.editingAttributesGroupId != null) {
-            notifier.selectEditingAttributesGroup(null);
-          } else if (uiState.editingExpectedValueTarget != null) {
-            notifier.selectEditingExpectedValue(null);
-          } else if (uiState.selectedMeasurement != null) {
-            notifier.selectMeasurement(null);
-          } else if (uiState.selectedGroupId != null) {
-            notifier.selectGroup(null);
-          } else if (uiState.selectedEstimationGroupId != null) {
-            notifier.selectEstimationGroup(null);
-          } else if (uiState.selectedCalibrationTarget != null) {
-            notifier.selectCalibrationTarget(null);
-          }
-          return;
-        }
-
-        final shouldExit = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Exit OpenMOI?'),
-            content: const Text('Are you sure you want to exit the app?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('No'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+    return Scaffold(
+      body: body,
+      bottomNavigationBar: showBottomBar
+          ? NavigationBar(
+              selectedIndex: uiState.activeTab,
+              onDestinationSelected: (index) {
+                ref.read(moiProvider.notifier).setTab(index);
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.timer),
+                  label: 'Measure',
                 ),
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Yes'),
-              ),
-            ],
-          ),
-        );
-
-        if (shouldExit == true) {
-          SystemNavigator.pop();
-        }
-      },
-      child: Scaffold(
-        body: body,
-        bottomNavigationBar: showBottomBar
-            ? NavigationBar(
-                selectedIndex: _currentIndex,
-                onDestinationSelected: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.timer),
-                    label: 'Measure',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.functions),
-                    label: 'Estimate',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.tune),
-                    label: 'Calibrate',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.settings),
-                    label: 'Settings',
-                  ),
-                ],
-              )
-            : null,
-      ),
+                NavigationDestination(
+                  icon: Icon(Icons.functions),
+                  label: 'Estimate',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.tune),
+                  label: 'Calibrate',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.settings),
+                  label: 'Settings',
+                ),
+              ],
+            )
+          : null,
     );
   }
 }

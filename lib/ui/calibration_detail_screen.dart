@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models.dart';
+import '../logic/oscillation_detector.dart';
 import '../providers/moi_provider.dart';
 import 'components.dart';
 
@@ -72,10 +73,8 @@ class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScree
     String? expectedNote;
     switch (widget.target) {
       case CalibrationTarget.OBJECT_A:
-        expectedNote = 'Expected Period: ${uiState.expectedPeriodA.toStringAsFixed(uiState.periodUnitsResolution)}s';
-        break;
       case CalibrationTarget.OBJECT_B:
-        expectedNote = 'Expected Period: ${uiState.expectedPeriodB.toStringAsFixed(uiState.periodUnitsResolution)}s';
+        expectedNote = null;
         break;
       case CalibrationTarget.TARE_PB:
         expectedNote = 'Expected MOI: ${uiState.expectedMoiPB.toStringAsFixed(4)} kg·cm²';
@@ -89,7 +88,7 @@ class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScree
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         if (isSelectionMode) {
           setState(() {
@@ -121,29 +120,6 @@ class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScree
                         color: theme.colorScheme.onSurface,
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () => notifier.selectEditingExpectedValue(widget.target),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'i',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'Georgia',
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            fontStyle: FontStyle.italic,
-                            color: theme.colorScheme.onPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
 
@@ -156,15 +132,17 @@ class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScree
                   moiResolution: uiState.moiUnitsResolution,
                   periodResolution: uiState.periodUnitsResolution,
                   isPeriod: true,
+                  inlineToleranceWithUnits: !isTare,
                   label2: isTare ? 'MOI' : null,
                   avg2: moiStats?.average ?? 0.0,
                   stdDev2: moiStats?.stdDev ?? 0.0,
                   expectedNote: expectedNote,
+                  onInfoClick: isTare ? () => notifier.selectEditingExpectedValue(widget.target) : null,
                 ),
 
                 const SizedBox(height: 12),
 
-                if (isSelectionMode) ...[
+                if (isSelectionMode)
                   SelectionTopBar(
                     count: selectedIds.length,
                     isAllSelected: selectedIds.length >= measurements.length && measurements.isNotEmpty,
@@ -190,16 +168,16 @@ class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScree
                         isSelectionMode = false;
                       });
                     },
-                  ),
-                ] else ...[
+                  )
+                else
                   MeasurementControlButton(
                     state: uiState.detectorState,
                     progress: uiState.progress,
+                    isCalibrated: !isTare ? true : uiState.isCalibrated,
                     cooldownRemaining: uiState.cooldownRemaining,
                     preparationRemaining: uiState.preparationRemaining,
                     onStart: () => notifier.startMeasurement(),
                   ),
-                ],
 
                 const SizedBox(height: 8),
 

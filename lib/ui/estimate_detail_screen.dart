@@ -112,59 +112,78 @@ class _EstimateDetailScreenState extends ConsumerState<EstimateDetailScreen> {
                   showTolerance: swStdDev > 0 || twStdDev > 0,
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        EstimationInputField(
-                          label: 'Weight',
-                          value: m,
-                          unit: mUnit,
-                          units: const ['oz', 'lb', 'kg'],
-                          onValueChange: (v) => setState(() => m = v),
-                          onUnitChange: (u) => setState(() => mUnit = u),
-                        ),
-                        EstimationInputField(
-                          label: 'Length',
-                          value: l,
-                          unit: lUnit,
-                          units: const ['in', 'cm'],
-                          onValueChange: (v) => setState(() => l = v),
-                          onUnitChange: (u) => setState(() => lUnit = u),
-                        ),
-                        EstimationInputField(
-                          label: 'Width',
-                          value: w,
-                          unit: wUnit,
-                          units: const ['in', 'cm'],
-                          onValueChange: (v) => setState(() => w = v),
-                          onUnitChange: (u) => setState(() => wUnit = u),
-                        ),
-                        EstimationInputField(
-                          label: 'Balance Point',
-                          value: bp,
-                          unit: bpUnit,
-                          units: const ['in', 'cm'],
-                          onValueChange: (v) => setState(() => bp = v),
-                          onUnitChange: (u) => setState(() => bpUnit = u),
-                        ),
-                        EstimationInputField(
-                          label: 'Radius',
-                          value: r,
-                          unit: rUnit,
-                          units: const ['in', 'cm'],
-                          onValueChange: (v) => setState(() => r = v),
-                          onUnitChange: (u) => setState(() => rUnit = u),
-                          locked: isRadiusLocked,
-                        ),
+                        Text('Paddle / Racquet Geometry', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                        const SizedBox(height: 6),
 
-                        TypeSelector(
-                          label: 'Type',
-                          current: type,
-                          options: const ['MOI-5', 'MOI-10', 'Pickleball Paddle', 'Racquet'],
-                          onSelect: (t) => setState(() => type = t),
+                        Card(
+                          color: theme.colorScheme.surfaceVariant,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            child: Column(
+                              children: [
+                                EstimationInputField(
+                                  label: 'Weight',
+                                  value: m,
+                                  unit: mUnit,
+                                  units: const ['oz', 'lb', 'kg'],
+                                  onValueChange: (v) => setState(() => m = v),
+                                  onUnitChange: (u) => setState(() => mUnit = u),
+                                ),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                EstimationInputField(
+                                  label: 'Length',
+                                  value: l,
+                                  unit: lUnit,
+                                  units: const ['in', 'cm'],
+                                  onValueChange: (v) => setState(() => l = v),
+                                  onUnitChange: (u) => setState(() => lUnit = u),
+                                ),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                EstimationInputField(
+                                  label: 'Width',
+                                  value: w,
+                                  unit: wUnit,
+                                  units: const ['in', 'cm'],
+                                  onValueChange: (v) => setState(() => w = v),
+                                  onUnitChange: (u) => setState(() => wUnit = u),
+                                ),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                EstimationInputField(
+                                  label: 'Balance Point',
+                                  value: bp,
+                                  unit: bpUnit,
+                                  units: const ['in', 'cm'],
+                                  onValueChange: (v) => setState(() => bp = v),
+                                  onUnitChange: (u) => setState(() => bpUnit = u),
+                                ),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                EstimationInputField(
+                                  label: 'Radius',
+                                  value: r,
+                                  unit: rUnit,
+                                  units: const ['in', 'cm'],
+                                  onValueChange: (v) => setState(() => r = v),
+                                  onUnitChange: (u) => setState(() => rUnit = u),
+                                  locked: isRadiusLocked,
+                                ),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                TypeSelector(
+                                  label: 'Type',
+                                  current: type,
+                                  options: const ['MOI-5', 'MOI-10', 'Pickleball Paddle', 'Racquet'],
+                                  onSelect: (t) => setState(() => type = t),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
 
                         const SizedBox(height: 24),
@@ -176,7 +195,7 @@ class _EstimateDetailScreenState extends ConsumerState<EstimateDetailScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: theme.colorScheme.primary,
                               foregroundColor: theme.colorScheme.onPrimary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                             onPressed: () {
                               final mVal = double.tryParse(m) ?? 0.0;

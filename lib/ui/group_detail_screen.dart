@@ -95,7 +95,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         if (isSelectionMode) {
           setState(() {
@@ -159,70 +159,117 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   stdDevBP: stdDevBP,
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 4),
 
-                // Centered Tare Button with Info Button on Far Right
-                Stack(
-                  alignment: Alignment.center,
+                // Harmonized Tare Selector & Info Button Control Row
+                Row(
                   children: [
-                    Center(
+                    Expanded(
                       child: PopupMenuButton<String>(
                         initialValue: uiState.selectedTareMode,
                         onSelected: (mode) => notifier.setTareMode(mode),
                         child: Container(
-                          height: 40,
-                          width: 170,
+                          height: 42,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.primary,
-                            borderRadius: BorderRadius.circular(20),
+                            color: theme.colorScheme.surfaceVariant,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: theme.colorScheme.primary.withOpacity(0.4)),
                           ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'Tare: $tareLabel',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: theme.colorScheme.onPrimary,
-                            ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Tare Adapter: $tareLabel',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                              Icon(Icons.keyboard_arrow_down, size: 20, color: theme.colorScheme.primary),
+                            ],
                           ),
                         ),
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(value: 'NONE', child: Text('None')),
-                          PopupMenuItem(
-                            value: 'PICKLEBALL',
-                            enabled: uiState.pickleballTareOffset > 0,
-                            child: Text(uiState.pickleballTareOffset > 0 ? 'Pickleball Adapter' : 'PB-Tare Adapter First'),
-                          ),
-                          PopupMenuItem(
-                            value: 'TWIST',
-                            enabled: uiState.twistTareOffset > 0,
-                            child: Text(uiState.twistTareOffset > 0 ? 'Twist Weight Adapter' : 'TW-Tare Adapter First'),
-                          ),
-                        ],
+                        itemBuilder: (context) {
+                          final isDark = theme.brightness == Brightness.dark;
+                          final selectedBg = isDark ? const Color(0xFF1E3A52) : const Color(0xFFE2F0FE);
+                          final isNone = uiState.selectedTareMode == 'NONE';
+                          final isPB = uiState.selectedTareMode == 'PICKLEBALL';
+                          final isTW = uiState.selectedTareMode == 'TWIST';
+                          return [
+                            PopupMenuItem<String>(
+                              value: 'NONE',
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                color: isNone ? selectedBg : null,
+                                child: Text(
+                                  'None',
+                                  style: TextStyle(
+                                    fontWeight: isNone ? FontWeight.bold : FontWeight.normal,
+                                    color: isNone ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'PICKLEBALL',
+                              enabled: uiState.pickleballTareOffset > 0,
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                color: isPB ? selectedBg : null,
+                                child: Text(
+                                  uiState.pickleballTareOffset > 0 ? 'Pickleball Adapter' : 'PB-Tare Adapter First',
+                                  style: TextStyle(
+                                    fontWeight: isPB ? FontWeight.bold : FontWeight.normal,
+                                    color: isPB ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'TWIST',
+                              enabled: uiState.twistTareOffset > 0,
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                color: isTW ? selectedBg : null,
+                                child: Text(
+                                  uiState.twistTareOffset > 0 ? 'Twist Weight Adapter' : 'TW-Tare Adapter First',
+                                  style: TextStyle(
+                                    fontWeight: isTW ? FontWeight.bold : FontWeight.normal,
+                                    color: isTW ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ];
+                        },
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () => notifier.selectEditingAttributesGroup(widget.groupId),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'i',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontFamily: 'Georgia',
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              fontStyle: FontStyle.italic,
-                              color: theme.colorScheme.onPrimary,
-                            ),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => notifier.selectEditingAttributesGroup(widget.groupId),
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'i',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Georgia',
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            fontStyle: FontStyle.italic,
+                            color: theme.colorScheme.onPrimary,
                           ),
                         ),
                       ),
@@ -232,7 +279,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
                 const SizedBox(height: 12),
 
-                if (isSelectionMode) ...[
+                if (isSelectionMode)
                   SelectionTopBar(
                     count: selectedIds.length,
                     isAllSelected: selectedIds.length >= measurements.length && measurements.isNotEmpty,
@@ -258,8 +305,8 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                         isSelectionMode = false;
                       });
                     },
-                  ),
-                ] else ...[
+                  )
+                else
                   MeasurementControlButton(
                     state: uiState.detectorState,
                     progress: uiState.progress,
@@ -268,7 +315,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                     preparationRemaining: uiState.preparationRemaining,
                     onStart: () => notifier.startMeasurement(),
                   ),
-                ],
 
                 const SizedBox(height: 8),
 

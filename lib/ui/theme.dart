@@ -5,17 +5,30 @@ class AppTheme {
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     colorScheme: AppColors.lightColorScheme,
-    scaffoldBackgroundColor: const Color(0xFFFFFFFF),
+    scaffoldBackgroundColor: const Color(0xFFEDF5FE),
     cardTheme: CardThemeData(
       elevation: 0,
-      color: AppColors.lightColorScheme.surfaceVariant,
+      color: Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: const Color(0xFFF7FAFE),
+      backgroundColor: Colors.white,
       indicatorColor: const Color(0xFFD8EEFF),
+      indicatorShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF34A4EB));
@@ -30,14 +43,18 @@ class AppTheme {
       }),
     ),
     inputDecorationTheme: InputDecorationTheme(
-      border: const OutlineInputBorder(),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: AppColors.lightColorScheme.outline),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: AppColors.lightColorScheme.outline.withOpacity(0.4)),
       ),
       focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: AppColors.lightColorScheme.primary, width: 2.0),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
     ),
   );
 
@@ -49,11 +66,21 @@ class AppTheme {
       elevation: 0,
       color: AppColors.darkColorScheme.surfaceVariant,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: const Color(0xFF1C222A),
       indicatorColor: const Color(0xFF004977),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
@@ -69,14 +96,18 @@ class AppTheme {
       }),
     ),
     inputDecorationTheme: InputDecorationTheme(
-      border: const OutlineInputBorder(),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: AppColors.darkColorScheme.outline),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: AppColors.darkColorScheme.outline.withOpacity(0.4)),
       ),
       focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: AppColors.darkColorScheme.primary, width: 2.0),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
     ),
   );
 }

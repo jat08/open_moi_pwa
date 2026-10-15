@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 import '../core/theme/app_colors.dart';
 import '../data/models.dart';
 import '../providers/moi_provider.dart';
-import 'components.dart';
 
 class MeasurementDetailScreen extends ConsumerWidget {
   final Measurement measurement;
@@ -82,17 +81,17 @@ class MeasurementDetailScreen extends ConsumerWidget {
                 Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface, size: 28),
+                      icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface, size: 26),
                       onPressed: () => notifier.selectMeasurement(null),
                     ),
                     Text(
                       'Measurement Data',
-                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 6),
 
                 Expanded(
                   child: SingleChildScrollView(
@@ -101,8 +100,9 @@ class MeasurementDetailScreen extends ConsumerWidget {
                       children: [
                         Card(
                           color: theme.colorScheme.surfaceVariant,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           child: Padding(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             child: Column(
                               children: [
                                 Row(
@@ -117,14 +117,14 @@ class MeasurementDetailScreen extends ConsumerWidget {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 8),
+                                Divider(height: 10, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
                                 Row(
                                   children: [
                                     Expanded(
                                       flex: 7,
                                       child: InfoBit(
                                         label: 'MOI',
-                                        value: finalMoiText,
+                                        value: '$finalMoiText kg·cm²',
                                         onLongClick: () {
                                           Clipboard.setData(ClipboardData(text: finalMoiValue.toStringAsFixed(uiState.moiUnitsResolution)));
                                           ScaffoldMessenger.of(context).showSnackBar(
@@ -148,7 +148,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 8),
+                                Divider(height: 10, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
                                 Row(
                                   children: [
                                     Expanded(
@@ -166,25 +166,25 @@ class MeasurementDetailScreen extends ConsumerWidget {
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 10),
 
                         Text(
                           'Oscillation Graph',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
                         ),
 
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 4),
 
                         OscillationGraph(measurement: measurement),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 10),
 
                         Text(
                           'Cycle Analysis',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
                         ),
 
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 4),
 
                         if (cycles.isNotEmpty) ...[
                           Builder(builder: (context) {
@@ -200,99 +200,110 @@ class MeasurementDetailScreen extends ConsumerWidget {
 
                             final margin = isTW ? uiState.twMargin : uiState.swMargin;
 
-                            return Column(
-                              children: cycles.asMap().entries.map((entry) {
-                                final index = entry.key;
-                                final period = entry.value;
-                                final isRef = refIndex == (index + 1);
-                                final isTrimmed = trimLast && index == (cycles.length - 1);
-                                final diff = (period - refValue).abs() / refValue;
-                                final isExcluded = !isTrimmed && (diff > margin);
+                            return Card(
+                              color: theme.colorScheme.surfaceVariant,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                child: Column(
+                                  children: cycles.asMap().entries.map((entry) {
+                                    final index = entry.key;
+                                    final period = entry.value;
+                                    final isRef = refIndex == (index + 1);
+                                    final isTrimmed = trimLast && index == (cycles.length - 1);
+                                    final diff = (period - refValue).abs() / refValue;
+                                    final isExcluded = !isTrimmed && (diff > margin);
 
-                                Color periodColor = theme.colorScheme.onSurface;
-                                if (isTrimmed) periodColor = isDark ? AppColors.errorTextDark : AppColors.errorTextLight;
-                                else if (isExcluded) periodColor = theme.colorScheme.outline;
+                                    Color periodColor = theme.colorScheme.onSurface;
+                                    if (isTrimmed) {
+                                      periodColor = isDark ? AppColors.errorTextDark : AppColors.errorTextLight;
+                                    } else if (isExcluded) {
+                                      periodColor = theme.colorScheme.outline;
+                                    }
 
-                                return Column(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 6),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
+                                    return Column(
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 4),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Text(
-                                                'Cycle #${index + 1}',
-                                                style: TextStyle(color: periodColor, fontWeight: isRef ? FontWeight.bold : FontWeight.normal),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    'Cycle #${index + 1}',
+                                                    style: TextStyle(fontSize: 14, color: periodColor, fontWeight: isRef ? FontWeight.bold : FontWeight.normal),
+                                                  ),
+                                                  if (isRef) ...[
+                                                    const SizedBox(width: 8),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                                      decoration: BoxDecoration(
+                                                        color: theme.colorScheme.primary.withOpacity(0.15),
+                                                        borderRadius: BorderRadius.circular(6),
+                                                      ),
+                                                      child: Text(
+                                                        'REFERENCE',
+                                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                  if (isTrimmed) ...[
+                                                    const SizedBox(width: 8),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.red.withOpacity(0.2),
+                                                        borderRadius: BorderRadius.circular(6),
+                                                      ),
+                                                      child: Text(
+                                                        'TRIMMED',
+                                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isDark ? AppColors.errorTextDark : AppColors.errorTextLight),
+                                                      ),
+                                                    ),
+                                                  ] else if (isExcluded) ...[
+                                                    const SizedBox(width: 8),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.amber.withOpacity(0.25),
+                                                        borderRadius: BorderRadius.circular(6),
+                                                      ),
+                                                      child: Text(
+                                                        'DEVIATION',
+                                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isDark ? AppColors.warningTextDark : AppColors.warningTextLight),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
                                               ),
-                                              if (isRef) ...[
-                                                const SizedBox(width: 8),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: theme.colorScheme.primary.withOpacity(0.15),
-                                                    borderRadius: BorderRadius.circular(4),
-                                                  ),
-                                                  child: Text(
-                                                    'REFERENCE',
-                                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-                                                  ),
+                                              GestureDetector(
+                                                onLongPress: () {
+                                                  Clipboard.setData(ClipboardData(text: period.toStringAsFixed(uiState.periodUnitsResolution)));
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(content: Text('Copied: ${period.toStringAsFixed(uiState.periodUnitsResolution)}s')),
+                                                  );
+                                                },
+                                                child: Text(
+                                                  '${period.toStringAsFixed(uiState.periodUnitsResolution)}s',
+                                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: periodColor),
                                                 ),
-                                              ],
-                                              if (isTrimmed) ...[
-                                                const SizedBox(width: 8),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.red.withOpacity(0.2),
-                                                    borderRadius: BorderRadius.circular(4),
-                                                  ),
-                                                  child: Text(
-                                                    'TRIMMED',
-                                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isDark ? AppColors.errorTextDark : AppColors.errorTextLight),
-                                                  ),
-                                                ),
-                                              ] else if (isExcluded) ...[
-                                                const SizedBox(width: 8),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.amber.withOpacity(0.25),
-                                                    borderRadius: BorderRadius.circular(4),
-                                                  ),
-                                                  child: Text(
-                                                    'DEVIATION',
-                                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isDark ? AppColors.warningTextDark : AppColors.warningTextLight),
-                                                  ),
-                                                ),
-                                              ],
+                                              ),
                                             ],
                                           ),
-                                          GestureDetector(
-                                            onLongPress: () {
-                                              Clipboard.setData(ClipboardData(text: period.toStringAsFixed(uiState.periodUnitsResolution)));
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text('Copied: ${period.toStringAsFixed(uiState.periodUnitsResolution)}s')),
-                                              );
-                                            },
-                                            child: Text(
-                                              '${period.toStringAsFixed(uiState.periodUnitsResolution)}s',
-                                              style: TextStyle(fontWeight: FontWeight.bold, color: periodColor),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
-                                  ],
-                                );
-                              }).toList(),
+                                        ),
+                                        if (index < cycles.length - 1)
+                                          Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
                             );
                           }),
                         ],
 
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 24),
                       ],
                     ),
                   ),
@@ -326,8 +337,9 @@ class InfoBit extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, color: theme.colorScheme.outline)),
-          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme.colorScheme.outline)),
+          const SizedBox(height: 1),
+          Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
         ],
       ),
     );
@@ -353,7 +365,7 @@ class OscillationGraph extends StatelessWidget {
 
     if (rawData.isEmpty || measurement.totalDuration <= 0) {
       return Container(
-        height: 200,
+        height: 160,
         alignment: Alignment.center,
         child: Text('No graph data available', style: TextStyle(color: theme.colorScheme.outline)),
       );
@@ -363,7 +375,7 @@ class OscillationGraph extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 16, left: 8, right: 8, bottom: 12),
+      padding: const EdgeInsets.only(top: 12, left: 8, right: 8, bottom: 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
@@ -371,7 +383,7 @@ class OscillationGraph extends StatelessWidget {
       child: Column(
         children: [
           SizedBox(
-            height: 200,
+            height: 150,
             width: double.infinity,
             child: CustomPaint(
               painter: WaveformPainter(
@@ -385,7 +397,7 @@ class OscillationGraph extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

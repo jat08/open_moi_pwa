@@ -1,5 +1,8 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../core/theme/app_colors.dart';
 import '../data/models.dart';
@@ -9,41 +12,166 @@ import '../providers/moi_provider.dart';
 class DynamicTitleText extends StatelessWidget {
   final String text;
   final double maxFontSize;
-  final FontWeight? fontWeight;
-  final FontStyle? fontStyle;
-  final Color? color;
-  final TextAlign? textAlign;
+  final FontWeight fontWeight;
+  final Color color;
 
   const DynamicTitleText({
     super.key,
     required this.text,
     this.maxFontSize = 20,
-    this.fontWeight,
-    this.fontStyle,
-    this.color,
-    this.textAlign,
+    this.fontWeight = FontWeight.bold,
+    this.color = Colors.black,
   });
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            text,
-            maxLines: 1,
-            style: TextStyle(
-              fontSize: maxFontSize,
-              fontWeight: fontWeight,
-              fontStyle: fontStyle,
-              color: color,
+        double fontSize = maxFontSize;
+        final style = TextStyle(
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          color: color,
+        );
+
+        TextPainter textPainter = TextPainter(
+          text: TextSpan(text: text, style: style),
+          maxLines: 1,
+          textDirection: Directionality.maybeOf(context) ?? ui.TextDirection.ltr,
+        )..layout();
+
+        while ((textPainter.didExceedMaxLines || textPainter.width > constraints.maxWidth) && fontSize > 11) {
+          fontSize -= 0.5;
+          textPainter = TextPainter(
+            text: TextSpan(
+              text: text,
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: fontWeight,
+                color: color,
+              ),
             ),
-            textAlign: textAlign,
+            maxLines: 1,
+            textDirection: Directionality.maybeOf(context) ?? ui.TextDirection.ltr,
+          )..layout();
+        }
+
+        return Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            color: color,
           ),
         );
       },
+    );
+  }
+}
+
+class DeleteConfirmationDialog extends StatelessWidget {
+  final String title;
+  final String text;
+  final VoidCallback onConfirm;
+
+  const DeleteConfirmationDialog({
+    super.key,
+    required this.title,
+    required this.text,
+    required this.onConfirm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: Text(title, style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
+      content: Text(text, style: TextStyle(color: theme.colorScheme.onSurface)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          onPressed: () {
+            Navigator.of(context).pop();
+            onConfirm();
+          },
+          child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+      ],
+    );
+  }
+}
+
+class RenameDialog extends StatefulWidget {
+  final String currentName;
+  final ValueChanged<String> onConfirm;
+
+  const RenameDialog({
+    super.key,
+    required this.currentName,
+    required this.onConfirm,
+  });
+
+  @override
+  State<RenameDialog> createState() => _RenameDialogState();
+}
+
+class _RenameDialogState extends State<RenameDialog> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.currentName);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: const Text('Rename'),
+      content: TextField(
+        controller: _controller,
+        maxLength: 40,
+        autofocus: true,
+        decoration: const InputDecoration(labelText: 'Name'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          onPressed: () {
+            final text = _controller.text.trim();
+            if (text.isNotEmpty) {
+              widget.onConfirm(text);
+              Navigator.of(context).pop();
+            }
+          },
+          child: const Text('Save'),
+        ),
+      ],
     );
   }
 }
@@ -68,59 +196,30 @@ class SelectionTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      height: 46,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: onClear,
-              ),
-              IconButton(
-                icon: Icon(
-                  isAllSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                  color: theme.colorScheme.primary,
-                ),
-                onPressed: onToggleAll,
-              ),
-              const SizedBox(width: 4),
-              GestureDetector(
-                onTap: onToggleAll,
-                child: Text(
-                  '$count selected',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
-                ),
-              ),
-            ],
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: onClear,
+          ),
+          Text(
+            '$count Selected',
+            style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onPrimaryContainer),
+          ),
+          const Spacer(),
+          TextButton(
+            onPressed: onToggleAll,
+            child: Text(isAllSelected ? 'Deselect All' : 'Select All'),
           ),
           IconButton(
-            icon: Icon(
-              Icons.delete,
-              color: count > 0 ? Colors.red : Colors.grey,
-            ),
-            onPressed: count > 0
-                ? () {
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => DeleteConfirmationDialog(
-                        title: 'Delete Items?',
-                        text: 'Are you sure you want to delete $count selected items? This action cannot be undone.',
-                        onConfirm: onDelete,
-                      ),
-                    );
-                  }
-                : null,
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: onDelete,
           ),
         ],
       ),
@@ -143,10 +242,6 @@ class MeasurementItem extends StatelessWidget {
   final double fitThreshold;
   final double margin;
   final bool trimLast;
-
-  static const Color primaryBlue = Color(0xFF38A5F2);
-  static const Color secondaryTeal = Color(0xFF0D7A70);
-  static const Color cardBg = Color(0xFFEFF4F9);
 
   const MeasurementItem({
     super.key,
@@ -179,24 +274,27 @@ class MeasurementItem extends StatelessWidget {
 
     double avgMeasured = measurement.period;
     if (cycles.isNotEmpty) {
-      final candidates = (trimLast && cycles.length > 1) ? cycles.sublist(0, cycles.length - 1) : cycles;
-      avgMeasured = candidates.reduce((a, b) => a + b) / candidates.length;
+      if (trimLast && cycles.length > 1) {
+        avgMeasured = cycles.sublist(0, cycles.length - 1).reduce((a, b) => a + b) / (cycles.length - 1);
+      } else {
+        avgMeasured = cycles.reduce((a, b) => a + b) / cycles.length;
+      }
     }
 
     final value = isPeriod ? avgMeasured : measurement.moi;
+    final diff = averageVal > 0 ? (value - averageVal).abs() / averageVal : 0.0;
+    final isOutlier = averageVal > 0 && diff > margin;
 
-    final isOutlier = averageVal > 0
-        ? ((value - averageVal).abs() / averageVal) > margin
-        : false;
+    final containerColor = selected
+        ? theme.colorScheme.primaryContainer
+        : AppColors.getCardBackgroundColor(
+            context: context,
+            isSelected: selected,
+            isError: measurement.fitResidual >= fitThreshold,
+            isOutlier: isOutlier,
+          );
 
-    final containerColor = AppColors.getCardBackgroundColor(
-      context: context,
-      isSelected: selected,
-      isError: measurement.fitResidual >= fitThreshold,
-      isOutlier: isOutlier,
-    );
-
-    final String valueText = isPeriod
+    final valueText = isPeriod
         ? '${avgMeasured.toStringAsFixed(periodResolution)}s'
         : '${value.toStringAsFixed(resolution)} kg·cm²';
 
@@ -213,14 +311,14 @@ class MeasurementItem extends StatelessWidget {
       elevation: 0,
       color: containerColor,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         side: selected ? BorderSide(color: theme.colorScheme.primary, width: 2) : BorderSide.none,
       ),
       margin: const EdgeInsets.symmetric(vertical: 1.5),
       child: InkWell(
         onTap: onClick,
         onLongPress: onLongClick,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           child: Row(
@@ -281,26 +379,6 @@ class MeasurementItem extends StatelessWidget {
                         height: 1.1,
                       ),
                     ),
-                    if (measurement.fitResidual >= fitThreshold)
-                      Text(
-                        'Poor Fit Quality',
-                        style: TextStyle(
-                          color: isDark ? AppColors.errorTextDark : AppColors.errorTextLight,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          height: 1.1,
-                        ),
-                      )
-                    else if (isOutlier)
-                      Text(
-                        'High Deviation',
-                        style: TextStyle(
-                          color: isDark ? AppColors.warningTextDark : AppColors.warningTextLight,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          height: 1.1,
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -326,7 +404,7 @@ class MeasurementItem extends StatelessWidget {
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(6.0),
-                  child: Icon(Icons.delete, size: 26, color: theme.colorScheme.outline),
+                  child: Icon(Icons.delete, size: 24, color: theme.colorScheme.outline),
                 ),
               ),
             ],
@@ -362,15 +440,22 @@ class MeasurementControlButton extends StatelessWidget {
     Widget content;
 
     if (!isCalibrated) {
-      content = Container(
-        color: theme.colorScheme.errorContainer,
-        alignment: Alignment.center,
-        child: Text(
-          'Calibrate Device First',
-          style: TextStyle(
-            color: theme.colorScheme.onErrorContainer,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
+      content = Consumer(
+        builder: (context, ref, child) => InkWell(
+          onTap: () {
+            ref.read(moiProvider.notifier).navigateToCalibrate();
+          },
+          child: Container(
+            color: theme.colorScheme.errorContainer,
+            alignment: Alignment.center,
+            child: Text(
+              'Calibrate Device First',
+              style: TextStyle(
+                color: theme.colorScheme.onErrorContainer,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
           ),
         ),
       );
@@ -477,10 +562,6 @@ class SummaryHeaderLarge extends StatelessWidget {
   final double? calculatedBP;
   final double? stdDevBP;
 
-  static const Color primaryBlue = Color(0xFF38A5F2);
-  static const Color secondaryTeal = Color(0xFF0D7A70);
-  static const Color greyLabel = Color(0xFF8E8E93);
-
   const SummaryHeaderLarge({
     super.key,
     required this.avgSW,
@@ -499,98 +580,153 @@ class SummaryHeaderLarge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final swStr = '${avgSW.toStringAsFixed(moiResolution)} ± ${stdDevSW.toStringAsFixed(moiResolution)} kg·cm²';
-    final twStr = '${avgTW.toStringAsFixed(moiResolution)} ± ${stdDevTW.toStringAsFixed(moiResolution)} kg·cm²';
-    final pSWVal = '${avgPeriodSW.toStringAsFixed(periodResolution)} ± ${stdDevPeriodSW.toStringAsFixed(periodResolution)}s';
-    final pTWVal = '${avgPeriodTW.toStringAsFixed(periodResolution)} ± ${stdDevPeriodTW.toStringAsFixed(periodResolution)}s';
+    final theme = Theme.of(context);
+    final hasSW = avgSW > 0;
+    final swVal = hasSW ? avgSW.toStringAsFixed(moiResolution) : 'No Data';
+    final swTol = hasSW ? '± ${stdDevSW.toStringAsFixed(moiResolution)} kg·cm²' : '';
 
-    String? bpStr;
+    final hasTW = avgTW > 0;
+    final twVal = hasTW ? avgTW.toStringAsFixed(moiResolution) : 'No Data';
+    final twTol = hasTW ? '± ${stdDevTW.toStringAsFixed(moiResolution)} kg·cm²' : '';
+
+    final periodSWText = avgPeriodSW > 0 ? 'Period: ${avgPeriodSW.toStringAsFixed(periodResolution)}s' : 'Period: No Data';
+    final periodTWText = avgPeriodTW > 0 ? 'Period: ${avgPeriodTW.toStringAsFixed(periodResolution)}s' : 'Period: No Data';
+
+    String? bpVal;
+    String? bpTol;
     if (calculatedBP != null && calculatedBP! > 0) {
-      final bpVal = calculatedBP!.toStringAsFixed(moiResolution);
-      final bpTol = (stdDevBP != null && stdDevBP! > 0) ? ' ± ${stdDevBP!.toStringAsFixed(moiResolution)}' : '';
-      bpStr = '$bpVal$bpTol cm';
+      bpVal = calculatedBP!.toStringAsFixed(moiResolution);
+      bpTol = (stdDevBP != null && stdDevBP! > 0) ? '± ${stdDevBP!.toStringAsFixed(moiResolution)} cm' : 'cm';
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onLongPress: () {
-            Clipboard.setData(ClipboardData(text: avgSW.toStringAsFixed(moiResolution)));
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Copied SW: ${avgSW.toStringAsFixed(moiResolution)}')),
-            );
-          },
-          child: DynamicTitleText(
-            text: 'SW: $swStr',
-            maxFontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: primaryBlue,
-          ),
-        ),
-        GestureDetector(
-          onLongPress: () {
-            Clipboard.setData(ClipboardData(text: avgPeriodSW.toStringAsFixed(periodResolution)));
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Copied Period: ${avgPeriodSW.toStringAsFixed(periodResolution)}')),
-            );
-          },
-          child: Row(
-            children: [
-              const Text('Period SW: ', style: TextStyle(fontSize: 18, color: greyLabel, fontWeight: FontWeight.bold)),
-              Text(pSWVal, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryBlue)),
-            ],
-          ),
-        ),
-        if (bpStr != null) ...[
-          GestureDetector(
-            onLongPress: () {
-              Clipboard.setData(ClipboardData(text: calculatedBP!.toStringAsFixed(moiResolution)));
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Copied BP: ${calculatedBP!.toStringAsFixed(moiResolution)}')),
-              );
-            },
-            child: Row(
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceVariant,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('BP: ', style: TextStyle(fontSize: 18, color: greyLabel, fontWeight: FontWeight.bold)),
-                Text(bpStr, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryBlue)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Swing Weight', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.primary, letterSpacing: 0.5)),
+                      const SizedBox(height: 4),
+                      GestureDetector(
+                        onLongPress: () {
+                          Clipboard.setData(ClipboardData(text: avgSW.toStringAsFixed(moiResolution)));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Copied SW: ${avgSW.toStringAsFixed(moiResolution)}')),
+                          );
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(swVal, style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: theme.colorScheme.primary, height: 1.1)),
+                            if (hasSW) ...[
+                              const SizedBox(height: 4),
+                              Text(swTol, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.primary.withOpacity(0.85), height: 1.1)),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onLongPress: () {
+                          if (hasSW) {
+                            Clipboard.setData(ClipboardData(text: avgPeriodSW.toStringAsFixed(periodResolution)));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Copied Period SW: ${avgPeriodSW.toStringAsFixed(periodResolution)}')),
+                            );
+                          }
+                        },
+                        child: Text(
+                          periodSWText,
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: theme.colorScheme.outline, height: 1.1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 110,
+                  color: theme.colorScheme.outline.withOpacity(0.3),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Twist Weight', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, letterSpacing: 0.5)),
+                      const SizedBox(height: 4),
+                      GestureDetector(
+                        onLongPress: () {
+                          Clipboard.setData(ClipboardData(text: avgTW.toStringAsFixed(moiResolution)));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Copied TW: ${avgTW.toStringAsFixed(moiResolution)}')),
+                          );
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(twVal, style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, height: 1.1)),
+                            if (hasTW) ...[
+                              const SizedBox(height: 4),
+                              Text(twTol, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary.withOpacity(0.85), height: 1.1)),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onLongPress: () {
+                          if (hasTW) {
+                            Clipboard.setData(ClipboardData(text: avgPeriodTW.toStringAsFixed(periodResolution)));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Copied Period TW: ${avgPeriodTW.toStringAsFixed(periodResolution)}')),
+                            );
+                          }
+                        },
+                        child: Text(
+                          periodTWText,
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: theme.colorScheme.outline, height: 1.1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-          ),
-        ],
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 6),
-          child: Divider(height: 1, thickness: 1.0, color: Color(0xFFC7C7CC)),
-        ),
-        GestureDetector(
-          onLongPress: () {
-            Clipboard.setData(ClipboardData(text: avgTW.toStringAsFixed(moiResolution)));
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Copied TW: ${avgTW.toStringAsFixed(moiResolution)}')),
-            );
-          },
-          child: DynamicTitleText(
-            text: 'TW: $twStr',
-            maxFontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: secondaryTeal,
-          ),
-        ),
-        GestureDetector(
-          onLongPress: () {
-            Clipboard.setData(ClipboardData(text: avgPeriodTW.toStringAsFixed(periodResolution)));
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Copied Period: ${avgPeriodTW.toStringAsFixed(periodResolution)}')),
-            );
-          },
-          child: Row(
-            children: [
-              const Text('Period TW: ', style: TextStyle(fontSize: 18, color: greyLabel, fontWeight: FontWeight.bold)),
-              Text(pTWVal, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: secondaryTeal)),
+            if (bpVal != null) ...[
+              Divider(height: 20, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+              GestureDetector(
+                onLongPress: () {
+                  Clipboard.setData(ClipboardData(text: calculatedBP!.toStringAsFixed(moiResolution)));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Copied BP: ${calculatedBP!.toStringAsFixed(moiResolution)}')),
+                  );
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Balance Point: ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.colorScheme.outline)),
+                    Text(bpVal, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                    if (bpTol != null) ...[
+                      const SizedBox(width: 4),
+                      Text(bpTol, style: TextStyle(fontSize: 15, color: theme.colorScheme.outline)),
+                    ],
+                  ],
+                ),
+              ),
             ],
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -606,6 +742,7 @@ class SingleSummaryHeader extends StatelessWidget {
   final double avg2;
   final double stdDev2;
   final bool showTolerance;
+  final bool inlineToleranceWithUnits;
   final String? expectedNote;
 
   const SingleSummaryHeader({
@@ -620,231 +757,402 @@ class SingleSummaryHeader extends StatelessWidget {
     this.avg2 = 0.0,
     this.stdDev2 = 0.0,
     this.showTolerance = true,
+    this.inlineToleranceWithUnits = false,
     this.expectedNote,
+    this.onInfoClick,
   });
+
+  final VoidCallback? onInfoClick;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final res = isPeriod ? periodResolution : moiResolution;
-    final unit = isPeriod ? 's' : 'kg·cm²';
+    final unit1 = isPeriod ? 's' : 'kg·cm²';
 
-    final val1 = showTolerance
-        ? '${avg.toStringAsFixed(res)} ± ${stdDev.toStringAsFixed(res)} $unit'
-        : '${avg.toStringAsFixed(res)} $unit';
+    final fullLabel1 = label == 'SW' ? 'Swing Weight' : (label == 'TW' ? 'Twist Weight' : label);
+    final fullLabel2 = label2 == 'SW' ? 'Swing Weight' : (label2 == 'TW' ? 'Twist Weight' : label2);
 
-    final line1 = '$label: $val1';
+    final hasVal1 = avg > 0;
+    final val1 = hasVal1 ? avg.toStringAsFixed(res) : 'No Data';
+    final tol1 = hasVal1 && showTolerance ? '± ${stdDev.toStringAsFixed(res)} $unit1' : (hasVal1 ? unit1 : '');
 
-    String? line2;
-    if (label2 != null) {
-      line2 = showTolerance
-          ? '$label2: ${avg2.toStringAsFixed(moiResolution)} ± ${stdDev2.toStringAsFixed(moiResolution)} kg·cm²'
-          : '$label2: ${avg2.toStringAsFixed(moiResolution)} kg·cm²';
-    }
+    final hasVal2 = avg2 > 0;
+    final val2 = hasVal2 ? avg2.toStringAsFixed(moiResolution) : 'No Data';
+    final tol2 = hasVal2 && showTolerance ? '± ${stdDev2.toStringAsFixed(moiResolution)} kg·cm²' : (hasVal2 ? 'kg·cm²' : '');
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DynamicTitleText(
-          text: line1,
-          maxFontSize: 32,
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary,
-        ),
-        if (line2 != null) ...[
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 6),
-            child: Divider(height: 1, thickness: 1.0, color: Color(0xFFC7C7CC)),
-          ),
-          DynamicTitleText(
-            text: line2,
-            maxFontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.secondary,
-          ),
-        ],
-        if (expectedNote != null) ...[
-          const SizedBox(height: 4),
-          Text(
-            expectedNote!,
-            style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: theme.colorScheme.outline),
-          ),
-        ],
-      ],
-    );
-  }
-}
+    final inlineVal1 = hasVal1
+        ? (showTolerance
+            ? '$val1 ± ${stdDev.toStringAsFixed(res)} $unit1'
+            : '$val1 $unit1')
+        : 'No Data';
 
-class DeleteConfirmationDialog extends StatelessWidget {
-  final String title;
-  final String text;
-  final VoidCallback onConfirm;
-
-  const DeleteConfirmationDialog({
-    super.key,
-    required this.title,
-    required this.text,
-    required this.onConfirm,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(title),
-      content: Text(text),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('No'),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-          onPressed: () {
-            Navigator.of(context).pop();
-            onConfirm();
-          },
-          child: const Text('Yes'),
-        ),
-      ],
-    );
-  }
-}
-
-class RenameDialog extends StatefulWidget {
-  final String currentName;
-  final ValueChanged<String> onConfirm;
-
-  const RenameDialog({
-    super.key,
-    required this.currentName,
-    required this.onConfirm,
-  });
-
-  @override
-  State<RenameDialog> createState() => _RenameDialogState();
-}
-
-class _RenameDialogState extends State<RenameDialog> {
-  late TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.currentName);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Rename Group'),
-      content: TextField(
-        controller: _controller,
-        maxLength: 40,
-        decoration: const InputDecoration(
-          labelText: 'New Name',
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceVariant,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(fullLabel1, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.primary, letterSpacing: 0.5)),
+                      const SizedBox(height: 4),
+                      GestureDetector(
+                        onLongPress: () {
+                          Clipboard.setData(ClipboardData(text: val1));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Copied $fullLabel1: $val1')),
+                          );
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              inlineToleranceWithUnits ? inlineVal1 : val1,
+                              style: TextStyle(
+                                fontSize: inlineToleranceWithUnits ? 24 : 36,
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                                height: 1.1,
+                              ),
+                            ),
+                            if (!inlineToleranceWithUnits && hasVal1) ...[
+                              const SizedBox(height: 4),
+                              Text(tol1, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.primary.withOpacity(0.85), height: 1.1)),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (fullLabel2 != null) ...[
+                  Container(
+                    width: 1,
+                    height: 80,
+                    color: theme.colorScheme.outline.withOpacity(0.3),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(fullLabel2!, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, letterSpacing: 0.5)),
+                        const SizedBox(height: 4),
+                        GestureDetector(
+                          onLongPress: () {
+                            Clipboard.setData(ClipboardData(text: val2));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Copied $fullLabel2: $val2')),
+                            );
+                          },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(val2, style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, height: 1.1)),
+                              if (hasVal2) ...[
+                                const SizedBox(height: 4),
+                                Text(tol2, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary.withOpacity(0.85), height: 1.1)),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            if (expectedNote != null && expectedNote!.isNotEmpty) ...[
+              Divider(height: 20, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      expectedNote!,
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.outline),
+                    ),
+                  ),
+                  if (onInfoClick != null) ...[
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: onInfoClick,
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'i',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Georgia',
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            fontStyle: FontStyle.italic,
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            widget.onConfirm(_controller.text);
-          },
-          child: const Text('Rename'),
-        ),
-      ],
     );
   }
 }
 
-class SortDialog extends StatefulWidget {
-  final SortType currentType;
-  final SortDirection currentDirection;
-  final void Function(SortType type, SortDirection direction) onApply;
+class EstimationInputField extends StatelessWidget {
+  final String label;
+  final String value;
+  final String unit;
+  final List<String> units;
+  final ValueChanged<String> onValueChange;
+  final ValueChanged<String> onUnitChange;
+  final bool locked;
+  final double inputWidth;
+  final double unitWidth;
 
-  const SortDialog({
+  const EstimationInputField({
     super.key,
-    required this.currentType,
-    required this.currentDirection,
-    required this.onApply,
+    required this.label,
+    required this.value,
+    required this.unit,
+    required this.units,
+    required this.onValueChange,
+    required this.onUnitChange,
+    this.locked = false,
+    this.inputWidth = 100,
+    this.unitWidth = 70,
   });
-
-  @override
-  State<SortDialog> createState() => _SortDialogState();
-}
-
-class _SortDialogState extends State<SortDialog> {
-  late SortType _type;
-  late SortDirection _direction;
-
-  @override
-  void initState() {
-    super.initState();
-    _type = widget.currentType;
-    _direction = widget.currentDirection;
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return AlertDialog(
-      title: const Text('Sort', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Type', style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
-          RadioListTile<SortType>(
-            title: const Text('Name'),
-            value: SortType.NAME,
-            groupValue: _type,
-            onChanged: (val) => setState(() => _type = val!),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          RadioListTile<SortType>(
-            title: const Text('Date'),
-            value: SortType.DATE,
-            groupValue: _type,
-            onChanged: (val) => setState(() => _type = val!),
-          ),
-          const Divider(),
-          Text('Direction', style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
-          RadioListTile<SortDirection>(
-            title: const Text('Ascending'),
-            value: SortDirection.ASCENDING,
-            groupValue: _direction,
-            onChanged: (val) => setState(() => _direction = val!),
-          ),
-          RadioListTile<SortDirection>(
-            title: const Text('Descending'),
-            value: SortDirection.DESCENDING,
-            groupValue: _direction,
-            onChanged: (val) => setState(() => _direction = val!),
+          const SizedBox(width: 8),
+          Row(
+            children: [
+              SizedBox(
+                width: inputWidth,
+                height: 38,
+                child: TextField(
+                  controller: TextEditingController(text: value)..selection = TextSelection.collapsed(offset: value.length),
+                  enabled: !locked,
+                  style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  textAlign: TextAlign.end,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: theme.colorScheme.surface,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                    prefixIcon: locked ? Icon(Icons.lock, size: 18, color: theme.colorScheme.outline) : null,
+                    prefixIconConstraints: locked ? const BoxConstraints(minWidth: 32, minHeight: 0) : null,
+                  ),
+                  onChanged: onValueChange,
+                ),
+              ),
+              const SizedBox(width: 8),
+              UnitPicklist(
+                current: unit,
+                units: units,
+                onSelect: onUnitChange,
+                enabled: !locked,
+                width: unitWidth,
+              ),
+            ],
           ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+    );
+  }
+}
+
+class UnitPicklist extends StatelessWidget {
+  final String current;
+  final List<String> units;
+  final ValueChanged<String> onSelect;
+  final bool enabled;
+  final double width;
+
+  const UnitPicklist({
+    super.key,
+    required this.current,
+    required this.units,
+    required this.onSelect,
+    this.enabled = true,
+    this.width = 70,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return PopupMenuButton<String>(
+      enabled: enabled,
+      initialValue: current,
+      onSelected: onSelect,
+      child: Container(
+        width: width,
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(10),
         ),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            widget.onApply(_type, _direction);
-          },
-          child: const Text('Apply'),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              current,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(width: 2),
+            Icon(Icons.keyboard_arrow_down, size: 16, color: theme.colorScheme.primary),
+          ],
         ),
-      ],
+      ),
+      itemBuilder: (context) {
+        final isDark = theme.brightness == Brightness.dark;
+        final selectedBg = isDark ? const Color(0xFF1E3A52) : const Color(0xFFE2F0FE);
+        return units.map((u) {
+          final isSelected = u == current;
+          return PopupMenuItem<String>(
+            value: u,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected ? selectedBg : null,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                u,
+                style: TextStyle(
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+          );
+        }).toList();
+      },
+    );
+  }
+}
+
+class TypeSelector extends StatelessWidget {
+  final String label;
+  final String current;
+  final List<String> options;
+  final ValueChanged<String> onSelect;
+  final double width;
+
+  const TypeSelector({
+    super.key,
+    required this.label,
+    required this.current,
+    required this.options,
+    required this.onSelect,
+    this.width = 178,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          PopupMenuButton<String>(
+            initialValue: current,
+            onSelected: onSelect,
+            child: Container(
+              width: width,
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      current,
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Icon(Icons.keyboard_arrow_down, size: 16, color: theme.colorScheme.primary),
+                ],
+              ),
+            ),
+            itemBuilder: (context) {
+              final isDark = theme.brightness == Brightness.dark;
+              final selectedBg = isDark ? const Color(0xFF1E3A52) : const Color(0xFFE2F0FE);
+              return options.map((o) {
+                final isSelected = o == current;
+                return PopupMenuItem<String>(
+                  value: o,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? selectedBg : null,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      o,
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList();
+            },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -852,59 +1160,55 @@ class _SortDialogState extends State<SortDialog> {
 class ReadOnlySettingField extends StatelessWidget {
   final String label;
   final String value;
-  final VoidCallback? onLongClick;
   final double width;
+  final VoidCallback? onLongClick;
 
   const ReadOnlySettingField({
     super.key,
     required this.label,
     required this.value,
-    this.onLongClick,
     this.width = 160,
+    this.onLongClick,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return InkWell(
-      onLongPress: onLongClick,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(fontSize: 16, color: theme.colorScheme.onSurface),
-              ),
-            ),
-            SizedBox(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(label, style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface)),
+          ),
+          GestureDetector(
+            onLongPress: onLongClick,
+            child: Container(
               width: width,
-              height: 40,
-              child: TextField(
-                controller: TextEditingController(text: value),
-                readOnly: true,
-                textAlign: TextAlign.end,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.normal,
-                ),
-                decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.lock, size: 18, color: theme.colorScheme.outline),
-                  border: const OutlineInputBorder(),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: theme.colorScheme.outline),
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(Icons.lock, size: 18, color: theme.colorScheme.outline),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: theme.colorScheme.primary, width: 2.0),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -913,41 +1217,36 @@ class ReadOnlySettingField extends StatelessWidget {
 class NumberWheelPicker extends StatelessWidget {
   final double value;
   final List<double> range;
-  final ValueChanged<double> onValueChange;
   final String format;
   final double multiplyBy;
+  final ValueChanged<double> onValueChange;
 
   const NumberWheelPicker({
     super.key,
     required this.value,
     required this.range,
-    required this.onValueChange,
     this.format = '%.1f',
     this.multiplyBy = 1.0,
+    required this.onValueChange,
   });
 
-  String _formatVal(double val) {
-    final v = val * multiplyBy;
+  String _formatVal(double v) {
+    final adj = v * multiplyBy;
     if (format.contains('%%')) {
-      return '${v.toStringAsFixed(1)}%';
-    } else if (format.contains('%.0f')) {
-      return v.toInt().toString();
-    } else if (format.contains('%.2f')) {
-      return v.toStringAsFixed(2);
+      return '${adj.toStringAsFixed(1)}%';
+    } else if (format == '%.0f') {
+      return adj.toInt().toString();
     } else {
-      return v.toStringAsFixed(1);
+      return adj.toStringAsFixed(1);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      onPressed: () {
+    final theme = Theme.of(context);
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () {
         showDialog(
           context: context,
           builder: (ctx) => _NumberWheelDialog(
@@ -958,9 +1257,19 @@ class NumberWheelPicker extends StatelessWidget {
           ),
         );
       },
-      child: Text(
-        _formatVal(value),
-        style: const TextStyle(fontSize: 16, color: Color(0xFF38A5F2), fontWeight: FontWeight.bold),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _formatVal(value),
+              style: TextStyle(fontSize: 15, color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(width: 2),
+            Icon(Icons.keyboard_arrow_down, size: 18, color: theme.colorScheme.primary),
+          ],
+        ),
       ),
     );
   }
@@ -982,13 +1291,10 @@ class ItemWheelPicker<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      onPressed: () {
+    final theme = Theme.of(context);
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () {
         showDialog(
           context: context,
           builder: (ctx) => _ItemWheelDialog<T>(
@@ -999,9 +1305,19 @@ class ItemWheelPicker<T> extends StatelessWidget {
           ),
         );
       },
-      child: Text(
-        displayLabel(value),
-        style: const TextStyle(fontSize: 16, color: Color(0xFF38A5F2), fontWeight: FontWeight.bold),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              displayLabel(value),
+              style: TextStyle(fontSize: 15, color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(width: 2),
+            Icon(Icons.keyboard_arrow_down, size: 18, color: theme.colorScheme.primary),
+          ],
+        ),
       ),
     );
   }
@@ -1027,6 +1343,7 @@ class _ItemWheelDialog<T> extends StatefulWidget {
 class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
   late int _selectedIndex;
   late FixedExtentScrollController _controller;
+  bool _isSelecting = false;
 
   @override
   void initState() {
@@ -1053,7 +1370,7 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
     final primaryBlue = isDark ? theme.colorScheme.primary : const Color(0xFF2B9DF0);
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       backgroundColor: dialogBg,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -1074,7 +1391,7 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: wheelBg,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Stack(
                 alignment: Alignment.center,
@@ -1105,15 +1422,25 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
                         final item = widget.options[index];
                         return GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            _controller.animateToItem(
-                              index,
-                              duration: const Duration(milliseconds: 200),
-                              curve: Curves.easeOut,
-                            );
-                            setState(() {
-                              _selectedIndex = index;
-                            });
+                          onTap: () async {
+                            if (_isSelecting) return;
+                            _isSelecting = true;
+                            if (index == _selectedIndex) {
+                              if (context.mounted) {
+                                Navigator.of(context).pop();
+                                widget.onConfirm(item);
+                              }
+                            } else {
+                              await _controller.animateToItem(
+                                index,
+                                duration: const Duration(milliseconds: 250),
+                                curve: Curves.easeOutCubic,
+                              );
+                              if (context.mounted) {
+                                Navigator.of(context).pop();
+                                widget.onConfirm(item);
+                              }
+                            }
                           },
                           child: Center(
                             child: Text(
@@ -1142,7 +1469,7 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 onPressed: () {
@@ -1185,6 +1512,7 @@ class _NumberWheelDialog extends StatefulWidget {
 class _NumberWheelDialogState extends State<_NumberWheelDialog> {
   late int _selectedIndex;
   late FixedExtentScrollController _controller;
+  bool _isSelecting = false;
 
   @override
   void initState() {
@@ -1211,7 +1539,7 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
     final primaryBlue = isDark ? theme.colorScheme.primary : const Color(0xFF2B9DF0);
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       backgroundColor: dialogBg,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -1232,7 +1560,7 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: wheelBg,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Stack(
                 alignment: Alignment.center,
@@ -1263,15 +1591,25 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
                         final item = widget.range[index];
                         return GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            _controller.animateToItem(
-                              index,
-                              duration: const Duration(milliseconds: 200),
-                              curve: Curves.easeOut,
-                            );
-                            setState(() {
-                              _selectedIndex = index;
-                            });
+                          onTap: () async {
+                            if (_isSelecting) return;
+                            _isSelecting = true;
+                            if (index == _selectedIndex) {
+                              if (context.mounted) {
+                                Navigator.of(context).pop();
+                                widget.onConfirm(item);
+                              }
+                            } else {
+                              await _controller.animateToItem(
+                                index,
+                                duration: const Duration(milliseconds: 250),
+                                curve: Curves.easeOutCubic,
+                              );
+                              if (context.mounted) {
+                                Navigator.of(context).pop();
+                                widget.onConfirm(item);
+                              }
+                            }
                           },
                           child: Center(
                             child: Text(
@@ -1300,7 +1638,7 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 onPressed: () {
@@ -1323,164 +1661,76 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
   }
 }
 
-class EstimationInputField extends StatelessWidget {
-  final String label;
-  final String value;
-  final String unit;
-  final List<String> units;
-  final ValueChanged<String> onValueChange;
-  final ValueChanged<String> onUnitChange;
-  final bool locked;
+class SortDialog extends StatelessWidget {
+  final SortType currentType;
+  final SortDirection currentDirection;
+  final void Function(SortType type, SortDirection direction) onApply;
 
-  const EstimationInputField({
+  const SortDialog({
     super.key,
-    required this.label,
-    required this.value,
-    required this.unit,
-    required this.units,
-    required this.onValueChange,
-    required this.onUnitChange,
-    this.locked = false,
+    required this.currentType,
+    required this.currentDirection,
+    required this.onApply,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final displayValue = locked && value.isEmpty ? 'N/A' : value;
+    SortType selectedType = currentType;
+    SortDirection selectedDir = currentDirection;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 16, color: theme.colorScheme.onSurface),
-            ),
-          ),
-          SizedBox(
-            width: 120,
-            height: 40,
-            child: TextField(
-              controller: TextEditingController(text: displayValue)
-                ..selection = TextSelection.collapsed(offset: displayValue.length),
-              onChanged: locked ? null : onValueChange,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              readOnly: locked,
-              textAlign: locked ? TextAlign.end : TextAlign.start,
-              style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface),
-              decoration: InputDecoration(
-                prefixIcon: locked ? Icon(Icons.lock, size: 18, color: theme.colorScheme.outline) : null,
-                border: const OutlineInputBorder(),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: theme.colorScheme.outline),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: theme.colorScheme.primary, width: 2.0),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Text('Sort By'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<SortType>(
+                title: const Text('Name'),
+                value: SortType.NAME,
+                groupValue: selectedType,
+                onChanged: (v) => setState(() => selectedType = v!),
               ),
-            ),
+              RadioListTile<SortType>(
+                title: const Text('Date'),
+                value: SortType.DATE,
+                groupValue: selectedType,
+                onChanged: (v) => setState(() => selectedType = v!),
+              ),
+              const Divider(),
+              RadioListTile<SortDirection>(
+                title: const Text('Ascending'),
+                value: SortDirection.ASCENDING,
+                groupValue: selectedDir,
+                onChanged: (v) => setState(() => selectedDir = v!),
+              ),
+              RadioListTile<SortDirection>(
+                title: const Text('Descending'),
+                value: SortDirection.DESCENDING,
+                groupValue: selectedDir,
+                onChanged: (v) => setState(() => selectedDir = v!),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          UnitPicklist(current: unit, options: units, onSelect: onUnitChange),
-        ],
-      ),
-    );
-  }
-}
-
-class UnitPicklist extends StatelessWidget {
-  final String current;
-  final List<String> options;
-  final ValueChanged<String> onSelect;
-
-  const UnitPicklist({
-    super.key,
-    required this.current,
-    required this.options,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return PopupMenuButton<String>(
-      initialValue: current,
-      onSelected: onSelect,
-      child: Container(
-        width: 80,
-        height: 40,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          border: Border.all(color: theme.colorScheme.outline),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(current, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
-      ),
-      itemBuilder: (context) {
-        return options.map((opt) {
-          return PopupMenuItem<String>(
-            value: opt,
-            child: Text(opt),
-          );
-        }).toList();
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                onApply(selectedType, selectedDir);
+              },
+              child: const Text('Apply'),
+            ),
+          ],
+        );
       },
-    );
-  }
-}
-
-class TypeSelector extends StatelessWidget {
-  final String label;
-  final String current;
-  final List<String> options;
-  final ValueChanged<String> onSelect;
-
-  const TypeSelector({
-    super.key,
-    required this.label,
-    required this.current,
-    required this.options,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 16, color: theme.colorScheme.onSurface),
-            ),
-          ),
-          PopupMenuButton<String>(
-            initialValue: current,
-            onSelected: onSelect,
-            child: Container(
-              width: 208,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                border: Border.all(color: theme.colorScheme.outline),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(current, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
-            ),
-            itemBuilder: (context) {
-              return options.map((opt) {
-                return PopupMenuItem<String>(
-                  value: opt,
-                  child: Text(opt),
-                );
-              }).toList();
-            },
-          ),
-        ],
-      ),
     );
   }
 }

@@ -119,83 +119,109 @@ class _GroupAttributesScreenState extends ConsumerState<GroupAttributesScreen> {
                           'Measured Results',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
 
-                        ReadOnlySettingField(
-                          label: 'Measured SW',
-                          value: swDisplay,
-                          width: 208,
-                          onLongClick: () {
-                            Clipboard.setData(ClipboardData(text: uiState.currentSWAverage.toStringAsFixed(res)));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Copied SW: ${uiState.currentSWAverage.toStringAsFixed(res)}')),
-                            );
-                          },
-                        ),
-                        ReadOnlySettingField(
-                          label: 'Measured TW',
-                          value: twDisplay,
-                          width: 208,
-                          onLongClick: () {
-                            Clipboard.setData(ClipboardData(text: uiState.currentTWAverage.toStringAsFixed(res)));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Copied TW: ${uiState.currentTWAverage.toStringAsFixed(res)}')),
-                            );
-                          },
-                        ),
-                        ReadOnlySettingField(
-                          label: 'Calculated BP',
-                          value: bpDisplay,
-                          width: 208,
-                          onLongClick: calculatedBP != null
-                              ? () {
-                                  final bpVal = calculatedBP!;
-                                  Clipboard.setData(ClipboardData(text: bpVal.toStringAsFixed(res)));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Copied BP: ${bpVal.toStringAsFixed(res)}')),
-                                  );
-                                }
-                              : null,
+                        Card(
+                          color: theme.colorScheme.surfaceVariant,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            child: Column(
+                              children: [
+                                ReadOnlySettingField(
+                                  label: 'Measured SW',
+                                  value: swDisplay,
+                                  width: 178,
+                                  onLongClick: () {
+                                    Clipboard.setData(ClipboardData(text: uiState.currentSWAverage.toStringAsFixed(res)));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Copied SW: ${uiState.currentSWAverage.toStringAsFixed(res)}')),
+                                    );
+                                  },
+                                ),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                ReadOnlySettingField(
+                                  label: 'Measured TW',
+                                  value: twDisplay,
+                                  width: 178,
+                                  onLongClick: () {
+                                    Clipboard.setData(ClipboardData(text: uiState.currentTWAverage.toStringAsFixed(res)));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Copied TW: ${uiState.currentTWAverage.toStringAsFixed(res)}')),
+                                    );
+                                  },
+                                ),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                ReadOnlySettingField(
+                                  label: 'Calculated BP',
+                                  value: bpDisplay,
+                                  width: 178,
+                                  onLongClick: calculatedBP != null
+                                      ? () {
+                                          final bpVal = calculatedBP!;
+                                          Clipboard.setData(ClipboardData(text: bpVal.toStringAsFixed(res)));
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text('Copied BP: ${bpVal.toStringAsFixed(res)}')),
+                                          );
+                                        }
+                                      : null,
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
 
                         Text(
                           'Physical Attributes',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
 
-                        EstimationInputField(
-                          label: 'Weight',
-                          value: m,
-                          unit: mUnit,
-                          units: const ['oz', 'lb', 'kg'],
-                          onValueChange: (v) => setState(() => m = v),
-                          onUnitChange: (u) => setState(() => mUnit = u),
-                        ),
-                        EstimationInputField(
-                          label: 'Length',
-                          value: l,
-                          unit: lUnit,
-                          units: const ['in', 'cm'],
-                          onValueChange: (v) => setState(() => l = v),
-                          onUnitChange: (u) => setState(() => lUnit = u),
-                        ),
-                        EstimationInputField(
-                          label: 'Width',
-                          value: w,
-                          unit: wUnit,
-                          units: const ['in', 'cm'],
-                          onValueChange: (v) => setState(() => w = v),
-                          onUnitChange: (u) => setState(() => wUnit = u),
-                        ),
-
-                        TypeSelector(
-                          label: 'Type',
-                          current: type,
-                          options: const ['Pickleball Paddle', 'Racquet'],
-                          onSelect: (t) => setState(() => type = t),
+                        Card(
+                          color: theme.colorScheme.surfaceVariant,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            child: Column(
+                              children: [
+                                EstimationInputField(
+                                  label: 'Weight',
+                                  value: m,
+                                  unit: mUnit,
+                                  units: const ['oz', 'lb', 'kg'],
+                                  onValueChange: (v) => setState(() => m = v),
+                                  onUnitChange: (u) => setState(() => mUnit = u),
+                                ),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                EstimationInputField(
+                                  label: 'Length',
+                                  value: l,
+                                  unit: lUnit,
+                                  units: const ['in', 'cm'],
+                                  onValueChange: (v) => setState(() => l = v),
+                                  onUnitChange: (u) => setState(() => lUnit = u),
+                                ),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                EstimationInputField(
+                                  label: 'Width',
+                                  value: w,
+                                  unit: wUnit,
+                                  units: const ['in', 'cm'],
+                                  onValueChange: (v) => setState(() => w = v),
+                                  onUnitChange: (u) => setState(() => wUnit = u),
+                                ),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                TypeSelector(
+                                  label: 'Type',
+                                  current: type,
+                                  options: const ['Pickleball Paddle', 'Racquet'],
+                                  onSelect: (t) => setState(() => type = t),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
 
                         const SizedBox(height: 24),
@@ -207,7 +233,7 @@ class _GroupAttributesScreenState extends ConsumerState<GroupAttributesScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: theme.colorScheme.primary,
                               foregroundColor: theme.colorScheme.onPrimary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                             onPressed: () {
                               final mVal = double.tryParse(m) ?? 0.0;
