@@ -140,14 +140,19 @@ class OscillationDetector {
 
     final x = event.x;
     final y = event.y;
+    final z = event.z;
 
-    final horizontalMag = sqrt(x * x + y * y);
-    if (horizontalMag < 0.2) {
+    final gMag = sqrt(x * x + y * y + z * z);
+    if (gMag < 0.2) {
       _updateState(OscillationState.WRONG_ORIENTATION);
       return;
     }
 
-    final angle = (atan2(x.abs(), y.abs()) * 180.0 / pi).abs();
+    final anglePitch = (atan2(z.abs(), y.abs()) * 180.0 / pi).abs();
+    final angleRoll = (atan2(x.abs(), y.abs()) * 180.0 / pi).abs();
+    final angleVec = (acos((y.abs() / gMag).clamp(-1.0, 1.0)) * 180.0 / pi);
+
+    final angle = min(angleVec, min(anglePitch, angleRoll));
     final isCorrectOrientation = (angle - targetAngle).abs() < orientationThreshold;
 
     if (!isCorrectOrientation) {

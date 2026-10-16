@@ -41,25 +41,6 @@
   </style>
 
   <script>
-    if (typeof Intl !== 'undefined') {
-      try {
-        Object.defineProperty(Intl, 'v8BreakIterator', {
-          get: function() {
-            return function(locale, options) {
-              return {
-                first: function() { return 0; },
-                next: function() { return 0; },
-                current: function() { return 0; },
-                adoptText: function(text) {}
-              };
-            };
-          },
-          configurable: true,
-          enumerable: false
-        });
-      } catch (e) {}
-    }
-
     window.requestMotionPermission = function() {
       return new Promise(function(resolve) {
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
