@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nfc_manager/nfc_manager.dart';
@@ -995,7 +996,7 @@ class MoiNotifier extends StateNotifier<UiState> {
   // --- NFC Methods ---
 
   Future<void> openNfcSettings() async {
-    if (Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       try {
         await _nfcChannel.invokeMethod('openNfcSettings');
       } catch (_) {}
@@ -1005,7 +1006,7 @@ class MoiNotifier extends StateNotifier<UiState> {
   Future<void> setNfcScanning(bool scanning) async {
     if (!scanning) {
       try {
-        if (Platform.isAndroid) {
+        if (!kIsWeb && Platform.isAndroid) {
           await _nfcChannel.invokeMethod('disableNfc');
         }
         await NfcManager.instance.stopSession();
@@ -1027,7 +1028,7 @@ class MoiNotifier extends StateNotifier<UiState> {
       state = state.copyWith(
         isNfcScanning: false,
         nfcEnabled: false,
-        nfcStatus: () => 'NFC is not available or supported on this device.',
+        nfcStatus: () => 'NFC is not available or supported on this device/platform.',
       );
       return;
     }
@@ -1038,7 +1039,7 @@ class MoiNotifier extends StateNotifier<UiState> {
       nfcStatus: () => 'Ready to Scan...',
     );
 
-    if (Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       try {
         await _nfcChannel.invokeMethod('enableNfc');
       } catch (_) {}
@@ -1146,7 +1147,7 @@ class MoiNotifier extends StateNotifier<UiState> {
       loadPreferences();
       await calculateCalibrationIfReady();
       try {
-        if (Platform.isAndroid) {
+        if (!kIsWeb && Platform.isAndroid) {
           await _nfcChannel.invokeMethod('disableNfc');
         }
         await NfcManager.instance.stopSession();

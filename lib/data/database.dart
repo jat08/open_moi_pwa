@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'models.dart';
 
 class DatabaseHelper {
@@ -15,6 +17,9 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDB(String filePath) async {
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    }
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
@@ -22,7 +27,9 @@ class DatabaseHelper {
       path,
       version: 1,
       onConfigure: (db) async {
-        await db.execute('PRAGMA foreign_keys = ON');
+        if (!kIsWeb) {
+          await db.execute('PRAGMA foreign_keys = ON');
+        }
       },
       onCreate: _createDB,
     );

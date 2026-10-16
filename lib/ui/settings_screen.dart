@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,9 +49,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
 
     final filename = getExportFilename(baseName);
+
+    if (kIsWeb) {
+      final bytes = Uint8List.fromList(utf8.encode(csvContent));
+      await Share.shareXFiles(
+        [XFile.fromData(bytes, name: filename, mimeType: 'text/csv')],
+        subject: filename,
+      );
+      return;
+    }
+
     bool savedToDownloads = false;
 
-    if (Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       try {
         final downloadDir = Directory('/storage/emulated/0/Download');
         if (await downloadDir.exists()) {
@@ -83,15 +95,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv'],
+      withData: kIsWeb,
     );
 
-    if (result != null && result.files.single.path != null) {
-      final file = File(result.files.single.path!);
-      final content = await file.readAsString();
-      if (type == 'MEASURE') {
-        await notifier.importMeasureFromCsv(content);
-      } else {
-        await notifier.importEstimateFromCsv(content);
+    if (result != null) {
+      String? content;
+      if (kIsWeb) {
+        final bytes = result.files.single.bytes;
+        if (bytes != null) {
+          content = utf8.decode(bytes);
+        }
+      } else if (result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        content = await file.readAsString();
+      }
+
+      if (content != null) {
+        if (type == 'MEASURE') {
+          await notifier.importMeasureFromCsv(content);
+        } else {
+          await notifier.importEstimateFromCsv(content);
+        }
       }
     }
   }
