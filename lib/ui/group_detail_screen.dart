@@ -285,8 +285,8 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
                 const SizedBox(height: 12),
 
-                SizedBox(
-                  height: 48,
+                Container(
+                  constraints: const BoxConstraints(minHeight: 48),
                   child: isSelectionMode
                       ? SelectionTopBar(
                           count: selectedIds.length,
