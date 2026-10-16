@@ -134,90 +134,92 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                   ),
                 ),
 
-                if (isSelectionMode)
-                  SelectionTopBar(
-                    count: selectedIds.length,
-                    isAllSelected: selectedIds.length >= uiState.groups.length && uiState.groups.isNotEmpty,
-                    onToggleAll: () {
-                      setState(() {
-                        if (selectedIds.length >= uiState.groups.length) {
-                          selectedIds.clear();
-                        } else {
-                          selectedIds = uiState.groups.map((g) => g.group.id!).toSet();
-                        }
-                      });
-                    },
-                    onClear: () {
-                      setState(() {
-                        selectedIds.clear();
-                        isSelectionMode = false;
-                      });
-                    },
-                    onDelete: () {
-                      notifier.deleteGroups(selectedIds);
-                      setState(() {
-                        selectedIds.clear();
-                        isSelectionMode = false;
-                      });
-                    },
-                  )
-                else
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 46,
-                          child: TextField(
-                            onChanged: (query) => notifier.setSearchQuery(query),
-                            style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15),
-                            decoration: InputDecoration(
-                              hintText: 'Search groups...',
-                              hintStyle: TextStyle(color: theme.colorScheme.outline, fontSize: 15),
-                              prefixIcon: Icon(Icons.search, color: theme.colorScheme.primary, size: 22),
-                              filled: true,
-                              fillColor: theme.colorScheme.surfaceVariant,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(18),
-                                borderSide: BorderSide.none,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(18),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(18),
-                                borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 46,
-                        height: 46,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceVariant,
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          icon: Icon(Icons.swap_vert, size: 24, color: theme.colorScheme.primary),
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (ctx) => SortDialog(
-                                currentType: uiState.sortType,
-                                currentDirection: uiState.sortDirection,
-                                onApply: (type, dir) => notifier.setSortOrder(type, dir),
-                              ),
-                            );
+                SizedBox(
+                  height: 48,
+                  child: isSelectionMode
+                      ? SelectionTopBar(
+                          count: selectedIds.length,
+                          isAllSelected: selectedIds.length >= uiState.groups.length && uiState.groups.isNotEmpty,
+                          onToggleAll: () {
+                            setState(() {
+                              if (selectedIds.length >= uiState.groups.length) {
+                                selectedIds.clear();
+                              } else {
+                                selectedIds = uiState.groups.map((g) => g.group.id!).toSet();
+                              }
+                            });
                           },
+                          onClear: () {
+                            setState(() {
+                              selectedIds.clear();
+                              isSelectionMode = false;
+                            });
+                          },
+                          onDelete: () {
+                            notifier.deleteGroups(selectedIds);
+                            setState(() {
+                              selectedIds.clear();
+                              isSelectionMode = false;
+                            });
+                          },
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                height: 48,
+                                child: TextField(
+                                  onChanged: (query) => notifier.setSearchQuery(query),
+                                  style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15),
+                                  decoration: InputDecoration(
+                                    hintText: 'Search groups...',
+                                    hintStyle: TextStyle(color: theme.colorScheme.outline, fontSize: 15),
+                                    prefixIcon: Icon(Icons.search, color: theme.colorScheme.primary, size: 22),
+                                    filled: true,
+                                    fillColor: theme.colorScheme.surfaceVariant,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                      borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceVariant,
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                icon: Icon(Icons.swap_vert, size: 24, color: theme.colorScheme.primary),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (ctx) => SortDialog(
+                                      currentType: uiState.sortType,
+                                      currentDirection: uiState.sortDirection,
+                                      onApply: (type, dir) => notifier.setSortOrder(type, dir),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
+                ),
 
                 const SizedBox(height: 8),
 

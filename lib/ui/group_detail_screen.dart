@@ -273,16 +273,10 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                           borderRadius: BorderRadius.circular(18),
                         ),
                         alignment: Alignment.center,
-                        child: Text(
-                          'i',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'Georgia',
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            fontStyle: FontStyle.italic,
-                            color: theme.colorScheme.onPrimary,
-                          ),
+                        child: Icon(
+                          Icons.sell,
+                          color: theme.colorScheme.onPrimary,
+                          size: 22,
                         ),
                       ),
                     ),
@@ -291,42 +285,44 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
                 const SizedBox(height: 12),
 
-                if (isSelectionMode)
-                  SelectionTopBar(
-                    count: selectedIds.length,
-                    isAllSelected: selectedIds.length >= measurements.length && measurements.isNotEmpty,
-                    onToggleAll: () {
-                      setState(() {
-                        if (selectedIds.length >= measurements.length) {
-                          selectedIds.clear();
-                        } else {
-                          selectedIds = measurements.map((m) => m.id!).toSet();
-                        }
-                      });
-                    },
-                    onClear: () {
-                      setState(() {
-                        selectedIds.clear();
-                        isSelectionMode = false;
-                      });
-                    },
-                    onDelete: () {
-                      notifier.deleteMeasurements(selectedIds);
-                      setState(() {
-                        selectedIds.clear();
-                        isSelectionMode = false;
-                      });
-                    },
-                  )
-                else
-                  MeasurementControlButton(
-                    state: uiState.detectorState,
-                    progress: uiState.progress,
-                    isCalibrated: uiState.isCalibrated,
-                    cooldownRemaining: uiState.cooldownRemaining,
-                    preparationRemaining: uiState.preparationRemaining,
-                    onStart: () => notifier.startMeasurement(),
-                  ),
+                SizedBox(
+                  height: 48,
+                  child: isSelectionMode
+                      ? SelectionTopBar(
+                          count: selectedIds.length,
+                          isAllSelected: selectedIds.length >= measurements.length && measurements.isNotEmpty,
+                          onToggleAll: () {
+                            setState(() {
+                              if (selectedIds.length >= measurements.length) {
+                                selectedIds.clear();
+                              } else {
+                                selectedIds = measurements.map((m) => m.id!).toSet();
+                              }
+                            });
+                          },
+                          onClear: () {
+                            setState(() {
+                              selectedIds.clear();
+                              isSelectionMode = false;
+                            });
+                          },
+                          onDelete: () {
+                            notifier.deleteMeasurements(selectedIds);
+                            setState(() {
+                              selectedIds.clear();
+                              isSelectionMode = false;
+                            });
+                          },
+                        )
+                      : MeasurementControlButton(
+                          state: uiState.detectorState,
+                          progress: uiState.progress,
+                          isCalibrated: uiState.isCalibrated,
+                          cooldownRemaining: uiState.cooldownRemaining,
+                          preparationRemaining: uiState.preparationRemaining,
+                          onStart: () => notifier.startMeasurement(),
+                        ),
+                ),
 
                 const SizedBox(height: 8),
 

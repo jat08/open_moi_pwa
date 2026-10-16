@@ -44,6 +44,7 @@ class DynamicTitleText extends StatelessWidget {
           text: TextSpan(text: text, style: style),
           maxLines: maxLines,
           textDirection: Directionality.maybeOf(context) ?? ui.TextDirection.ltr,
+          textScaler: MediaQuery.textScalerOf(context),
         )..layout(maxWidth: constraints.maxWidth);
 
         while ((textPainter.didExceedMaxLines || textPainter.height > (fontSize * 1.35 * maxLines)) && fontSize > 11) {
@@ -59,6 +60,7 @@ class DynamicTitleText extends StatelessWidget {
             ),
             maxLines: maxLines,
             textDirection: Directionality.maybeOf(context) ?? ui.TextDirection.ltr,
+            textScaler: MediaQuery.textScalerOf(context),
           )..layout(maxWidth: constraints.maxWidth);
         }
 
@@ -203,7 +205,7 @@ class SelectionTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      height: 46,
+      constraints: const BoxConstraints(minHeight: 48),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer,
@@ -379,7 +381,7 @@ class MeasurementItem extends StatelessWidget {
                       ),
                     ],
                     Text(
-                      'Fit Residual: ${measurement.fitResidual.toStringAsFixed(3)}',
+                      'Fit: ${measurement.fitResidual.toStringAsFixed(3)}',
                       style: TextStyle(
                         fontSize: 11,
                         color: measurement.fitResidual >= fitThreshold
@@ -548,7 +550,7 @@ class MeasurementControlButton extends StatelessWidget {
     }
 
     return Container(
-      height: 48,
+      constraints: const BoxConstraints(minHeight: 48),
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(18)),
@@ -618,6 +620,7 @@ class SummaryHeaderLarge extends StatelessWidget {
           maxFontSize: 36.0,
           maxWidth: halfWidth,
           fontWeight: FontWeight.bold,
+          textScaler: MediaQuery.textScalerOf(context),
         );
 
         return Card(
@@ -881,6 +884,7 @@ class SingleSummaryHeader extends StatelessWidget {
           maxFontSize: inlineToleranceWithUnits ? 24.0 : 36.0,
           maxWidth: halfWidth,
           fontWeight: FontWeight.bold,
+          textScaler: MediaQuery.textScalerOf(context),
         );
 
         return Card(
@@ -1020,16 +1024,10 @@ class SingleSummaryHeader extends StatelessWidget {
                           borderRadius: BorderRadius.circular(14),
                         ),
                         alignment: Alignment.center,
-                        child: Text(
-                          'i',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'Georgia',
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            fontStyle: FontStyle.italic,
-                            color: theme.colorScheme.onPrimary,
-                          ),
+                        child: Icon(
+                          Icons.sell,
+                          color: theme.colorScheme.onPrimary,
+                          size: 22,
                         ),
                       ),
                     ),

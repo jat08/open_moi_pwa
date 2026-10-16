@@ -861,71 +861,41 @@ class MoiNotifier extends StateNotifier<UiState> {
         .toList();
     if (points.isEmpty) return 1.0;
 
-    final maxAmp = points.map((p) => p.abs()).reduce(max);
-    if (maxAmp == 0.0) return 1.0;
+    final n = points.length;
+    final omega = (2.0 * pi) / period;
 
-    final y0 = points[0].clamp(-maxAmp, maxAmp);
-    var phi = asin(y0 / maxAmp);
+    double sumSinSq = 0.0;
+    double sumCosSq = 0.0;
+    double sumYSin = 0.0;
+    double sumYCos = 0.0;
 
-    var initialSlope = 0.0;
-    final motionThreshold = 0.05 * maxAmp;
-    var upCount = 0;
-    var downCount = 0;
-    const confirmationRequired = 5;
+    for (var i = 0; i < n; i++) {
+      final t = (i / max(1, n - 1)) * totalDuration;
+      final s = sin(omega * t);
+      final c = cos(omega * t);
+      final y = points[i];
 
-    for (var i = 1; i < points.length; i++) {
-      final yi = points[i];
-      if (y0 >= 0) {
-        if (yi > (y0 + motionThreshold)) {
-          upCount++;
-          downCount = 0;
-        } else if (yi < y0 - motionThreshold || yi < -motionThreshold) {
-          downCount++;
-          upCount = 0;
-        } else {
-          upCount = 0;
-          downCount = 0;
-        }
-      } else {
-        if (yi < y0 - motionThreshold) {
-          downCount++;
-          upCount = 0;
-        } else if (yi > y0 + motionThreshold || yi > motionThreshold) {
-          upCount++;
-          downCount = 0;
-        } else {
-          upCount = 0;
-          downCount = 0;
-        }
-      }
-
-      if (upCount >= confirmationRequired) {
-        initialSlope = 1.0;
-        break;
-      }
-      if (downCount >= confirmationRequired) {
-        initialSlope = -1.0;
-        break;
-      }
+      sumSinSq += s * s;
+      sumCosSq += c * c;
+      sumYSin += y * s;
+      sumYCos += y * c;
     }
 
-    if (initialSlope == 0.0 && points.length > 1) {
-      initialSlope = points[1] - points[0];
+    final c1 = sumSinSq > 0 ? sumYSin / sumSinSq : 0.0;
+    final c2 = sumCosSq > 0 ? sumYCos / sumCosSq : 0.0;
+    final amplitude = sqrt(c1 * c1 + c2 * c2);
+
+    if (amplitude == 0.0) return 1.0;
+
+    double totalError = 0.0;
+    for (var i = 0; i < n; i++) {
+      final t = (i / max(1, n - 1)) * totalDuration;
+      final fittedVal = c1 * sin(omega * t) + c2 * cos(omega * t);
+      totalError += (points[i] - fittedVal).abs();
     }
 
-    if (initialSlope < 0) {
-      phi = pi - phi;
-    }
-
-    var totalError = 0.0;
-    for (var i = 0; i < points.length; i++) {
-      final time = (i / max(1, points.length - 1)) * totalDuration;
-      final theoretical = maxAmp * sin(2.0 * pi * time / period + phi);
-      totalError += (points[i] - theoretical).abs();
-    }
-
-    final avgError = totalError / points.length;
-    return (avgError / maxAmp) * 10.0;
+    final avgError = totalError / n;
+    return (avgError / amplitude) * 10.0;
   }
 
   void startCooldown() {
@@ -1038,12 +1008,26 @@ class MoiNotifier extends StateNotifier<UiState> {
         if (Platform.isAndroid) {
           await _nfcChannel.invokeMethod('disableNfc');
         }
-        NfcManager.instance.stopSession();
+        await NfcManager.instance.stopSession();
       } catch (_) {}
       state = state.copyWith(
         isNfcScanning: false,
         nfcEnabled: true,
         nfcStatus: () => null,
+      );
+      return;
+    }
+
+    bool isAvailable = false;
+    try {
+      isAvailable = await NfcManager.instance.isAvailable();
+    } catch (_) {}
+
+    if (!isAvailable) {
+      state = state.copyWith(
+        isNfcScanning: false,
+        nfcEnabled: false,
+        nfcStatus: () => 'NFC is not available or supported on this device.',
       );
       return;
     }
@@ -1090,13 +1074,22 @@ class MoiNotifier extends StateNotifier<UiState> {
 
           if (records.isNotEmpty) {
             await processNfcMessage(records);
+            try {
+              await NfcManager.instance.stopSession(alertMessage: 'NFC Read Successful!');
+            } catch (_) {}
           } else {
+            try {
+              await NfcManager.instance.stopSession(errorMessage: 'No NDEF records found');
+            } catch (_) {}
             state = state.copyWith(
               nfcStatus: () => 'No NDEF text records found on tag.',
             );
           }
         },
         onError: (NfcError error) async {
+          try {
+            await NfcManager.instance.stopSession(errorMessage: error.message);
+          } catch (_) {}
           state = state.copyWith(
             isNfcScanning: false,
             nfcStatus: () => 'NFC Scan Error: ${error.message}',
@@ -1104,7 +1097,10 @@ class MoiNotifier extends StateNotifier<UiState> {
         },
       );
     } catch (e) {
-      // Handled natively on Android
+      state = state.copyWith(
+        isNfcScanning: false,
+        nfcStatus: () => 'Failed to start NFC: $e',
+      );
     }
   }
 

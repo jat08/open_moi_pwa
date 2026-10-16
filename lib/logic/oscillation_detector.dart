@@ -55,6 +55,8 @@ class OscillationDetector {
   final List<double> _rawGyroSamples = [];
   final List<double> _cycleDurations = [];
 
+  final Stopwatch _stopwatch = Stopwatch();
+
   StreamSubscription<AccelerometerEvent>? _accelSub;
   StreamSubscription<GyroscopeEvent>? _gyroSub;
 
@@ -64,7 +66,16 @@ class OscillationDetector {
     required this.onProgressUpdate,
   });
 
+  int get _currentTimestampNs {
+    if (!_stopwatch.isRunning) {
+      _stopwatch.start();
+    }
+    return (_stopwatch.elapsedTicks * 1000000000) ~/ _stopwatch.frequency;
+  }
+
   void startListening() {
+    _stopwatch.reset();
+    _stopwatch.start();
     _accelSub = accelerometerEventStream(samplingPeriod: SensorInterval.fastestInterval).listen(handleAccelerometer);
     _gyroSub = gyroscopeEventStream(samplingPeriod: SensorInterval.fastestInterval).listen(handleGyroscope);
   }
@@ -74,6 +85,7 @@ class OscillationDetector {
     _gyroSub?.cancel();
     _accelSub = null;
     _gyroSub = null;
+    _stopwatch.stop();
   }
 
   void setMaxDuration(double seconds) {
@@ -122,7 +134,7 @@ class OscillationDetector {
   void handleGyroscope(GyroscopeEvent event) {
     if (_currentState == OscillationState.WRONG_ORIENTATION) return;
 
-    final timestampNs = event.timestamp.microsecondsSinceEpoch * 1000;
+    final timestampNs = _currentTimestampNs;
 
     final gx = _gravityVector[0];
     final gy = _gravityVector[1];

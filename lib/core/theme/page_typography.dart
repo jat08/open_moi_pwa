@@ -13,8 +13,8 @@ class PageTypography {
 
     // Calculate a page-level unified scale factor based on screen width and system text scaling.
     double widthFactor = (width / baselineWidth).clamp(0.78, 1.15);
-    double zoomCompensation = textScale > 1.0 ? (1.0 / (1.0 + (textScale - 1.0) * 0.4)) : 1.0;
-    double unifiedScale = (widthFactor * zoomCompensation).clamp(0.75, 1.15);
+    double zoomCompensation = textScale > 1.0 ? (1.0 / (1.0 + (textScale - 1.0) * 0.65)) : 1.0;
+    double unifiedScale = (widthFactor * zoomCompensation).clamp(0.70, 1.15);
 
     return PageTypography._(unifiedScale);
   }
@@ -35,6 +35,7 @@ class PageTypography {
     required double maxFontSize,
     required double maxWidth,
     required FontWeight fontWeight,
+    TextScaler textScaler = TextScaler.noScaling,
   }) {
     double targetBase = maxFontSize * scale;
     double minSize = targetBase < maxFontSize ? targetBase : maxFontSize;
@@ -49,6 +50,7 @@ class PageTypography {
         text: TextSpan(text: text, style: style),
         maxLines: 1,
         textDirection: ui.TextDirection.ltr,
+        textScaler: textScaler,
       )..layout();
 
       while (painter.width > maxWidth && currentSize > 10.0) {
@@ -57,6 +59,7 @@ class PageTypography {
           text: TextSpan(text: text, style: TextStyle(fontSize: currentSize, fontWeight: fontWeight)),
           maxLines: 1,
           textDirection: ui.TextDirection.ltr,
+          textScaler: textScaler,
         )..layout();
       }
 
