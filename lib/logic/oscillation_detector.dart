@@ -45,7 +45,7 @@ class OscillationDetector {
   int _maxMeasurementDurationNs = 8000000000; // Default 8s in ns
   int _measurementStartTimeNs = 0;
 
-  static const double orientationThreshold = 5.0;
+  static const double orientationThreshold = 10.0;
   static const double targetAngle = 45.0;
   static const double nudgeThreshold = 0.3;
   static const int debounceNs = 100000000; // 0.1s hysteresis window
