@@ -321,6 +321,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                           cooldownRemaining: uiState.cooldownRemaining,
                           preparationRemaining: uiState.preparationRemaining,
                           onStart: () => notifier.startMeasurement(),
+                          onRequestPermission: () => notifier.requestPermission(),
                         ),
                 ),
 

@@ -102,14 +102,6 @@ class MainNavigationScaffold extends ConsumerStatefulWidget {
 
 class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold> {
   int _currentIndex = 0;
-  bool _hasRequestedWebMotionPermission = false;
-
-  void _handleFirstUserTap() {
-    if (kIsWeb && !_hasRequestedWebMotionPermission) {
-      _hasRequestedWebMotionPermission = true;
-      requestWebMotionPermission();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,37 +148,34 @@ class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold>
       }
     }
 
-    return Listener(
-      onPointerDown: (_) => _handleFirstUserTap(),
-      child: Scaffold(
-        body: body,
-        bottomNavigationBar: showBottomBar
-            ? NavigationBar(
-                selectedIndex: uiState.activeTab,
-                onDestinationSelected: (index) {
-                  ref.read(moiProvider.notifier).setTab(index);
-                },
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.timer),
-                    label: 'Measure',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.functions),
-                    label: 'Estimate',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.tune),
-                    label: 'Calibrate',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.settings),
-                    label: 'Settings',
-                  ),
-                ],
-              )
-            : null,
-      ),
+    return Scaffold(
+      body: body,
+      bottomNavigationBar: showBottomBar
+          ? NavigationBar(
+              selectedIndex: uiState.activeTab,
+              onDestinationSelected: (index) {
+                ref.read(moiProvider.notifier).setTab(index);
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.timer),
+                  label: 'Measure',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.functions),
+                  label: 'Estimate',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.tune),
+                  label: 'Calibrate',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.settings),
+                  label: 'Settings',
+                ),
+              ],
+            )
+          : null,
     );
   }
 }

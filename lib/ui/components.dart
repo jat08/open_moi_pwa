@@ -434,6 +434,7 @@ class MeasurementControlButton extends StatelessWidget {
   final double cooldownRemaining;
   final int preparationRemaining;
   final VoidCallback onStart;
+  final VoidCallback? onRequestPermission;
 
   const MeasurementControlButton({
     super.key,
@@ -443,6 +444,7 @@ class MeasurementControlButton extends StatelessWidget {
     this.cooldownRemaining = 0.0,
     this.preparationRemaining = 0,
     required this.onStart,
+    this.onRequestPermission,
   });
 
   @override
@@ -492,7 +494,7 @@ class MeasurementControlButton extends StatelessWidget {
               ),
             ),
           ),
-          if (kIsWeb) ...[
+          if (kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) ...[
             const SizedBox(height: 8),
             SizedBox(
               height: 48,
@@ -505,9 +507,7 @@ class MeasurementControlButton extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.sensors, size: 20),
                 label: const Text('Enable Motion and Orientation', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                onPressed: () async {
-                  await requestWebMotionPermission();
-                },
+                onPressed: onRequestPermission,
               ),
             ),
           ],

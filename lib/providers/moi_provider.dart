@@ -709,12 +709,17 @@ class MoiNotifier extends StateNotifier<UiState> {
     selectEditingExpectedValue(null);
   }
 
+  Future<void> requestPermission() async {
+    if (!kIsWeb) return;
+    final granted = await requestWebMotionPermission();
+    if (granted) {
+      _detector?.stopListening();
+      _detector?.startListening();
+    }
+  }
+
   Future<void> startMeasurement() async {
     if (state.cooldownRemaining > 0) return;
-
-    if (kIsWeb) {
-      await requestWebMotionPermission();
-    }
 
     final prepTime = state.preparationTime;
     if (prepTime > 0) {

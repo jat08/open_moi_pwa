@@ -178,6 +178,7 @@ class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScree
                           cooldownRemaining: uiState.cooldownRemaining,
                           preparationRemaining: uiState.preparationRemaining,
                           onStart: () => notifier.startMeasurement(),
+                          onRequestPermission: () => notifier.requestPermission(),
                         ),
                 ),
 
