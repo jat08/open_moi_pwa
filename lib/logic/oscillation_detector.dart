@@ -10,6 +10,17 @@ external void _addEventListener(String type, JSFunction listener);
 @JS('window.removeEventListener')
 external void _removeEventListener(String type, JSFunction listener);
 
+@JS('window.Gyroscope')
+external JSAny? get _windowGyroscope;
+
+bool get _hasGenericSensorApi {
+  try {
+    return _windowGyroscope != null;
+  } catch (_) {
+    return false;
+  }
+}
+
 extension type _DeviceMotionEvent(JSObject _) implements JSObject {
   external _DeviceAcceleration? get accelerationIncludingGravity;
   external _DeviceRotationRate? get rotationRate;
@@ -106,7 +117,9 @@ class OscillationDetector {
     _stopwatch.start();
     sampleCount = 0;
 
-    if (kIsWeb) {
+    final useFallback = kIsWeb && !_hasGenericSensorApi;
+
+    if (useFallback) {
       _webMotionListener = ((_DeviceMotionEvent event) {
         final accel = event.accelerationIncludingGravity;
         if (accel != null) {
@@ -154,7 +167,7 @@ class OscillationDetector {
   }
 
   void stopListening() {
-    if (kIsWeb && _webMotionListener != null) {
+    if (_webMotionListener != null) {
       _removeEventListener('devicemotion', _webMotionListener!);
       _webMotionListener = null;
     } else {
