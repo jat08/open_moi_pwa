@@ -41,6 +41,18 @@
   </style>
 
   <script>
+    if (typeof Intl !== 'undefined' && Intl.Segmenter && !Intl.v8BreakIterator) {
+      Intl.v8BreakIterator = function(locale, options) {
+        var segmenter = new Intl.Segmenter(locale, { granularity: 'grapheme' });
+        return {
+          first: function() { return 0; },
+          next: function() { return 0; },
+          current: function() { return 0; },
+          adoptText: function(text) {}
+        };
+      };
+    }
+
     window.addEventListener('load', function() {
       if (screen.orientation && screen.orientation.lock) {
         screen.orientation.lock('portrait-primary').catch(function() {});
