@@ -44,10 +44,16 @@ class OpenMOIApp extends ConsumerWidget {
     final uiState = ref.watch(moiProvider);
 
     // Screen Wakelock management
-    if (uiState.keepScreenOn) {
-      WakelockPlus.enable();
-    } else {
-      WakelockPlus.disable();
+    if (!kIsWeb) {
+      if (uiState.keepScreenOn) {
+        try {
+          WakelockPlus.enable();
+        } catch (_) {}
+      } else {
+        try {
+          WakelockPlus.disable();
+        } catch (_) {}
+      }
     }
 
     ThemeMode themeMode;

@@ -81,7 +81,9 @@ class OscillationDetector {
     _stopwatch.start();
     sampleCount = 0;
 
-    _accelSub = accelerometerEventStream(samplingPeriod: SensorInterval.fastestInterval).listen(
+    final interval = kIsWeb ? SensorInterval.uiInterval : SensorInterval.fastestInterval;
+
+    _accelSub = accelerometerEventStream(samplingPeriod: interval).listen(
       (event) {
         sampleCount++;
         handleAccelerometer(event);
@@ -92,7 +94,7 @@ class OscillationDetector {
       cancelOnError: false,
     );
 
-    _gyroSub = gyroscopeEventStream(samplingPeriod: SensorInterval.fastestInterval).listen(
+    _gyroSub = gyroscopeEventStream(samplingPeriod: interval).listen(
       (event) {
         sampleCount++;
         handleGyroscope(event);
