@@ -41,17 +41,38 @@
   </style>
 
   <script>
-    if (typeof Intl !== 'undefined' && Intl.Segmenter && !Intl.v8BreakIterator) {
-      Intl.v8BreakIterator = function(locale, options) {
-        var segmenter = new Intl.Segmenter(locale, { granularity: 'grapheme' });
-        return {
-          first: function() { return 0; },
-          next: function() { return 0; },
-          current: function() { return 0; },
-          adoptText: function(text) {}
-        };
-      };
+    if (typeof Intl !== 'undefined') {
+      try {
+        Object.defineProperty(Intl, 'v8BreakIterator', {
+          get: function() {
+            return function(locale, options) {
+              return {
+                first: function() { return 0; },
+                next: function() { return 0; },
+                current: function() { return 0; },
+                adoptText: function(text) {}
+              };
+            };
+          },
+          configurable: true,
+          enumerable: false
+        });
+      } catch (e) {}
     }
+
+    window.requestMotionPermission = function() {
+      return new Promise(function(resolve) {
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+          DeviceMotionEvent.requestPermission().then(function(state) {
+            resolve(state === 'granted');
+          }).catch(function() {
+            resolve(false);
+          });
+        } else {
+          resolve(true);
+        }
+      });
+    };
 
     window.addEventListener('load', function() {
       if (screen.orientation && screen.orientation.lock) {

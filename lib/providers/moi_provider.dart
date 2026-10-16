@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:js_interop';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -15,6 +16,21 @@ import '../logic/oscillation_detector.dart';
 enum SortType { NAME, DATE }
 enum SortDirection { ASCENDING, DESCENDING }
 enum CalibrationTarget { NONE, OBJECT_A, OBJECT_B, TARE_PB, TARE_TW }
+
+@JS('requestMotionPermission')
+external JSPromise<JSBoolean> jsRequestMotionPermission();
+
+Future<bool> requestWebMotionPermission() async {
+  if (!kIsWeb) return true;
+  try {
+    final promise = jsRequestMotionPermission();
+    final result = await promise.toDart;
+    return result.toDart;
+  } catch (e) {
+    print('Web motion permission request exception: $e');
+  }
+  return true;
+}
 
 class UiState {
   final OscillationState detectorState;
@@ -721,8 +737,12 @@ class MoiNotifier extends StateNotifier<UiState> {
     selectEditingExpectedValue(null);
   }
 
-  void startMeasurement() {
+  Future<void> startMeasurement() async {
     if (state.cooldownRemaining > 0) return;
+
+    if (kIsWeb) {
+      await requestWebMotionPermission();
+    }
 
     final prepTime = state.preparationTime;
     if (prepTime > 0) {

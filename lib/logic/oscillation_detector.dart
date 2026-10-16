@@ -142,12 +142,8 @@ class OscillationDetector {
     final y = event.y;
 
     final horizontalMag = sqrt(x * x + y * y);
-    if (horizontalMag < 1.0) {
-      if (kIsWeb) {
-        _updateState(OscillationState.READY);
-      } else {
-        _updateState(OscillationState.WRONG_ORIENTATION);
-      }
+    if (horizontalMag < 0.2) {
+      _updateState(OscillationState.WRONG_ORIENTATION);
       return;
     }
 
@@ -174,7 +170,7 @@ class OscillationDetector {
 
     final vRot = gMag > 1.0
         ? (event.x * gx + event.y * gy + event.z * gz) / gMag
-        : (gyroMag > 0 ? gyroMag : 0.0);
+        : gyroMag;
 
     switch (_currentState) {
       case OscillationState.WRONG_ORIENTATION:
