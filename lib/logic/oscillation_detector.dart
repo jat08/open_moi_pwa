@@ -221,13 +221,15 @@ class OscillationDetector {
   }
 
   void _finishMeasurement() {
-    if (_tStartNs > 0 && _detectedCycles > 0 && _rawGyroSamples.isNotEmpty) {
+    if (_cycleDurations.isNotEmpty && _rawGyroSamples.isNotEmpty) {
       final endTimeNs = _tEndNs > _tStartNs ? _tEndNs : _lastCrossingTimeNs;
-      final durationNs = endTimeNs - _tStartNs;
+      final durationNs = (endTimeNs > _tStartNs)
+          ? (endTimeNs - _tStartNs)
+          : (_cycleDurations.reduce((a, b) => a + b) * 1000000000.0).toInt();
       final actualCycleCount = _cycleDurations.length;
 
       if (actualCycleCount > 0) {
-        final avgPeriod = (durationNs / actualCycleCount) / 1000000000.0;
+        final avgPeriod = _cycleDurations.reduce((a, b) => a + b) / actualCycleCount;
         final totalDurSec = durationNs / 1000000000.0;
 
         onMeasurementComplete(

@@ -764,7 +764,11 @@ class MoiNotifier extends StateNotifier<UiState> {
 
       final residual = calculateFitResidual(result.rawData, rawPeriod, result.totalDuration);
 
-      switch (state.calibrationTarget) {
+      final target = (state.selectedCalibrationTarget != null && state.selectedCalibrationTarget != CalibrationTarget.NONE)
+          ? state.selectedCalibrationTarget!
+          : state.calibrationTarget;
+
+      switch (target) {
         case CalibrationTarget.OBJECT_A:
           await _db.insertMeasurement(Measurement(
             type: 'OBJECT_A',

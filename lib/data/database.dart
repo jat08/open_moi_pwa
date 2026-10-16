@@ -19,6 +19,11 @@ class DatabaseHelper {
   Future<Database> _initDB(String filePath) async {
     if (kIsWeb) {
       databaseFactory = databaseFactoryFfiWeb;
+      return await openDatabase(
+        filePath,
+        version: 1,
+        onCreate: _createDB,
+      );
     }
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
@@ -27,9 +32,7 @@ class DatabaseHelper {
       path,
       version: 1,
       onConfigure: (db) async {
-        if (!kIsWeb) {
-          await db.execute('PRAGMA foreign_keys = ON');
-        }
+        await db.execute('PRAGMA foreign_keys = ON');
       },
       onCreate: _createDB,
     );
