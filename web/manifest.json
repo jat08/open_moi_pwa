@@ -6,7 +6,7 @@
     "background_color": "#EDF5FE",
     "theme_color": "#34A4EB",
     "description": "Moment of Inertia measuring companion application for paddles and racquets.",
-    "orientation": "portrait",
+    "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
         {

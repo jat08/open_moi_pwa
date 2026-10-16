@@ -30,7 +30,22 @@
       padding: 0;
       overflow: hidden;
     }
+    @media screen and (orientation: landscape) and (max-device-width: 900px) {
+      body {
+        max-width: 450px;
+        margin: 0 auto;
+        position: relative;
+      }
+    }
   </style>
+
+  <script>
+    window.addEventListener('load', function() {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('portrait-primary').catch(function() {});
+      }
+    });
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
