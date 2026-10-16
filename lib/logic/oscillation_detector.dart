@@ -1,7 +1,31 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:js_interop';
 import 'package:flutter/foundation.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+
+@JS('window.addEventListener')
+external void _addEventListener(String type, JSFunction listener);
+
+@JS('window.removeEventListener')
+external void _removeEventListener(String type, JSFunction listener);
+
+extension type _DeviceMotionEvent(JSObject _) implements JSObject {
+  external _DeviceAcceleration? get accelerationIncludingGravity;
+  external _DeviceRotationRate? get rotationRate;
+}
+
+extension type _DeviceAcceleration(JSObject _) implements JSObject {
+  external double? get x;
+  external double? get y;
+  external double? get z;
+}
+
+extension type _DeviceRotationRate(JSObject _) implements JSObject {
+  external double? get alpha;
+  external double? get beta;
+  external double? get gamma;
+}
 
 enum OscillationState {
   WRONG_ORIENTATION,
@@ -62,6 +86,7 @@ class OscillationDetector {
 
   StreamSubscription<AccelerometerEvent>? _accelSub;
   StreamSubscription<GyroscopeEvent>? _gyroSub;
+  JSFunction? _webMotionListener;
 
   OscillationDetector({
     required this.onStateChanged,
@@ -81,36 +106,63 @@ class OscillationDetector {
     _stopwatch.start();
     sampleCount = 0;
 
-    final interval = kIsWeb ? SensorInterval.uiInterval : SensorInterval.fastestInterval;
+    if (kIsWeb) {
+      _webMotionListener = ((_DeviceMotionEvent event) {
+        final accel = event.accelerationIncludingGravity;
+        if (accel != null) {
+          final ax = accel.x ?? 0.0;
+          final ay = accel.y ?? 0.0;
+          final az = accel.z ?? 0.0;
+          sampleCount++;
+          handleAccelerometer(AccelerometerEvent(ax, ay, az, DateTime.now()));
+        }
+        final rot = event.rotationRate;
+        if (rot != null) {
+          final rx = (rot.beta ?? 0.0) * pi / 180.0;
+          final ry = (rot.gamma ?? 0.0) * pi / 180.0;
+          final rz = (rot.alpha ?? 0.0) * pi / 180.0;
+          sampleCount++;
+          handleGyroscope(GyroscopeEvent(rx, ry, rz, DateTime.now()));
+        }
+      }).toJS;
+      _addEventListener('devicemotion', _webMotionListener!);
+    } else {
+      final interval = SensorInterval.fastestInterval;
 
-    _accelSub = accelerometerEventStream(samplingPeriod: interval).listen(
-      (event) {
-        sampleCount++;
-        handleAccelerometer(event);
-      },
-      onError: (err) {
-        print('Accelerometer stream error: $err');
-      },
-      cancelOnError: false,
-    );
+      _accelSub = accelerometerEventStream(samplingPeriod: interval).listen(
+        (event) {
+          sampleCount++;
+          handleAccelerometer(event);
+        },
+        onError: (err) {
+          print('Accelerometer stream error: $err');
+        },
+        cancelOnError: false,
+      );
 
-    _gyroSub = gyroscopeEventStream(samplingPeriod: interval).listen(
-      (event) {
-        sampleCount++;
-        handleGyroscope(event);
-      },
-      onError: (err) {
-        print('Gyroscope stream error: $err');
-      },
-      cancelOnError: false,
-    );
+      _gyroSub = gyroscopeEventStream(samplingPeriod: interval).listen(
+        (event) {
+          sampleCount++;
+          handleGyroscope(event);
+        },
+        onError: (err) {
+          print('Gyroscope stream error: $err');
+        },
+        cancelOnError: false,
+      );
+    }
   }
 
   void stopListening() {
-    _accelSub?.cancel();
-    _gyroSub?.cancel();
-    _accelSub = null;
-    _gyroSub = null;
+    if (kIsWeb && _webMotionListener != null) {
+      _removeEventListener('devicemotion', _webMotionListener!);
+      _webMotionListener = null;
+    } else {
+      _accelSub?.cancel();
+      _gyroSub?.cancel();
+      _accelSub = null;
+      _gyroSub = null;
+    }
     _stopwatch.stop();
   }
 
