@@ -64,6 +64,18 @@ class OpenMOIApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
+      builder: (context, child) {
+        final mediaQuery = MediaQuery.of(context);
+        return MediaQuery(
+          data: mediaQuery.copyWith(
+            textScaler: mediaQuery.textScaler.clamp(
+              minScaleFactor: 0.8,
+              maxScaleFactor: 1.3,
+            ),
+          ),
+          child: child!,
+        );
+      },
       home: const MainNavigationScaffold(),
     );
   }
@@ -95,6 +107,8 @@ class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold>
 
     if (uiState.editingAttributesGroupId != null && uiState.currentAttributeGroup != null) {
       body = GroupAttributesScreen(group: uiState.currentAttributeGroup!);
+    } else if (uiState.editingExpectedValueTarget != null) {
+      body = CalibrationInfoScreen(target: uiState.editingExpectedValueTarget!);
     } else if (uiState.selectedMeasurement != null) {
       body = MeasurementDetailScreen(measurement: uiState.selectedMeasurement!);
     } else if (uiState.selectedGroupId != null) {
@@ -103,8 +117,6 @@ class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold>
       body = EstimateDetailScreen(group: uiState.currentEstimationGroup!);
     } else if (uiState.selectedCalibrationTarget != null) {
       body = CalibrationDetailScreen(target: uiState.selectedCalibrationTarget!);
-    } else if (uiState.editingExpectedValueTarget != null) {
-      body = CalibrationInfoScreen(target: uiState.editingExpectedValueTarget!);
     } else {
       switch (uiState.activeTab) {
         case 0:

@@ -33,6 +33,38 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
     _knownBController = TextEditingController(text: state.knownObjectBInertia.toString().replaceAll(RegExp(r'\.0$'), ''));
   }
 
+  void _showSectionDescription(BuildContext context, String title, String description) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(description, style: const TextStyle(fontSize: 15)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionHeader(BuildContext context, String title, String description) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _showSectionDescription(context, title, description),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Text(
+          title,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _knownAController.dispose();
@@ -116,7 +148,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(top: 8, bottom: 6),
+                      padding: const EdgeInsets.only(top: 8, bottom: 2),
                       child: Row(
                         children: [
                           Expanded(
@@ -152,8 +184,19 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                         ],
                       ),
                     ),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        "Tap any section header for more info.",
+                        style: TextStyle(fontSize: 13, color: theme.colorScheme.outline),
+                      ),
+                    ),
 
-                    Text('Known Calibration Objects', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                    _sectionHeader(
+                      context,
+                      'Known Calibration Objects',
+                      'Measure oscillation periods for two objects with distinct, known inertia to compute device spring constant and device inertia.',
+                    ),
                     const SizedBox(height: 4),
 
                     CalibrationObjectCard(
@@ -200,7 +243,11 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
 
                     const SizedBox(height: 12),
 
-                    Text('Calibration Objects MOI', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                    _sectionHeader(
+                      context,
+                      'Calibration Objects MOI',
+                      'Enter the exact known moment of inertia values for Object A and Object B.',
+                    ),
                     const SizedBox(height: 4),
 
                     Card(
@@ -294,7 +341,11 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
 
                     const SizedBox(height: 12),
 
-                    Text('Derived Device Parameters', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                    _sectionHeader(
+                      context,
+                      'Derived Device Parameters',
+                      'Calculated spring constant and internal device inertia derived from Object A and Object B calibration measurements.',
+                    ),
                     const SizedBox(height: 4),
 
                     Card(
@@ -336,7 +387,11 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
 
                     const SizedBox(height: 12),
 
-                    Text('Tare Adapters', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                    _sectionHeader(
+                      context,
+                      'Tare Adapters',
+                      'Measure adapter periods so the system can automatically tare adapter inertia from paddle measurements.',
+                    ),
                     const SizedBox(height: 4),
 
                     CalibrationObjectCard(
@@ -504,8 +559,8 @@ class CalibrationObjectCard extends StatelessWidget {
 
     if (!isTareCard) {
       final periodText = filtered.isEmpty || avgPeriod <= 0
-          ? 'Period: No Data'
-          : 'Period: ${avgPeriod.toStringAsFixed(periodResolution)}';
+          ? 'T: No Data'
+          : 'T: ${avgPeriod.toStringAsFixed(periodResolution)}';
       return Card(
         elevation: 0,
         color: theme.colorScheme.surfaceVariant,
@@ -562,7 +617,7 @@ class CalibrationObjectCard extends StatelessWidget {
         ? avgMoi.toStringAsFixed(moiResolution)
         : 'No Data';
 
-    final fullPeriodStr = 'Period: $periodStr';
+    final fullPeriodStr = 'T: $periodStr';
     final fullMoiStr = 'MOI: $moiStr';
 
     final metaStr = 'Readings: ${measurements.length}';
@@ -625,7 +680,7 @@ class CalibrationObjectCard extends StatelessWidget {
                           ),
                           child: Row(
                             children: [
-                              Text('Period: ', style: TextStyle(fontSize: valueFontSize * 0.88, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                              Text('T: ', style: TextStyle(fontSize: valueFontSize * 0.88, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
                               Expanded(
                                 child: Text(
                                   periodStr,
