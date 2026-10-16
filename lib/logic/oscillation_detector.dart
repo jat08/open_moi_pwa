@@ -24,6 +24,7 @@ bool get _hasGenericSensorApi {
 extension type _DeviceMotionEvent(JSObject _) implements JSObject {
   external _DeviceAcceleration? get accelerationIncludingGravity;
   external _DeviceRotationRate? get rotationRate;
+  external double get timeStamp;
 }
 
 extension type _DeviceAcceleration(JSObject _) implements JSObject {
@@ -93,8 +94,6 @@ class OscillationDetector {
   final List<double> _rawGyroSamples = [];
   final List<double> _cycleDurations = [];
 
-  final Stopwatch _stopwatch = Stopwatch();
-
   StreamSubscription<AccelerometerEvent>? _accelSub;
   StreamSubscription<GyroscopeEvent>? _gyroSub;
   JSFunction? _webMotionListener;
@@ -105,29 +104,24 @@ class OscillationDetector {
     required this.onProgressUpdate,
   });
 
-  int get _currentTimestampNs {
-    if (!_stopwatch.isRunning) {
-      _stopwatch.start();
-    }
-    return (_stopwatch.elapsedTicks * 1000000000) ~/ _stopwatch.frequency;
-  }
-
   void startListening() {
-    _stopwatch.reset();
-    _stopwatch.start();
     sampleCount = 0;
 
     final useFallback = kIsWeb && !_hasGenericSensorApi;
 
     if (useFallback) {
       _webMotionListener = ((_DeviceMotionEvent event) {
+        // timeStamp is in milliseconds since page load
+        final stampMicros = (event.timeStamp * 1000).toInt();
+        final dt = DateTime.fromMicrosecondsSinceEpoch(stampMicros);
+
         final accel = event.accelerationIncludingGravity;
         if (accel != null) {
           final ax = accel.x ?? 0.0;
           final ay = accel.y ?? 0.0;
           final az = accel.z ?? 0.0;
           sampleCount++;
-          handleAccelerometer(AccelerometerEvent(ax, ay, az, DateTime.now()));
+          handleAccelerometer(AccelerometerEvent(ax, ay, az, dt));
         }
         final rot = event.rotationRate;
         if (rot != null) {
@@ -135,7 +129,7 @@ class OscillationDetector {
           final ry = (rot.gamma ?? 0.0) * pi / 180.0;
           final rz = (rot.alpha ?? 0.0) * pi / 180.0;
           sampleCount++;
-          handleGyroscope(GyroscopeEvent(rx, ry, rz, DateTime.now()));
+          handleGyroscope(GyroscopeEvent(rx, ry, rz, dt));
         }
       }).toJS;
       _addEventListener('devicemotion', _webMotionListener!);
@@ -176,7 +170,6 @@ class OscillationDetector {
       _accelSub = null;
       _gyroSub = null;
     }
-    _stopwatch.stop();
   }
 
   void setMaxDuration(double seconds) {
@@ -232,7 +225,8 @@ class OscillationDetector {
   void handleGyroscope(GyroscopeEvent event) {
     if (_currentState == OscillationState.WRONG_ORIENTATION) return;
 
-    final timestampNs = _currentTimestampNs;
+    // Utilize the precise hardware timestamp provided by the event (converted to nanoseconds)
+    final timestampNs = event.timestamp.microsecondsSinceEpoch * 1000;
 
     final gx = _gravityVector[0];
     final gy = _gravityVector[1];

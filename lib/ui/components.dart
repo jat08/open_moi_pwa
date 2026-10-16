@@ -515,20 +515,26 @@ class MeasurementControlButton extends StatelessWidget {
       );
     } else if (preparationRemaining > 0) {
       content = Container(
-        color: Colors.grey,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(18),
+        ),
         alignment: Alignment.center,
         child: Text(
           'Waiting $preparationRemaining Seconds to be Ready',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(color: theme.colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold, fontSize: 18),
         ),
       );
     } else if (cooldownRemaining > 0) {
       content = Container(
-        color: Colors.grey,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(18),
+        ),
         alignment: Alignment.center,
         child: Text(
           'Waiting ${cooldownRemaining.toInt()} seconds',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(color: theme.colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold, fontSize: 18),
         ),
       );
     } else {
@@ -546,11 +552,14 @@ class MeasurementControlButton extends StatelessWidget {
           break;
         case OscillationState.ARMED:
           content = Container(
-            color: theme.colorScheme.primary.withOpacity(0.2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(18),
+            ),
             alignment: Alignment.center,
             child: Text(
               'Ready - Waiting for Oscillations',
-              style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(color: theme.colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold, fontSize: 18),
             ),
           );
           break;
@@ -558,20 +567,30 @@ class MeasurementControlButton extends StatelessWidget {
         case OscillationState.ACTIVE_COUNTING:
           final label = state == OscillationState.SETTLING ? 'Settling...' : 'Measuring...';
           final pct = (progress * 100).toInt().clamp(0, 100);
-          content = Stack(
-            children: [
-              Container(color: theme.colorScheme.primary.withOpacity(0.15)),
-              FractionallySizedBox(
-                widthFactor: progress.clamp(0.0, 1.0),
-                child: Container(color: theme.colorScheme.primary.withOpacity(0.35)),
-              ),
-              Center(
-                child: Text(
-                  '$label $pct%',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+          content = Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                FractionallySizedBox(
+                  widthFactor: progress.clamp(0.0, 1.0),
+                  child: Container(color: theme.colorScheme.primary),
                 ),
-              ),
-            ],
+                Center(
+                  child: Text(
+                    '$label $pct%',
+                    style: TextStyle(
+                      fontSize: 18, 
+                      fontWeight: FontWeight.bold, 
+                      color: progress > 0.5 ? theme.colorScheme.onPrimary : theme.colorScheme.onSecondaryContainer
+                    ),
+                  ),
+                ),
+              ],
+            ),
           );
           break;
         default:
@@ -582,8 +601,6 @@ class MeasurementControlButton extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 48),
       width: double.infinity,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(18)),
       child: content,
     );
   }
