@@ -36,13 +36,24 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                final text = controller.text;
                 Navigator.of(ctx).pop();
-                notifier.addEstimationGroup(controller.text);
-                setState(() {
-                  selectedIds.clear();
-                  isSelectionMode = false;
-                });
+                try {
+                  await notifier.addEstimationGroup(text);
+                  if (mounted) {
+                    setState(() {
+                      selectedIds.clear();
+                      isSelectionMode = false;
+                    });
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error creating estimation group: $e')),
+                    );
+                  }
+                }
               },
               child: const Text('Create'),
             ),

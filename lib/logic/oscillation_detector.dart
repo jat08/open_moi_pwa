@@ -50,6 +50,8 @@ class OscillationDetector {
   static const double nudgeThreshold = 0.3;
   static const int debounceNs = 100000000; // 0.1s hysteresis window
 
+  int sampleCount = 0;
+
   final List<double> _gravityVector = [0.0, 0.0, 9.8];
   double _gyroBaseline = 0.0; // Dynamically tracks DC bias
 
@@ -77,8 +79,29 @@ class OscillationDetector {
   void startListening() {
     _stopwatch.reset();
     _stopwatch.start();
-    _accelSub = accelerometerEventStream(samplingPeriod: SensorInterval.fastestInterval).listen(handleAccelerometer);
-    _gyroSub = gyroscopeEventStream(samplingPeriod: SensorInterval.fastestInterval).listen(handleGyroscope);
+    sampleCount = 0;
+
+    _accelSub = accelerometerEventStream(samplingPeriod: SensorInterval.fastestInterval).listen(
+      (event) {
+        sampleCount++;
+        handleAccelerometer(event);
+      },
+      onError: (err) {
+        print('Accelerometer stream error: $err');
+      },
+      cancelOnError: false,
+    );
+
+    _gyroSub = gyroscopeEventStream(samplingPeriod: SensorInterval.fastestInterval).listen(
+      (event) {
+        sampleCount++;
+        handleGyroscope(event);
+      },
+      onError: (err) {
+        print('Gyroscope stream error: $err');
+      },
+      cancelOnError: false,
+    );
   }
 
   void stopListening() {

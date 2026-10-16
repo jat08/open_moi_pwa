@@ -36,13 +36,24 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                final text = controller.text;
                 Navigator.of(ctx).pop();
-                notifier.addGroup(controller.text);
-                setState(() {
-                  selectedIds.clear();
-                  isSelectionMode = false;
-                });
+                try {
+                  await notifier.addGroup(text);
+                  if (mounted) {
+                    setState(() {
+                      selectedIds.clear();
+                      isSelectionMode = false;
+                    });
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error creating group: $e')),
+                    );
+                  }
+                }
               },
               child: const Text('Create'),
             ),
