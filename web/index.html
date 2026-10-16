@@ -41,6 +41,27 @@
   </style>
 
   <script>
+    (function() {
+      function requestMotion() {
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+          DeviceMotionEvent.requestPermission()
+            .then(function(state) {
+              console.log('iOS Motion permission state: ' + state);
+            })
+            .catch(function(err) {
+              console.error('iOS Motion permission error: ' + err);
+            });
+        }
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          DeviceOrientationEvent.requestPermission().catch(function() {});
+        }
+        window.removeEventListener('click', requestMotion, true);
+        window.removeEventListener('touchstart', requestMotion, true);
+      }
+      window.addEventListener('click', requestMotion, true);
+      window.addEventListener('touchstart', requestMotion, true);
+    })();
+
     window.requestMotionPermission = function() {
       return new Promise(function(resolve) {
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {

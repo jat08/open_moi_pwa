@@ -149,39 +149,9 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(top: 8, bottom: 2),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                'Calibration',
-                                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            fit: FlexFit.loose,
-                            child: Container(
-                              height: 42,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary,
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              child: TextButton.icon(
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                                  foregroundColor: theme.colorScheme.onPrimary,
-                                ),
-                                icon: const Icon(Icons.nfc, size: 20),
-                                label: const Text('Read NFC', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                                onPressed: () => notifier.setNfcScanning(true),
-                              ),
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        'Calibration',
+                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
                       ),
                     ),
                     Padding(
@@ -442,65 +412,6 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                   ],
                 ),
               ),
-
-              if (uiState.isNfcScanning || uiState.nfcStatus != null)
-                Container(
-                  color: Colors.black54,
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.all(24),
-                  child: Material(
-                    borderRadius: BorderRadius.circular(16),
-                    color: theme.colorScheme.surface,
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'NFC Calibration',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            uiState.nfcStatus ?? 'Ready to Scan...',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 16, color: theme.colorScheme.onSurface),
-                          ),
-                          if (uiState.isNfcScanning) ...[
-                            const SizedBox(height: 24),
-                            CircularProgressIndicator(color: theme.colorScheme.primary),
-                          ],
-                          const SizedBox(height: 24),
-                          if (!uiState.nfcEnabled) ...[
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: theme.colorScheme.primary,
-                                  foregroundColor: theme.colorScheme.onPrimary,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                ),
-                                onPressed: () {
-                                  notifier.openNfcSettings();
-                                  notifier.setNfcScanning(false);
-                                },
-                                child: const Text('Open System Settings'),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: () => notifier.setNfcScanning(false),
-                              child: Text(!uiState.nfcEnabled ? 'Cancel' : 'Close'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
             ],
           ),
         ),

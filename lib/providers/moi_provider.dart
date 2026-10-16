@@ -6,7 +6,6 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nfc_manager/nfc_manager.dart';
 import '../data/app_preferences.dart';
 import '../data/database.dart';
 import '../data/models.dart';
@@ -105,10 +104,6 @@ class UiState {
   final List<EstimationGroup> estimationGroups;
   final EstimationGroup? currentEstimationGroup;
 
-  final bool isNfcScanning;
-  final bool nfcEnabled;
-  final String? nfcStatus;
-
   final String? importError;
   final int activeTab;
 
@@ -175,9 +170,6 @@ class UiState {
     this.selectedEstimationGroupId,
     this.estimationGroups = const [],
     this.currentEstimationGroup,
-    this.isNfcScanning = false,
-    this.nfcEnabled = true,
-    this.nfcStatus,
     this.importError,
     this.activeTab = 0,
   });
@@ -245,9 +237,6 @@ class UiState {
     int? Function()? selectedEstimationGroupId,
     List<EstimationGroup>? estimationGroups,
     EstimationGroup? Function()? currentEstimationGroup,
-    bool? isNfcScanning,
-    bool? nfcEnabled,
-    String? Function()? nfcStatus,
     String? Function()? importError,
     int? activeTab,
   }) {
@@ -314,9 +303,6 @@ class UiState {
       selectedEstimationGroupId: selectedEstimationGroupId != null ? selectedEstimationGroupId() : this.selectedEstimationGroupId,
       estimationGroups: estimationGroups ?? this.estimationGroups,
       currentEstimationGroup: currentEstimationGroup != null ? currentEstimationGroup() : this.currentEstimationGroup,
-      isNfcScanning: isNfcScanning ?? this.isNfcScanning,
-      nfcEnabled: nfcEnabled ?? this.nfcEnabled,
-      nfcStatus: nfcStatus != null ? nfcStatus() : this.nfcStatus,
       importError: importError != null ? importError() : this.importError,
       activeTab: activeTab ?? this.activeTab,
     );
@@ -334,7 +320,6 @@ final moiProvider = StateNotifierProvider<MoiNotifier, UiState>((ref) {
 });
 
 class MoiNotifier extends StateNotifier<UiState> {
-  static const MethodChannel _nfcChannel = MethodChannel('com.openmoi.open_moi_cp/nfc');
   final DatabaseHelper _db = DatabaseHelper.instance;
   late AppPreferences _prefs;
   OscillationDetector? _detector;
@@ -342,19 +327,6 @@ class MoiNotifier extends StateNotifier<UiState> {
 
   MoiNotifier() : super(UiState()) {
     _init();
-    _setupNativeNfcListener();
-  }
-
-  void _setupNativeNfcListener() {
-    _nfcChannel.setMethodCallHandler((call) async {
-      if (call.method == 'onNfcScanned') {
-        final List<dynamic> args = call.arguments as List<dynamic>;
-        final List<String> records = args.map((e) => e.toString()).toList();
-        if (records.isNotEmpty) {
-          await processNfcMessage(records);
-        }
-      }
-    });
   }
 
   Future<void> _init() async {
@@ -1015,201 +987,6 @@ class MoiNotifier extends StateNotifier<UiState> {
 
   void selectMeasurement(Measurement? measurement) {
     state = state.copyWith(selectedMeasurement: () => measurement);
-  }
-
-  // --- NFC Methods ---
-
-  Future<void> openNfcSettings() async {
-    if (!kIsWeb && Platform.isAndroid) {
-      try {
-        await _nfcChannel.invokeMethod('openNfcSettings');
-      } catch (_) {}
-    }
-  }
-
-  Future<void> setNfcScanning(bool scanning) async {
-    if (!scanning) {
-      try {
-        if (!kIsWeb && Platform.isAndroid) {
-          await _nfcChannel.invokeMethod('disableNfc');
-        }
-        await NfcManager.instance.stopSession();
-      } catch (_) {}
-      state = state.copyWith(
-        isNfcScanning: false,
-        nfcEnabled: true,
-        nfcStatus: () => null,
-      );
-      return;
-    }
-
-    bool isAvailable = false;
-    try {
-      isAvailable = await NfcManager.instance.isAvailable();
-    } catch (_) {}
-
-    if (!isAvailable) {
-      state = state.copyWith(
-        isNfcScanning: false,
-        nfcEnabled: false,
-        nfcStatus: () => 'NFC is not available or supported on this device/platform.',
-      );
-      return;
-    }
-
-    state = state.copyWith(
-      isNfcScanning: true,
-      nfcEnabled: true,
-      nfcStatus: () => 'Ready to Scan...',
-    );
-
-    if (!kIsWeb && Platform.isAndroid) {
-      try {
-        await _nfcChannel.invokeMethod('enableNfc');
-      } catch (_) {}
-    }
-
-    try {
-      await NfcManager.instance.startSession(
-        onDiscovered: (NfcTag tag) async {
-          List<String> records = [];
-
-          final ndef = Ndef.from(tag);
-          if (ndef != null) {
-            final cachedMessage = ndef.cachedMessage;
-            if (cachedMessage != null) {
-              for (final record in cachedMessage.records) {
-                final text = _parseNdefTextRecord(record);
-                if (text != null && text.isNotEmpty) {
-                  records.add(text);
-                }
-              }
-            } else {
-              try {
-                final message = await ndef.read();
-                for (final record in message.records) {
-                  final text = _parseNdefTextRecord(record);
-                  if (text != null && text.isNotEmpty) {
-                    records.add(text);
-                  }
-                }
-              } catch (_) {}
-            }
-          }
-
-          if (records.isNotEmpty) {
-            await processNfcMessage(records);
-            try {
-              await NfcManager.instance.stopSession(alertMessage: 'NFC Read Successful!');
-            } catch (_) {}
-          } else {
-            try {
-              await NfcManager.instance.stopSession(errorMessage: 'No NDEF records found');
-            } catch (_) {}
-            state = state.copyWith(
-              nfcStatus: () => 'No NDEF text records found on tag.',
-            );
-          }
-        },
-        onError: (NfcError error) async {
-          try {
-            await NfcManager.instance.stopSession(errorMessage: error.message);
-          } catch (_) {}
-          state = state.copyWith(
-            isNfcScanning: false,
-            nfcStatus: () => 'NFC Scan Error: ${error.message}',
-          );
-        },
-      );
-    } catch (e) {
-      state = state.copyWith(
-        isNfcScanning: false,
-        nfcStatus: () => 'Failed to start NFC: $e',
-      );
-    }
-  }
-
-  String? _parseNdefTextRecord(NdefRecord record) {
-    final payload = record.payload;
-    if (payload.isNotEmpty) {
-      final languageCodeLength = payload[0] & 0x3F;
-      if (payload.length > languageCodeLength + 1) {
-        return String.fromCharCodes(payload.sublist(languageCodeLength + 1));
-      }
-    }
-    try {
-      return String.fromCharCodes(record.payload);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<void> processNfcMessage(List<String> records) async {
-    bool updated = false;
-
-    for (final record in records) {
-      final clean = record.toUpperCase().replaceAll(' ', '').replaceAll('_', '');
-      final value = _extractNumber(record);
-      if (value == null) continue;
-
-      if (clean.startsWith('OBJA') || clean.startsWith('OBJECTA')) {
-        await _prefs.saveKnownObjectAInertia(value);
-        updated = true;
-      } else if (clean.startsWith('OBJB') || clean.startsWith('OBJECTB')) {
-        await _prefs.saveKnownObjectBInertia(value);
-        updated = true;
-      } else if (clean.startsWith('PB') || clean.startsWith('TAREPB')) {
-        await _prefs.saveExpectedValue('TARE_PB', value);
-        updated = true;
-      } else if (clean.startsWith('TW') || clean.startsWith('TARETW')) {
-        await _prefs.saveExpectedValue('TARE_TW', value);
-        updated = true;
-      }
-    }
-
-    if (updated) {
-      loadPreferences();
-      await calculateCalibrationIfReady();
-      try {
-        if (!kIsWeb && Platform.isAndroid) {
-          await _nfcChannel.invokeMethod('disableNfc');
-        }
-        await NfcManager.instance.stopSession();
-      } catch (_) {}
-      state = state.copyWith(
-        isNfcScanning: false,
-        nfcStatus: () => 'NFC Update Successful!',
-      );
-      await Future.delayed(const Duration(seconds: 2));
-      state = state.copyWith(nfcStatus: () => null);
-    } else {
-      state = state.copyWith(
-        nfcStatus: () => 'No valid calibration records found.',
-      );
-      await Future.delayed(const Duration(seconds: 2));
-      state = state.copyWith(
-        nfcStatus: () => state.isNfcScanning ? 'Ready to Scan...' : null,
-      );
-    }
-  }
-
-  double? _extractNumber(String text) {
-    String target = text;
-    if (text.contains(':')) {
-      target = text.split(':').last;
-    } else if (text.contains('=')) {
-      target = text.split('=').last;
-    }
-    final regex = RegExp(r'[+-]?([0-9]*[.])?[0-9]+');
-    final match = regex.firstMatch(target);
-    if (match != null) {
-      return double.tryParse(match.group(0)!);
-    }
-    final fallbackMatch = regex.firstMatch(text);
-    if (fallbackMatch != null) {
-      return double.tryParse(fallbackMatch.group(0)!);
-    }
-    return null;
   }
 
   // --- Estimation Methods ---
