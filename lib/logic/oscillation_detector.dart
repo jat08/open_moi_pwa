@@ -148,13 +148,14 @@ class OscillationDetector {
       return;
     }
 
-    final tiltAngleY = (atan2(sqrt(x * x + z * z), y.abs()) * 180.0 / pi);
-    final tiltAngleX = (atan2(sqrt(y * y + z * z), x.abs()) * 180.0 / pi);
+    // Must be facing upright/forward (not lying flat on back or face on a table)
+    final isFacingForward = z.abs() < (gMag * 0.6);
 
-    final diffY = (tiltAngleY - targetAngle).abs();
-    final diffX = (tiltAngleX - targetAngle).abs();
+    // Roll angle in screen plane (X vs Y) as shown in 45-degree orientation diagram
+    final rollAngle = (atan2(x.abs(), y.abs()) * 180.0 / pi);
+    final isCorrectAngle = (rollAngle - targetAngle).abs() < orientationThreshold;
 
-    final isCorrectOrientation = diffY < orientationThreshold || diffX < orientationThreshold;
+    final isCorrectOrientation = isFacingForward && isCorrectAngle;
 
     if (!isCorrectOrientation) {
       _updateState(OscillationState.WRONG_ORIENTATION);
