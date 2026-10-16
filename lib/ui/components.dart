@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -471,17 +472,46 @@ class MeasurementControlButton extends StatelessWidget {
         ),
       );
     } else if (state == OscillationState.WRONG_ORIENTATION) {
-      content = Container(
-        color: theme.colorScheme.errorContainer,
-        alignment: Alignment.center,
-        child: Text(
-          'Hold Phone at 45°',
-          style: TextStyle(
-            color: theme.colorScheme.onErrorContainer,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
+      content = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: 48,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.errorContainer,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              'Hold Phone at 45°',
+              style: TextStyle(
+                color: theme.colorScheme.onErrorContainer,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
           ),
-        ),
+          if (kIsWeb) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 48,
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                ),
+                icon: const Icon(Icons.sensors, size: 20),
+                label: const Text('Enable Motion and Orientation', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                onPressed: () async {
+                  await requestWebMotionPermission();
+                },
+              ),
+            ),
+          ],
+        ],
       );
     } else if (preparationRemaining > 0) {
       content = Container(
