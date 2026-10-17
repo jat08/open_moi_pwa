@@ -599,7 +599,7 @@ class MeasurementControlButton extends StatelessWidget {
               ),
             ),
           ),
-          if (kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) ...[
+          if (kIsWeb) ...[
             const SizedBox(height: 8),
             SizedBox(
               height: 52,
@@ -612,7 +612,10 @@ class MeasurementControlButton extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.sensors, size: 20),
                 label: const Text('Enable Motion and Orientation', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                onPressed: onRequestPermission,
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  onRequestPermission?.call();
+                },
               ),
             ),
           ],
@@ -771,7 +774,7 @@ class MeasurementControlButton extends StatelessWidget {
     }
 
     return Container(
-      height: 52,
+      constraints: const BoxConstraints(minHeight: 52),
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(28)),
@@ -2115,6 +2118,8 @@ class SortDialog extends StatelessWidget {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           child: SafeArea(
+            top: false,
+            bottom: true,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -2203,7 +2208,7 @@ class SortDialog extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
               ],
             ),
           ),

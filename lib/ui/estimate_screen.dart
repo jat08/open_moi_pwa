@@ -308,6 +308,8 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                                   HapticFeedback.lightImpact();
                                   showModalBottomSheet(
                                     context: context,
+                                    isScrollControlled: true,
+                                    useSafeArea: true,
                                     backgroundColor: Colors.transparent,
                                     builder: (ctx) => SortDialog(
                                       currentType: uiState.sortType,

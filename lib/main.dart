@@ -100,6 +100,15 @@ class MainNavigationScaffold extends ConsumerStatefulWidget {
 }
 
 class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold> {
+  bool _hasRequestedWebMotionPermission = false;
+
+  void _handleFirstUserTap() {
+    if (kIsWeb && !_hasRequestedWebMotionPermission) {
+      _hasRequestedWebMotionPermission = true;
+      ref.read(moiProvider.notifier).requestPermission();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final uiState = ref.watch(moiProvider);
@@ -157,8 +166,10 @@ class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold>
       }
     }
 
-    return Scaffold(
-      body: AnimatedSwitcher(
+    return Listener(
+      onPointerDown: (_) => _handleFirstUserTap(),
+      child: Scaffold(
+        body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 220),
         switchInCurve: Curves.easeOutCubic,
         switchOutCurve: Curves.easeInCubic,
@@ -204,6 +215,7 @@ class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold>
               ],
             )
           : null,
+      ),
     );
   }
 }

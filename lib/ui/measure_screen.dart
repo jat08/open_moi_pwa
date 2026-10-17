@@ -308,6 +308,8 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                                   HapticFeedback.lightImpact();
                                   showModalBottomSheet(
                                     context: context,
+                                    isScrollControlled: true,
+                                    useSafeArea: true,
                                     backgroundColor: Colors.transparent,
                                     builder: (ctx) => SortDialog(
                                       currentType: uiState.sortType,
