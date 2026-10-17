@@ -148,6 +148,7 @@ class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScree
                       ? SelectionTopBar(
                           count: selectedIds.length,
                           isAllSelected: selectedIds.length >= measurements.length && measurements.isNotEmpty,
+                          isPartialSelected: selectedIds.isNotEmpty && selectedIds.length < measurements.length,
                           onToggleAll: () {
                             setState(() {
                               if (selectedIds.length >= measurements.length) {

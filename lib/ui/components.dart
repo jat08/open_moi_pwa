@@ -189,6 +189,7 @@ class _RenameDialogState extends State<RenameDialog> {
 class SelectionTopBar extends StatelessWidget {
   final int count;
   final bool isAllSelected;
+  final bool isPartialSelected;
   final VoidCallback onToggleAll;
   final VoidCallback onClear;
   final VoidCallback onDelete;
@@ -197,6 +198,7 @@ class SelectionTopBar extends StatelessWidget {
     super.key,
     required this.count,
     required this.isAllSelected,
+    this.isPartialSelected = false,
     required this.onToggleAll,
     required this.onClear,
     required this.onDelete,
@@ -205,6 +207,8 @@ class SelectionTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bool? checkboxValue = isAllSelected ? true : (isPartialSelected ? null : false);
+
     return Container(
       constraints: const BoxConstraints(minHeight: 48),
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -214,19 +218,23 @@ class SelectionTopBar extends StatelessWidget {
       ),
       child: Row(
         children: [
+          Checkbox(
+            value: checkboxValue,
+            tristate: true,
+            activeColor: theme.colorScheme.primary,
+            onChanged: (_) => onToggleAll(),
+          ),
+          const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.close),
             onPressed: onClear,
           ),
+          const SizedBox(width: 4),
           Text(
             '$count Selected',
             style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onPrimaryContainer),
           ),
           const Spacer(),
-          TextButton(
-            onPressed: onToggleAll,
-            child: Text(isAllSelected ? 'Deselect All' : 'Select All'),
-          ),
           IconButton(
             icon: const Icon(Icons.delete, color: Colors.red),
             onPressed: onDelete,

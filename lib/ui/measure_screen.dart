@@ -151,6 +151,7 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                       ? SelectionTopBar(
                           count: selectedIds.length,
                           isAllSelected: selectedIds.length >= uiState.groups.length && uiState.groups.isNotEmpty,
+                          isPartialSelected: selectedIds.isNotEmpty && selectedIds.length < uiState.groups.length,
                           onToggleAll: () {
                             setState(() {
                               if (selectedIds.length >= uiState.groups.length) {

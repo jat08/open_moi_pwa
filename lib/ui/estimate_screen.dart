@@ -151,6 +151,7 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                       ? SelectionTopBar(
                           count: selectedIds.length,
                           isAllSelected: selectedIds.length >= uiState.estimationGroups.length && uiState.estimationGroups.isNotEmpty,
+                          isPartialSelected: selectedIds.isNotEmpty && selectedIds.length < uiState.estimationGroups.length,
                           onToggleAll: () {
                             setState(() {
                               if (selectedIds.length >= uiState.estimationGroups.length) {

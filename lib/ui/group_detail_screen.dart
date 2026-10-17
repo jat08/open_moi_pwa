@@ -197,6 +197,8 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                           final isNone = uiState.selectedTareMode == 'NONE';
                           final isPB = uiState.selectedTareMode == 'PICKLEBALL';
                           final isTW = uiState.selectedTareMode == 'TWIST';
+                          final isPBTared = uiState.pickleballTareOffset > 0;
+                          final isTWTared = uiState.twistTareOffset > 0;
                           return [
                             PopupMenuItem<String>(
                               value: 'NONE',
@@ -219,7 +221,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                             ),
                             PopupMenuItem<String>(
                               value: 'PICKLEBALL',
-                              enabled: uiState.pickleballTareOffset > 0,
+                              enabled: isPBTared,
                               height: 38,
                               padding: EdgeInsets.zero,
                               child: Container(
@@ -229,17 +231,19 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                                 color: isPB ? selectedBg : null,
                                 child: Text(
-                                  uiState.pickleballTareOffset > 0 ? 'Pickleball Adapter' : 'PB-Tare Adapter First',
+                                  'Pickleball Adapter',
                                   style: TextStyle(
                                     fontWeight: isPB ? FontWeight.bold : FontWeight.normal,
-                                    color: isPB ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                                    color: isPB
+                                        ? theme.colorScheme.primary
+                                        : (isPBTared ? theme.colorScheme.onSurface : theme.colorScheme.outline),
                                   ),
                                 ),
                               ),
                             ),
                             PopupMenuItem<String>(
                               value: 'TWIST',
-                              enabled: uiState.twistTareOffset > 0,
+                              enabled: isTWTared,
                               height: 38,
                               padding: EdgeInsets.zero,
                               child: Container(
@@ -249,10 +253,12 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                                 color: isTW ? selectedBg : null,
                                 child: Text(
-                                  uiState.twistTareOffset > 0 ? 'Twist Weight Adapter' : 'TW-Tare Adapter First',
+                                  'Twist Weight Adapter',
                                   style: TextStyle(
                                     fontWeight: isTW ? FontWeight.bold : FontWeight.normal,
-                                    color: isTW ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                                    color: isTW
+                                        ? theme.colorScheme.primary
+                                        : (isTWTared ? theme.colorScheme.onSurface : theme.colorScheme.outline),
                                   ),
                                 ),
                               ),
@@ -291,6 +297,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                       ? SelectionTopBar(
                           count: selectedIds.length,
                           isAllSelected: selectedIds.length >= measurements.length && measurements.isNotEmpty,
+                          isPartialSelected: selectedIds.isNotEmpty && selectedIds.length < measurements.length,
                           onToggleAll: () {
                             setState(() {
                               if (selectedIds.length >= measurements.length) {
