@@ -484,7 +484,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _settingLabel('Low Margin', 'The maximum allowable percentage variation threshold applied to Swing Weight (SW) and low inertia measurements (including Object A calibration). Measurements whose value deviates from the group mean by more than this percentage margin are highlighted as statistical outliers.'),
+                              _settingLabel('Low Margin', 'The maximum allowable percentage variation threshold applied to Swing Weight (SW) and higher inertia measurements (including Object A, Object B, and Tare SW calibration). Individual cycle periods or measurement values that deviate from the reference average by more than this margin are highlighted as statistical outliers.'),
                               NumberWheelPicker(
                                 value: uiState.swMargin,
                                 range: marginRange,
@@ -504,7 +504,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _settingLabel('High Margin', 'The maximum allowable percentage variation threshold applied to Twist Weight (TW) and high inertia measurements (including Object B calibration). Measurements whose value deviates from the group mean by more than this percentage margin are highlighted as statistical outliers.'),
+                              _settingLabel('High Margin', 'The maximum allowable percentage variation threshold applied to Twist Weight (TW) and lower inertia measurements (including Tare PB and Tare TW calibration). Individual cycle periods or measurement values that deviate from the reference average by more than this margin are highlighted as statistical outliers.'),
                               NumberWheelPicker(
                                 value: uiState.twMargin,
                                 range: marginRange,
