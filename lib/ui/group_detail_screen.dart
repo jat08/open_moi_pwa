@@ -447,13 +447,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                                   });
                                 }
                               },
-                              onDelete: () {
-                                notifier.deleteMeasurement(m);
-                                setState(() {
-                                  selectedIds.clear();
-                                  isSelectionMode = false;
-                                });
-                              },
                             ),
                           );
                         }),
@@ -550,13 +543,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                                     isSelectionMode = true;
                                   });
                                 }
-                              },
-                              onDelete: () {
-                                notifier.deleteMeasurement(m);
-                                setState(() {
-                                  selectedIds.clear();
-                                  isSelectionMode = false;
-                                });
                               },
                             ),
                           );

@@ -354,7 +354,7 @@ class SelectionTopBar extends StatelessWidget {
 
 class MeasurementItem extends StatelessWidget {
   final Measurement measurement;
-  final VoidCallback onDelete;
+  final VoidCallback? onDelete;
   final VoidCallback onClick;
   final VoidCallback onLongClick;
   final bool selected;
@@ -372,7 +372,7 @@ class MeasurementItem extends StatelessWidget {
   const MeasurementItem({
     super.key,
     required this.measurement,
-    required this.onDelete,
+    this.onDelete,
     required this.onClick,
     required this.onLongClick,
     this.selected = false,
@@ -520,25 +520,6 @@ class MeasurementItem extends StatelessWidget {
                   Text(timeStr, style: TextStyle(fontSize: 11.5, color: theme.colorScheme.outline, height: 1.15)),
                   Text(dateStr, style: TextStyle(fontSize: 11.5, color: theme.colorScheme.outline, height: 1.15)),
                 ],
-              ),
-              const SizedBox(width: 4),
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  showModalBottomSheet(
-                    context: context,
-                    backgroundColor: Colors.transparent,
-                    builder: (ctx) => DeleteConfirmationDialog(
-                      title: 'Delete Measurement?',
-                      text: 'Are you sure you want to delete measurement #$index?',
-                      onConfirm: onDelete,
-                    ),
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(6.0),
-                  child: Icon(Icons.delete_outline, size: 22, color: theme.colorScheme.outline),
-                ),
               ),
             ],
           ),

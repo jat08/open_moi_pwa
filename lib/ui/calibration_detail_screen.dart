@@ -278,13 +278,6 @@ class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScree
                               });
                             }
                           },
-                          onDelete: () {
-                            notifier.deleteMeasurement(m);
-                            setState(() {
-                              selectedIds.clear();
-                              isSelectionMode = false;
-                            });
-                          },
                         ),
                       );
                     },
