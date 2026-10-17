@@ -480,7 +480,18 @@ class WaveformPainter extends CustomPainter {
         ..strokeWidth = 1.5
         ..style = PaintingStyle.stroke;
 
-      final initialPhase = (rawData.length > 1 && rawData[1] < rawData[0]) ? pi : 0.0;
+      // Use arcsin of the first data point relative to maxAmp to find the exact phase offset
+      double initialPhase = 0.0;
+      if (rawData.isNotEmpty && maxAmp > 0) {
+        final normalizedFirstPoint = (rawData[0] / maxAmp).clamp(-1.0, 1.0);
+        initialPhase = asin(normalizedFirstPoint);
+
+        // If the wave is heading downwards initially, adjust the phase to the second quadrant
+        if (rawData.length > 1 && rawData[1] < rawData[0]) {
+          initialPhase = pi - initialPhase;
+        }
+      }
+
       final path = Path();
       for (var i = 0; i < rawData.length; i++) {
         final time = (i / max(1, rawData.length - 1)) * totalDuration;
