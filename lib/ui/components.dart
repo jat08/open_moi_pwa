@@ -558,21 +558,24 @@ class MeasurementControlButton extends StatelessWidget {
     Widget content;
 
     if (!isCalibrated) {
-      content = Consumer(
-        builder: (context, ref, child) => InkWell(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            ref.read(moiProvider.notifier).navigateToCalibrate();
-          },
-          child: Container(
-            color: theme.colorScheme.errorContainer,
-            alignment: Alignment.center,
-            child: Text(
-              'Calibrate Device First',
-              style: TextStyle(
-                color: theme.colorScheme.onErrorContainer,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+      content = SizedBox(
+        height: 52,
+        child: Consumer(
+          builder: (context, ref, child) => InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              ref.read(moiProvider.notifier).navigateToCalibrate();
+            },
+            child: Container(
+              color: theme.colorScheme.errorContainer,
+              alignment: Alignment.center,
+              child: Text(
+                'Calibrate Device First',
+                style: TextStyle(
+                  color: theme.colorScheme.onErrorContainer,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
@@ -622,57 +625,63 @@ class MeasurementControlButton extends StatelessWidget {
         ],
       );
     } else if (preparationRemaining > 0) {
-      content = InkWell(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onCancel?.call();
-        },
-        child: Container(
-          color: Colors.grey.shade700,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Waiting $preparationRemaining s to be Ready',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const Text(
-                  'Tap to Cancel',
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
+      content = SizedBox(
+        height: 52,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onCancel?.call();
+          },
+          child: Container(
+            color: Colors.grey.shade700,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Waiting $preparationRemaining s to be Ready',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const Text(
+                    'Tap to Cancel',
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       );
     } else if (cooldownRemaining > 0) {
-      content = InkWell(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onCancel?.call();
-        },
-        child: Container(
-          color: Colors.grey.shade700,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Waiting ${cooldownRemaining.toInt()} seconds',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const Text(
-                  'Tap to Cancel',
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
+      content = SizedBox(
+        height: 52,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onCancel?.call();
+          },
+          child: Container(
+            color: Colors.grey.shade700,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Waiting ${cooldownRemaining.toInt()} seconds',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const Text(
+                    'Tap to Cancel',
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -680,44 +689,50 @@ class MeasurementControlButton extends StatelessWidget {
     } else {
       switch (state) {
         case OscillationState.READY:
-          content = ElevatedButton(
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              onStart();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          content = SizedBox(
+            height: 52,
+            child: ElevatedButton(
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                onStart();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+              ),
+              child: const Text('Start Measurement', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
             ),
-            child: const Text('Start Measurement', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
           );
           break;
         case OscillationState.ARMED:
-          content = InkWell(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              onCancel?.call();
-            },
-            child: Container(
-              color: theme.colorScheme.primary.withValues(alpha: 0.2),
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Ready - Waiting for Oscillations',
-                      style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    Text(
-                      'Tap to Cancel',
-                      style: TextStyle(color: theme.colorScheme.primary.withValues(alpha: 0.7), fontSize: 11),
-                    ),
-                  ],
+          content = SizedBox(
+            height: 52,
+            child: InkWell(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                onCancel?.call();
+              },
+              child: Container(
+                color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Ready - Waiting for Oscillations',
+                        style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      Text(
+                        'Tap to Cancel',
+                        style: TextStyle(color: theme.colorScheme.primary.withValues(alpha: 0.7), fontSize: 11),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -727,44 +742,47 @@ class MeasurementControlButton extends StatelessWidget {
         case OscillationState.ACTIVE_COUNTING:
           final label = state == OscillationState.SETTLING ? 'Settling...' : 'Measuring...';
           final pct = (progress * 100).toInt().clamp(0, 100);
-          content = InkWell(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              onCancel?.call();
-            },
-            child: Stack(
-              children: [
-                Container(color: theme.colorScheme.primary.withValues(alpha: 0.15)),
-                FractionallySizedBox(
-                  widthFactor: progress.clamp(0.0, 1.0),
-                  child: Container(color: theme.colorScheme.primary.withValues(alpha: 0.35)),
-                ),
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '$label $pct%',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
+          content = SizedBox(
+            height: 52,
+            child: InkWell(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                onCancel?.call();
+              },
+              child: Stack(
+                children: [
+                  Container(color: theme.colorScheme.primary.withValues(alpha: 0.15)),
+                  FractionallySizedBox(
+                    widthFactor: progress.clamp(0.0, 1.0),
+                    child: Container(color: theme.colorScheme.primary.withValues(alpha: 0.35)),
+                  ),
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '$label $pct%',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                              ),
                             ),
-                          ),
-                          Text(
-                            'Tap to Cancel',
-                            style: TextStyle(fontSize: 11, color: theme.colorScheme.primary.withValues(alpha: 0.8), fontWeight: FontWeight.w500),
-                          ),
-                        ],
+                            Text(
+                              'Tap to Cancel',
+                              style: TextStyle(fontSize: 11, color: theme.colorScheme.primary.withValues(alpha: 0.8), fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
           break;
