@@ -61,6 +61,12 @@ class OscillationResult {
   });
 }
 
+class _GyroSample {
+  final int timestampNs;
+  final double value;
+  _GyroSample(this.timestampNs, this.value);
+}
+
 class OscillationDetector {
   final void Function(OscillationState state) onStateChanged;
   final void Function(OscillationResult result) onMeasurementComplete;
@@ -91,7 +97,7 @@ class OscillationDetector {
   final List<double> _gravityVector = [0.0, 0.0, 9.8];
   double _gyroBaseline = 0.0; // Dynamically tracks DC bias
 
-  final List<double> _rawGyroSamples = [];
+  final List<_GyroSample> _rawGyroSamples = [];
   final List<double> _cycleDurations = [];
 
   StreamSubscription<AccelerometerEvent>? _accelSub;
@@ -257,7 +263,7 @@ class OscillationDetector {
         _detectZeroCrossing(vRot, timestampNs);
 
         if (_currentState == OscillationState.ACTIVE_COUNTING) {
-          _rawGyroSamples.add(vRot);
+          _rawGyroSamples.add(_GyroSample(timestampNs, vRot));
         }
 
         final elapsedNs = timestampNs - _measurementStartTimeNs;
@@ -311,6 +317,56 @@ class OscillationDetector {
     }
   }
 
+  double _catmullRom(double p0, double p1, double p2, double p3, double t) {
+    final t2 = t * t;
+    final t3 = t2 * t;
+    return 0.5 *
+        ((2 * p1) +
+            (-p0 + p2) * t +
+            (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
+            (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
+  }
+
+  List<double> _resampleUniformly(List<_GyroSample> samples, int startNs, int endNs) {
+    if (samples.isEmpty) return [];
+    if (samples.length == 1) return [samples.first.value];
+
+    // Force a high-resolution uniform output (e.g. 200 points) to guarantee visual smoothness
+    // even if the physical sensor was polling at a low rate (like 60Hz on iOS).
+    final int numPoints = 200;
+    final List<double> resampled = [];
+    final double stepNs = (endNs - startNs) / max(1, numPoints - 1);
+
+    int idx = 0;
+    for (var i = 0; i < numPoints; i++) {
+      final targetTime = startNs + i * stepNs;
+
+      while (idx < samples.length - 1 && samples[idx + 1].timestampNs < targetTime) {
+        idx++;
+      }
+
+      if (idx >= samples.length - 1) {
+        resampled.add(samples.last.value);
+      } else {
+        final s0 = idx > 0 ? samples[idx - 1] : samples[idx];
+        final s1 = samples[idx];
+        final s2 = samples[idx + 1];
+        final s3 = idx < samples.length - 2 ? samples[idx + 2] : samples[idx + 1];
+
+        final dt = s2.timestampNs - s1.timestampNs;
+        if (dt <= 0) {
+          resampled.add(s1.value);
+        } else {
+          // Cubic Catmull-Rom spline interpolation for perfectly smooth curves
+          final t = (targetTime - s1.timestampNs) / dt;
+          final interp = _catmullRom(s0.value, s1.value, s2.value, s3.value, t);
+          resampled.add(interp);
+        }
+      }
+    }
+    return resampled;
+  }
+
   void _finishMeasurement() {
     if (_cycleDurations.isNotEmpty && _rawGyroSamples.isNotEmpty) {
       final endTimeNs = _tEndNs > _tStartNs ? _tEndNs : _lastCrossingTimeNs;
@@ -323,10 +379,12 @@ class OscillationDetector {
         final avgPeriod = _cycleDurations.reduce((a, b) => a + b) / actualCycleCount;
         final totalDurSec = durationNs / 1000000000.0;
 
+        final uniformSamples = _resampleUniformly(_rawGyroSamples, _tStartNs, endTimeNs);
+
         onMeasurementComplete(
           OscillationResult(
             averagePeriod: avgPeriod,
-            rawData: _rawGyroSamples.join(','),
+            rawData: uniformSamples.join(','),
             cyclePeriods: _cycleDurations.join(','),
             totalDuration: totalDurSec,
           ),
