@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models.dart';
 import '../providers/moi_provider.dart';
@@ -107,6 +108,54 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
         }
       },
       child: Scaffold(
+        bottomNavigationBar: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            border: Border(top: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.15))),
+          ),
+          child: SafeArea(
+            top: false,
+            child: isSelectionMode
+                ? SelectionTopBar(
+                    count: selectedIds.length,
+                    isAllSelected: selectedIds.length >= measurements.length && measurements.isNotEmpty,
+                    isPartialSelected: selectedIds.isNotEmpty && selectedIds.length < measurements.length,
+                    onToggleAll: () {
+                      setState(() {
+                        if (selectedIds.length >= measurements.length) {
+                          selectedIds.clear();
+                        } else {
+                          selectedIds = measurements.map((m) => m.id!).toSet();
+                        }
+                      });
+                    },
+                    onClear: () {
+                      setState(() {
+                        selectedIds.clear();
+                        isSelectionMode = false;
+                      });
+                    },
+                    onDelete: () {
+                      notifier.deleteMeasurements(selectedIds);
+                      setState(() {
+                        selectedIds.clear();
+                        isSelectionMode = false;
+                      });
+                    },
+                  )
+                : MeasurementControlButton(
+                    state: uiState.detectorState,
+                    progress: uiState.progress,
+                    isCalibrated: uiState.isCalibrated,
+                    cooldownRemaining: uiState.cooldownRemaining,
+                    preparationRemaining: uiState.preparationRemaining,
+                    onStart: () => notifier.startMeasurement(),
+                    onCancel: () => notifier.cancelMeasurement(),
+                    onRequestPermission: () => notifier.requestPermission(),
+                  ),
+          ),
+        ),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -118,13 +167,19 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   children: [
                     IconButton(
                       icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface, size: 28),
-                      onPressed: () => notifier.selectGroup(null),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        notifier.selectGroup(null);
+                      },
                     ),
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          showDialog(
+                          HapticFeedback.lightImpact();
+                          showModalBottomSheet(
                             context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
                             builder: (ctx) => RenameDialog(
                               currentName: group.name,
                               onConfirm: (newName) => notifier.renameGroup(group, newName),
@@ -142,7 +197,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
 
                 SummaryHeaderLarge(
                   avgSW: uiState.currentSWAverage,
@@ -159,7 +214,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   stdDevBP: stdDevBP,
                 ),
 
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
 
                 // Harmonized Tare Selector & Info Button Control Row
                 Row(
@@ -167,14 +222,17 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                     Expanded(
                       child: PopupMenuButton<String>(
                         initialValue: uiState.selectedTareMode,
-                        onSelected: (mode) => notifier.setTareMode(mode),
+                        onSelected: (mode) {
+                          HapticFeedback.selectionClick();
+                          notifier.setTareMode(mode);
+                        },
                         child: Container(
-                          height: 42,
+                          height: 44,
                           padding: const EdgeInsets.symmetric(horizontal: 14),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceVariant,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: theme.colorScheme.primary.withOpacity(0.4)),
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -269,14 +327,17 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                     ),
                     const SizedBox(width: 8),
                     InkWell(
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: () => notifier.selectEditingAttributesGroup(widget.groupId),
+                      borderRadius: BorderRadius.circular(22),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        notifier.selectEditingAttributesGroup(widget.groupId);
+                      },
                       child: Container(
-                        width: 42,
-                        height: 42,
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
                           color: theme.colorScheme.primary,
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(22),
                         ),
                         alignment: Alignment.center,
                         child: Icon(
@@ -289,50 +350,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 12),
-
-                Container(
-                  constraints: const BoxConstraints(minHeight: 48),
-                  child: isSelectionMode
-                      ? SelectionTopBar(
-                          count: selectedIds.length,
-                          isAllSelected: selectedIds.length >= measurements.length && measurements.isNotEmpty,
-                          isPartialSelected: selectedIds.isNotEmpty && selectedIds.length < measurements.length,
-                          onToggleAll: () {
-                            setState(() {
-                              if (selectedIds.length >= measurements.length) {
-                                selectedIds.clear();
-                              } else {
-                                selectedIds = measurements.map((m) => m.id!).toSet();
-                              }
-                            });
-                          },
-                          onClear: () {
-                            setState(() {
-                              selectedIds.clear();
-                              isSelectionMode = false;
-                            });
-                          },
-                          onDelete: () {
-                            notifier.deleteMeasurements(selectedIds);
-                            setState(() {
-                              selectedIds.clear();
-                              isSelectionMode = false;
-                            });
-                          },
-                        )
-                      : MeasurementControlButton(
-                          state: uiState.detectorState,
-                          progress: uiState.progress,
-                          isCalibrated: uiState.isCalibrated,
-                          cooldownRemaining: uiState.cooldownRemaining,
-                          preparationRemaining: uiState.preparationRemaining,
-                          onStart: () => notifier.startMeasurement(),
-                          onRequestPermission: () => notifier.requestPermission(),
-                        ),
-                ),
-
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
 
                 Expanded(
                   child: ListView(
@@ -346,53 +364,100 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                             color: theme.colorScheme.primary,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         ...swMeasurements.asMap().entries.map((entry) {
                           final index = entry.key;
                           final m = entry.value;
                           final isSelected = selectedIds.contains(m.id);
-                          return MeasurementItem(
-                            measurement: m,
-                            selected: isSelected,
-                            index: swMeasurements.length - index,
-                            resolution: uiState.moiUnitsResolution,
-                            periodResolution: uiState.periodUnitsResolution,
-                            averageVal: uiState.currentSWAverage,
-                            hideUnits: true,
-                            fitThreshold: uiState.fitResidualExclusion,
-                            margin: uiState.swMargin,
-                            trimLast: uiState.trimLastCycle,
-                            onClick: () {
-                              if (isSelectionMode) {
-                                setState(() {
-                                  if (isSelected) {
-                                    selectedIds.remove(m.id);
-                                  } else {
-                                    selectedIds.add(m.id!);
-                                  }
-                                });
-                              } else {
-                                notifier.selectMeasurement(m);
-                              }
+                          final mIndex = swMeasurements.length - index;
+
+                          return Dismissible(
+                            key: ValueKey<int>(m.id!),
+                            direction: DismissDirection.endToStart,
+                            background: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 2.0),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: const [
+                                  Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                  SizedBox(width: 6),
+                                  Icon(Icons.delete, color: Colors.white, size: 20),
+                                ],
+                              ),
+                            ),
+                            confirmDismiss: (direction) async {
+                              HapticFeedback.mediumImpact();
+                              bool confirmed = false;
+                              await showModalBottomSheet(
+                                context: context,
+                                backgroundColor: Colors.transparent,
+                                builder: (ctx) => DeleteConfirmationDialog(
+                                  title: 'Delete Measurement?',
+                                  text: 'Are you sure you want to delete measurement #$mIndex?',
+                                  onConfirm: () => confirmed = true,
+                                ),
+                              );
+                              return confirmed;
                             },
-                            onLongClick: () {
-                              if (!isSelectionMode) {
-                                setState(() {
-                                  selectedIds = {m.id!};
-                                  isSelectionMode = true;
-                                });
-                              }
-                            },
-                            onDelete: () {
+                            onDismissed: (direction) {
                               notifier.deleteMeasurement(m);
                               setState(() {
                                 selectedIds.clear();
                                 isSelectionMode = false;
                               });
                             },
+                            child: MeasurementItem(
+                              measurement: m,
+                              selected: isSelected,
+                              index: mIndex,
+                              resolution: uiState.moiUnitsResolution,
+                              periodResolution: uiState.periodUnitsResolution,
+                              averageVal: uiState.currentSWAverage,
+                              hideUnits: true,
+                              fitThreshold: uiState.fitResidualExclusion,
+                              margin: uiState.swMargin,
+                              trimLast: uiState.trimLastCycle,
+                              onClick: () {
+                                if (isSelectionMode) {
+                                  HapticFeedback.selectionClick();
+                                  setState(() {
+                                    if (isSelected) {
+                                      selectedIds.remove(m.id);
+                                    } else {
+                                      selectedIds.add(m.id!);
+                                    }
+                                  });
+                                } else {
+                                  HapticFeedback.lightImpact();
+                                  notifier.selectMeasurement(m);
+                                }
+                              },
+                              onLongClick: () {
+                                HapticFeedback.mediumImpact();
+                                if (!isSelectionMode) {
+                                  setState(() {
+                                    selectedIds = {m.id!};
+                                    isSelectionMode = true;
+                                  });
+                                }
+                              },
+                              onDelete: () {
+                                notifier.deleteMeasurement(m);
+                                setState(() {
+                                  selectedIds.clear();
+                                  isSelectionMode = false;
+                                });
+                              },
+                            ),
                           );
                         }),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                       ],
                       if (twMeasurements.isNotEmpty) ...[
                         Text(
@@ -403,50 +468,97 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                             color: theme.colorScheme.secondary,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         ...twMeasurements.asMap().entries.map((entry) {
                           final index = entry.key;
                           final m = entry.value;
                           final isSelected = selectedIds.contains(m.id);
-                          return MeasurementItem(
-                            measurement: m,
-                            selected: isSelected,
-                            index: twMeasurements.length - index,
-                            resolution: uiState.moiUnitsResolution,
-                            periodResolution: uiState.periodUnitsResolution,
-                            averageVal: uiState.currentTWAverage,
-                            hideUnits: true,
-                            fitThreshold: uiState.fitResidualExclusion,
-                            margin: uiState.twMargin,
-                            trimLast: uiState.trimLastCycle,
-                            onClick: () {
-                              if (isSelectionMode) {
-                                setState(() {
-                                  if (isSelected) {
-                                    selectedIds.remove(m.id);
-                                  } else {
-                                    selectedIds.add(m.id!);
-                                  }
-                                });
-                              } else {
-                                notifier.selectMeasurement(m);
-                              }
+                          final mIndex = twMeasurements.length - index;
+
+                          return Dismissible(
+                            key: ValueKey<int>(m.id!),
+                            direction: DismissDirection.endToStart,
+                            background: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 2.0),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: const [
+                                  Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                  SizedBox(width: 6),
+                                  Icon(Icons.delete, color: Colors.white, size: 20),
+                                ],
+                              ),
+                            ),
+                            confirmDismiss: (direction) async {
+                              HapticFeedback.mediumImpact();
+                              bool confirmed = false;
+                              await showModalBottomSheet(
+                                context: context,
+                                backgroundColor: Colors.transparent,
+                                builder: (ctx) => DeleteConfirmationDialog(
+                                  title: 'Delete Measurement?',
+                                  text: 'Are you sure you want to delete measurement #$mIndex?',
+                                  onConfirm: () => confirmed = true,
+                                ),
+                              );
+                              return confirmed;
                             },
-                            onLongClick: () {
-                              if (!isSelectionMode) {
-                                setState(() {
-                                  selectedIds = {m.id!};
-                                  isSelectionMode = true;
-                                });
-                              }
-                            },
-                            onDelete: () {
+                            onDismissed: (direction) {
                               notifier.deleteMeasurement(m);
                               setState(() {
                                 selectedIds.clear();
                                 isSelectionMode = false;
                               });
                             },
+                            child: MeasurementItem(
+                              measurement: m,
+                              selected: isSelected,
+                              index: mIndex,
+                              resolution: uiState.moiUnitsResolution,
+                              periodResolution: uiState.periodUnitsResolution,
+                              averageVal: uiState.currentTWAverage,
+                              hideUnits: true,
+                              fitThreshold: uiState.fitResidualExclusion,
+                              margin: uiState.twMargin,
+                              trimLast: uiState.trimLastCycle,
+                              onClick: () {
+                                if (isSelectionMode) {
+                                  HapticFeedback.selectionClick();
+                                  setState(() {
+                                    if (isSelected) {
+                                      selectedIds.remove(m.id);
+                                    } else {
+                                      selectedIds.add(m.id!);
+                                    }
+                                  });
+                                } else {
+                                  HapticFeedback.lightImpact();
+                                  notifier.selectMeasurement(m);
+                                }
+                              },
+                              onLongClick: () {
+                                HapticFeedback.mediumImpact();
+                                if (!isSelectionMode) {
+                                  setState(() {
+                                    selectedIds = {m.id!};
+                                    isSelectionMode = true;
+                                  });
+                                }
+                              },
+                              onDelete: () {
+                                notifier.deleteMeasurement(m);
+                                setState(() {
+                                  selectedIds.clear();
+                                  isSelectionMode = false;
+                                });
+                              },
+                            ),
                           );
                         }),
                       ],

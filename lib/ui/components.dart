@@ -11,6 +11,25 @@ import '../data/models.dart';
 import '../logic/oscillation_detector.dart';
 import '../providers/moi_provider.dart';
 
+/// One UI Drag Handle Bar Component for Bottom Sheets
+class OneUiDragHandle extends StatelessWidget {
+  const OneUiDragHandle({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: 38,
+      height: 4.5,
+      margin: const EdgeInsets.only(top: 10, bottom: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.outline.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(2.25),
+      ),
+    );
+  }
+}
+
 class DynamicTitleText extends StatelessWidget {
   final String text;
   final double maxFontSize;
@@ -96,29 +115,65 @@ class DeleteConfirmationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      title: Text(title, style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
-      content: Text(text, style: TextStyle(color: theme.colorScheme.onSurface)),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+    final isDark = theme.brightness == Brightness.dark;
+    final dialogBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: dialogBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const OneUiDragHandle(),
+            const SizedBox(height: 4),
+            Text(title, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Text(text, textAlign: TextAlign.center, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15)),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                      ),
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        Navigator.of(context).pop();
+                        onConfirm();
+                      },
+                      child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
         ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          ),
-          onPressed: () {
-            Navigator.of(context).pop();
-            onConfirm();
-          },
-          child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -154,34 +209,77 @@ class _RenameDialogState extends State<RenameDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      title: const Text('Rename'),
-      content: TextField(
-        controller: _controller,
-        maxLength: 40,
-        autofocus: true,
-        decoration: const InputDecoration(labelText: 'Name'),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final dialogBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: BoxDecoration(
+          color: dialogBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const OneUiDragHandle(),
+              const SizedBox(height: 4),
+              const Text('Rename Group', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _controller,
+                maxLength: 40,
+                autofocus: true,
+                decoration: const InputDecoration(labelText: 'Name'),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                        ),
+                        onPressed: () {
+                          final text = _controller.text.trim();
+                          if (text.isNotEmpty) {
+                            HapticFeedback.lightImpact();
+                            widget.onConfirm(text);
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
           ),
-          onPressed: () {
-            final text = _controller.text.trim();
-            if (text.isNotEmpty) {
-              widget.onConfirm(text);
-              Navigator.of(context).pop();
-            }
-          },
-          child: const Text('Save'),
         ),
-      ],
+      ),
     );
   }
 }
@@ -214,7 +312,7 @@ class SelectionTopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
         children: [
@@ -222,22 +320,31 @@ class SelectionTopBar extends StatelessWidget {
             value: checkboxValue,
             tristate: true,
             activeColor: theme.colorScheme.primary,
-            onChanged: (_) => onToggleAll(),
+            onChanged: (_) {
+              HapticFeedback.selectionClick();
+              onToggleAll();
+            },
           ),
           const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.close),
-            onPressed: onClear,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              onClear();
+            },
           ),
           const SizedBox(width: 4),
           Text(
             '$count Selected',
-            style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onPrimaryContainer),
+            style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onPrimaryContainer, fontSize: 15),
           ),
           const Spacer(),
           IconButton(
             icon: const Icon(Icons.delete, color: Colors.red),
-            onPressed: onDelete,
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              onDelete();
+            },
           ),
         ],
       ),
@@ -304,13 +411,14 @@ class MeasurementItem extends StatelessWidget {
     final value = isPeriod ? avgMeasured : measurement.moi;
     final diff = averageVal > 0 ? (value - averageVal).abs() / averageVal : 0.0;
     final isOutlier = averageVal > 0 && diff > margin;
+    final isFitError = measurement.fitResidual >= fitThreshold;
 
     final containerColor = selected
         ? theme.colorScheme.primaryContainer
         : AppColors.getCardBackgroundColor(
             context: context,
             isSelected: selected,
-            isError: measurement.fitResidual >= fitThreshold,
+            isError: isFitError,
             isOutlier: isOutlier,
           );
 
@@ -323,7 +431,7 @@ class MeasurementItem extends StatelessWidget {
     final timeStr = DateFormat('h:mm a').format(DateTime.fromMillisecondsSinceEpoch(measurement.timestamp));
     final dateStr = DateFormat('M/d/yy').format(DateTime.fromMillisecondsSinceEpoch(measurement.timestamp));
 
-    final valueColor = measurement.fitResidual >= fitThreshold
+    final valueColor = isFitError
         ? (isDark ? AppColors.errorTextDark : AppColors.errorTextLight)
         : theme.colorScheme.onSurface;
 
@@ -331,32 +439,38 @@ class MeasurementItem extends StatelessWidget {
       elevation: 0,
       color: containerColor,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         side: selected ? BorderSide(color: theme.colorScheme.primary, width: 2) : BorderSide.none,
       ),
-      margin: const EdgeInsets.symmetric(vertical: 1.5),
+      margin: const EdgeInsets.symmetric(vertical: 2.0),
       child: InkWell(
-        onTap: onClick,
-        onLongPress: onLongClick,
-        borderRadius: BorderRadius.circular(18),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onClick();
+        },
+        onLongPress: () {
+          HapticFeedback.mediumImpact();
+          onLongClick();
+        },
+        borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
-                width: 24,
+                width: 26,
                 child: Text(
                   '#$index',
-                  style: TextStyle(fontSize: 13, color: theme.colorScheme.outline),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: theme.colorScheme.outline),
                 ),
               ),
               if (showType && !isPeriod) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: measurement.moi >= 40 ? theme.colorScheme.primary : theme.colorScheme.secondary,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     typeMarking,
@@ -374,29 +488,26 @@ class MeasurementItem extends StatelessWidget {
                       valueText,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 15,
+                        fontSize: 16,
                         color: valueColor,
-                        height: 1.1,
+                        height: 1.15,
                       ),
                     ),
                     if (!isPeriod) ...[
                       Text(
-                        'Period: ${avgMeasured.toStringAsFixed(periodResolution)}s',
-                        style: TextStyle(fontSize: 11, color: theme.colorScheme.outline, height: 1.1),
-                      ),
-                      Text(
-                        'Tare: ${measurement.tareMode}',
-                        style: TextStyle(fontSize: 11, color: theme.colorScheme.outline, height: 1.1),
+                        'Period: ${avgMeasured.toStringAsFixed(periodResolution)}s  •  Tare: ${measurement.tareMode}',
+                        style: TextStyle(fontSize: 11.5, color: theme.colorScheme.outline, height: 1.15),
                       ),
                     ],
                     Text(
-                      'Fit: ${measurement.fitResidual.toStringAsFixed(3)}',
+                      'Fit Residual: ${measurement.fitResidual.toStringAsFixed(3)}',
                       style: TextStyle(
-                        fontSize: 11,
-                        color: measurement.fitResidual >= fitThreshold
+                        fontSize: 11.5,
+                        fontWeight: isFitError ? FontWeight.bold : FontWeight.normal,
+                        color: isFitError
                             ? (isDark ? AppColors.errorTextDark : AppColors.errorTextLight)
                             : theme.colorScheme.outline,
-                        height: 1.1,
+                        height: 1.15,
                       ),
                     ),
                   ],
@@ -406,15 +517,17 @@ class MeasurementItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(timeStr, style: TextStyle(fontSize: 11, color: theme.colorScheme.outline, height: 1.1)),
-                  Text(dateStr, style: TextStyle(fontSize: 11, color: theme.colorScheme.outline, height: 1.1)),
+                  Text(timeStr, style: TextStyle(fontSize: 11.5, color: theme.colorScheme.outline, height: 1.15)),
+                  Text(dateStr, style: TextStyle(fontSize: 11.5, color: theme.colorScheme.outline, height: 1.15)),
                 ],
               ),
               const SizedBox(width: 4),
               GestureDetector(
                 onTap: () {
-                  showDialog(
+                  HapticFeedback.lightImpact();
+                  showModalBottomSheet(
                     context: context,
+                    backgroundColor: Colors.transparent,
                     builder: (ctx) => DeleteConfirmationDialog(
                       title: 'Delete Measurement?',
                       text: 'Are you sure you want to delete measurement #$index?',
@@ -424,7 +537,7 @@ class MeasurementItem extends StatelessWidget {
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(6.0),
-                  child: Icon(Icons.delete, size: 24, color: theme.colorScheme.outline),
+                  child: Icon(Icons.delete_outline, size: 22, color: theme.colorScheme.outline),
                 ),
               ),
             ],
@@ -442,6 +555,7 @@ class MeasurementControlButton extends StatelessWidget {
   final double cooldownRemaining;
   final int preparationRemaining;
   final VoidCallback onStart;
+  final VoidCallback? onCancel;
   final VoidCallback? onRequestPermission;
 
   const MeasurementControlButton({
@@ -452,6 +566,7 @@ class MeasurementControlButton extends StatelessWidget {
     this.cooldownRemaining = 0.0,
     this.preparationRemaining = 0,
     required this.onStart,
+    this.onCancel,
     this.onRequestPermission,
   });
 
@@ -465,6 +580,7 @@ class MeasurementControlButton extends StatelessWidget {
       content = Consumer(
         builder: (context, ref, child) => InkWell(
           onTap: () {
+            HapticFeedback.lightImpact();
             ref.read(moiProvider.notifier).navigateToCalibrate();
           },
           child: Container(
@@ -475,7 +591,7 @@ class MeasurementControlButton extends StatelessWidget {
               style: TextStyle(
                 color: theme.colorScheme.onErrorContainer,
                 fontWeight: FontWeight.bold,
-                fontSize: 18,
+                fontSize: 16,
               ),
             ),
           ),
@@ -486,11 +602,11 @@ class MeasurementControlButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            height: 48,
+            height: 52,
             width: double.infinity,
             decoration: BoxDecoration(
               color: theme.colorScheme.errorContainer,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(28),
             ),
             alignment: Alignment.center,
             child: Text(
@@ -498,20 +614,20 @@ class MeasurementControlButton extends StatelessWidget {
               style: TextStyle(
                 color: theme.colorScheme.onErrorContainer,
                 fontWeight: FontWeight.bold,
-                fontSize: 18,
+                fontSize: 16,
               ),
             ),
           ),
           if (kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) ...[
             const SizedBox(height: 8),
             SizedBox(
-              height: 48,
+              height: 52,
               width: double.infinity,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: theme.colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                 ),
                 icon: const Icon(Icons.sensors, size: 20),
                 label: const Text('Enable Motion and Orientation', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
@@ -522,52 +638,104 @@ class MeasurementControlButton extends StatelessWidget {
         ],
       );
     } else if (preparationRemaining > 0) {
-      content = Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          'Waiting $preparationRemaining Seconds to be Ready',
-          style: TextStyle(color: theme.colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold, fontSize: 18),
+      content = InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onCancel?.call();
+        },
+        child: Container(
+          color: Colors.grey.shade700,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Waiting $preparationRemaining s to be Ready',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const Text(
+                  'Tap to Cancel',
+                  style: TextStyle(color: Colors.white70, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     } else if (cooldownRemaining > 0) {
-      content = Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          'Waiting ${cooldownRemaining.toInt()} seconds',
-          style: TextStyle(color: theme.colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold, fontSize: 18),
+      content = InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onCancel?.call();
+        },
+        child: Container(
+          color: Colors.grey.shade700,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Waiting ${cooldownRemaining.toInt()} seconds',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const Text(
+                  'Tap to Cancel',
+                  style: TextStyle(color: Colors.white70, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     } else {
       switch (state) {
         case OscillationState.READY:
           content = ElevatedButton(
-            onPressed: onStart,
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              onStart();
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
             ),
-            child: const Text('Start Measurement', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            child: const Text('Start Measurement', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
           );
           break;
         case OscillationState.ARMED:
-          content = Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              'Ready - Waiting for Oscillations',
-              style: TextStyle(color: theme.colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold, fontSize: 18),
+          content = InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onCancel?.call();
+            },
+            child: Container(
+              color: theme.colorScheme.primary.withValues(alpha: 0.2),
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Ready - Waiting for Oscillations',
+                      style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    Text(
+                      'Tap to Cancel',
+                      style: TextStyle(color: theme.colorScheme.primary.withValues(alpha: 0.7), fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
             ),
           );
           break;
@@ -575,25 +743,40 @@ class MeasurementControlButton extends StatelessWidget {
         case OscillationState.ACTIVE_COUNTING:
           final label = state == OscillationState.SETTLING ? 'Settling...' : 'Measuring...';
           final pct = (progress * 100).toInt().clamp(0, 100);
-          content = Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            clipBehavior: Clip.antiAlias,
+          content = InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onCancel?.call();
+            },
             child: Stack(
               children: [
+                Container(color: theme.colorScheme.primary.withValues(alpha: 0.15)),
                 FractionallySizedBox(
                   widthFactor: progress.clamp(0.0, 1.0),
-                  child: Container(color: theme.colorScheme.primary),
+                  child: Container(color: theme.colorScheme.primary.withValues(alpha: 0.35)),
                 ),
                 Center(
-                  child: Text(
-                    '$label $pct%',
-                    style: TextStyle(
-                      fontSize: 18, 
-                      fontWeight: FontWeight.bold, 
-                      color: progress > 0.5 ? theme.colorScheme.onPrimary : theme.colorScheme.onSecondaryContainer
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '$label $pct%',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          Text(
+                            'Tap to Cancel',
+                            style: TextStyle(fontSize: 11, color: theme.colorScheme.primary.withValues(alpha: 0.8), fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -607,8 +790,10 @@ class MeasurementControlButton extends StatelessWidget {
     }
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 48),
+      height: 52,
       width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(28)),
       child: content,
     );
   }
@@ -680,8 +865,8 @@ class SummaryHeaderLarge extends StatelessWidget {
 
         return Card(
           elevation: 0,
-          color: theme.colorScheme.surfaceVariant,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          color: theme.colorScheme.surfaceContainerHighest,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Column(
@@ -693,10 +878,11 @@ class SummaryHeaderLarge extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Swing Weight', style: TextStyle(fontSize: typo.cardTitleSize(17), fontWeight: FontWeight.bold, color: theme.colorScheme.primary, letterSpacing: 0.5)),
+                          Text('Swing Weight', style: TextStyle(fontSize: typo.cardTitleSize(16), fontWeight: FontWeight.bold, color: theme.colorScheme.primary, letterSpacing: 0.5)),
                           const SizedBox(height: 4),
                           GestureDetector(
                             onLongPress: () {
+                              HapticFeedback.lightImpact();
                               Clipboard.setData(ClipboardData(text: avgSW.toStringAsFixed(moiResolution)));
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Copied SW: ${avgSW.toStringAsFixed(moiResolution)}')),
@@ -728,9 +914,9 @@ class SummaryHeaderLarge extends StatelessWidget {
                                     child: Text(
                                       swTol,
                                       style: TextStyle(
-                                        fontSize: typo.cardTitleSize(17),
+                                        fontSize: typo.cardTitleSize(15),
                                         fontWeight: FontWeight.bold,
-                                        color: theme.colorScheme.primary.withOpacity(0.85),
+                                        color: theme.colorScheme.primary.withValues(alpha: 0.85),
                                         height: 1.1,
                                       ),
                                     ),
@@ -743,6 +929,7 @@ class SummaryHeaderLarge extends StatelessWidget {
                           GestureDetector(
                             onLongPress: () {
                               if (hasSW) {
+                                HapticFeedback.lightImpact();
                                 Clipboard.setData(ClipboardData(text: avgPeriodSW.toStringAsFixed(periodResolution)));
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('Copied Period SW: ${avgPeriodSW.toStringAsFixed(periodResolution)}')),
@@ -754,7 +941,7 @@ class SummaryHeaderLarge extends StatelessWidget {
                               alignment: Alignment.centerLeft,
                               child: Text(
                                 periodSWText,
-                                style: TextStyle(fontSize: typo.subtextSize(15), fontWeight: FontWeight.w500, color: theme.colorScheme.outline, height: 1.1),
+                                style: TextStyle(fontSize: typo.subtextSize(14), fontWeight: FontWeight.w500, color: theme.colorScheme.outline, height: 1.1),
                               ),
                             ),
                           ),
@@ -764,17 +951,18 @@ class SummaryHeaderLarge extends StatelessWidget {
                     Container(
                       width: 1,
                       height: 110,
-                      color: theme.colorScheme.outline.withOpacity(0.3),
+                      color: theme.colorScheme.outline.withValues(alpha: 0.25),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Twist Weight', style: TextStyle(fontSize: typo.cardTitleSize(17), fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, letterSpacing: 0.5)),
+                          Text('Twist Weight', style: TextStyle(fontSize: typo.cardTitleSize(16), fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, letterSpacing: 0.5)),
                           const SizedBox(height: 4),
                           GestureDetector(
                             onLongPress: () {
+                              HapticFeedback.lightImpact();
                               Clipboard.setData(ClipboardData(text: avgTW.toStringAsFixed(moiResolution)));
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Copied TW: ${avgTW.toStringAsFixed(moiResolution)}')),
@@ -806,9 +994,9 @@ class SummaryHeaderLarge extends StatelessWidget {
                                     child: Text(
                                       twTol,
                                       style: TextStyle(
-                                        fontSize: typo.cardTitleSize(17),
+                                        fontSize: typo.cardTitleSize(15),
                                         fontWeight: FontWeight.bold,
-                                        color: theme.colorScheme.secondary.withOpacity(0.85),
+                                        color: theme.colorScheme.secondary.withValues(alpha: 0.85),
                                         height: 1.1,
                                       ),
                                     ),
@@ -821,6 +1009,7 @@ class SummaryHeaderLarge extends StatelessWidget {
                           GestureDetector(
                             onLongPress: () {
                               if (hasTW) {
+                                HapticFeedback.lightImpact();
                                 Clipboard.setData(ClipboardData(text: avgPeriodTW.toStringAsFixed(periodResolution)));
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('Copied Period TW: ${avgPeriodTW.toStringAsFixed(periodResolution)}')),
@@ -832,7 +1021,7 @@ class SummaryHeaderLarge extends StatelessWidget {
                               alignment: Alignment.centerLeft,
                               child: Text(
                                 periodTWText,
-                                style: TextStyle(fontSize: typo.subtextSize(15), fontWeight: FontWeight.w500, color: theme.colorScheme.outline, height: 1.1),
+                                style: TextStyle(fontSize: typo.subtextSize(14), fontWeight: FontWeight.w500, color: theme.colorScheme.outline, height: 1.1),
                               ),
                             ),
                           ),
@@ -842,9 +1031,10 @@ class SummaryHeaderLarge extends StatelessWidget {
                   ],
                 ),
                 if (bpVal != null) ...[
-                  Divider(height: 20, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                  Divider(height: 20, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                   GestureDetector(
                     onLongPress: () {
+                      HapticFeedback.lightImpact();
                       Clipboard.setData(ClipboardData(text: calculatedBP!.toStringAsFixed(moiResolution)));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Copied BP: ${calculatedBP!.toStringAsFixed(moiResolution)}')),
@@ -856,7 +1046,7 @@ class SummaryHeaderLarge extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text('Balance Point: ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.colorScheme.outline)),
-                          Text(bpVal, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                          Text(bpVal, style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
                           if (bpTol != null) ...[
                             const SizedBox(width: 4),
                             Text(bpTol, style: TextStyle(fontSize: 15, color: theme.colorScheme.outline)),
@@ -911,6 +1101,7 @@ class SingleSummaryHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final typo = PageTypography.of(context);
+    final note = expectedNote;
     final res = isPeriod ? periodResolution : moiResolution;
     final unit1 = isPeriod ? 's' : 'kg·cm²';
 
@@ -944,8 +1135,8 @@ class SingleSummaryHeader extends StatelessWidget {
 
         return Card(
           elevation: 0,
-          color: theme.colorScheme.surfaceVariant,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          color: theme.colorScheme.surfaceContainerHighest,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Column(
@@ -957,10 +1148,11 @@ class SingleSummaryHeader extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(fullLabel1, style: TextStyle(fontSize: typo.cardTitleSize(17), fontWeight: FontWeight.bold, color: theme.colorScheme.primary, letterSpacing: 0.5)),
+                          Text(fullLabel1, style: TextStyle(fontSize: typo.cardTitleSize(16), fontWeight: FontWeight.bold, color: theme.colorScheme.primary, letterSpacing: 0.5)),
                           const SizedBox(height: 4),
                           GestureDetector(
                             onLongPress: () {
+                              HapticFeedback.lightImpact();
                               Clipboard.setData(ClipboardData(text: val1));
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Copied $fullLabel1: $val1')),
@@ -988,7 +1180,7 @@ class SingleSummaryHeader extends StatelessWidget {
                                   const SizedBox(height: 4),
                                   Text(
                                     tol1,
-                                    style: TextStyle(fontSize: typo.cardTitleSize(17), fontWeight: FontWeight.bold, color: theme.colorScheme.primary.withOpacity(0.85), height: 1.1),
+                                    style: TextStyle(fontSize: typo.cardTitleSize(15), fontWeight: FontWeight.bold, color: theme.colorScheme.primary.withValues(alpha: 0.85), height: 1.1),
                                   ),
                                 ],
                               ],
@@ -1001,17 +1193,18 @@ class SingleSummaryHeader extends StatelessWidget {
                       Container(
                         width: 1,
                         height: 80,
-                        color: theme.colorScheme.outline.withOpacity(0.3),
+                        color: theme.colorScheme.outline.withValues(alpha: 0.25),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(fullLabel2!, style: TextStyle(fontSize: typo.cardTitleSize(17), fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, letterSpacing: 0.5)),
+                            Text(fullLabel2, style: TextStyle(fontSize: typo.cardTitleSize(16), fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, letterSpacing: 0.5)),
                             const SizedBox(height: 4),
                             GestureDetector(
                               onLongPress: () {
+                                HapticFeedback.lightImpact();
                                 Clipboard.setData(ClipboardData(text: val2));
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('Copied $fullLabel2: $val2')),
@@ -1021,25 +1214,25 @@ class SingleSummaryHeader extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    val2,
-                                    maxLines: 1,
-                                    softWrap: false,
-                                    style: TextStyle(
-                                      fontSize: valueFontSize,
-                                      fontWeight: FontWeight.bold,
-                                      color: theme.colorScheme.secondary,
-                                      height: 1.1,
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      val2,
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      style: TextStyle(
+                                        fontSize: valueFontSize,
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.secondary,
+                                        height: 1.1,
+                                      ),
                                     ),
                                   ),
-                                ),
                                   if (hasVal2) ...[
                                     const SizedBox(height: 4),
                                     Text(
                                       tol2,
-                                      style: TextStyle(fontSize: typo.cardTitleSize(17), fontWeight: FontWeight.bold, color: theme.colorScheme.secondary.withOpacity(0.85), height: 1.1),
+                                      style: TextStyle(fontSize: typo.cardTitleSize(15), fontWeight: FontWeight.bold, color: theme.colorScheme.secondary.withValues(alpha: 0.85), height: 1.1),
                                     ),
                                   ],
                                 ],
@@ -1051,49 +1244,52 @@ class SingleSummaryHeader extends StatelessWidget {
                     ],
                   ],
                 ),
-            if (expectedNote != null && expectedNote!.isNotEmpty) ...[
-              Divider(height: 20, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        expectedNote!,
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.outline),
+                if (note != null && note.isNotEmpty) ...[
+                  Divider(height: 20, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            note,
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.outline),
+                          ),
+                        ),
                       ),
-                    ),
+                      if (onInfoClick != null) ...[
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            onInfoClick!();
+                          },
+                          child: Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.sell,
+                              color: theme.colorScheme.onPrimary,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  if (onInfoClick != null) ...[
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: onInfoClick,
-                      child: Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        alignment: Alignment.center,
-                        child: Icon(
-                          Icons.sell,
-                          color: theme.colorScheme.onPrimary,
-                          size: 22,
-                        ),
-                      ),
-                    ),
-                  ],
                 ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+              ],
+            ),
+          ),
+        );
       },
     );
   }
@@ -1157,7 +1353,7 @@ class EstimationInputField extends StatelessWidget {
                     fillColor: theme.colorScheme.surface,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                     contentPadding: const EdgeInsets.only(left: 6, right: 6, top: 0, bottom: 0),
-                    prefixIcon: locked ? Icon(Icons.lock, size: 18, color: theme.colorScheme.outline) : null,
+                    prefixIcon: locked ? Icon(Icons.lock_outline, size: 16, color: theme.colorScheme.outline) : null,
                     prefixIconConstraints: locked ? const BoxConstraints(minWidth: 28, minHeight: 0) : null,
                   ),
                   onChanged: onValueChange,
@@ -1201,7 +1397,10 @@ class UnitPicklist extends StatelessWidget {
     return PopupMenuButton<String>(
       enabled: enabled,
       initialValue: current,
-      onSelected: onSelect,
+      onSelected: (val) {
+        HapticFeedback.selectionClick();
+        onSelect(val);
+      },
       child: Container(
         width: width,
         height: 38,
@@ -1296,7 +1495,10 @@ class TypeSelector extends StatelessWidget {
           const SizedBox(width: 8),
           PopupMenuButton<String>(
             initialValue: current,
-            onSelected: onSelect,
+            onSelected: (val) {
+              HapticFeedback.selectionClick();
+              onSelect(val);
+            },
             child: Container(
               constraints: BoxConstraints(maxWidth: width),
               height: 38,
@@ -1391,7 +1593,12 @@ class ReadOnlySettingField extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           GestureDetector(
-            onLongPress: onLongClick,
+            onLongPress: () {
+              if (onLongClick != null) {
+                HapticFeedback.lightImpact();
+                onLongClick!();
+              }
+            },
             child: Container(
               constraints: BoxConstraints(maxWidth: width),
               height: 38,
@@ -1403,7 +1610,7 @@ class ReadOnlySettingField extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.lock, size: 18, color: theme.colorScheme.outline),
+                  Icon(Icons.lock_outline, size: 16, color: theme.colorScheme.outline),
                   const SizedBox(width: 6),
                   Expanded(
                     child: FittedBox(
@@ -1462,8 +1669,11 @@ class NumberWheelPicker extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: () {
-        showDialog(
+        HapticFeedback.lightImpact();
+        showModalBottomSheet(
           context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
           builder: (ctx) => _NumberWheelDialog(
             initialValue: value,
             range: range,
@@ -1510,8 +1720,11 @@ class ItemWheelPicker<T> extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: () {
-        showDialog(
+        HapticFeedback.lightImpact();
+        showModalBottomSheet(
           context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
           builder: (ctx) => _ItemWheelDialog<T>(
             initialValue: value,
             options: options,
@@ -1581,21 +1794,25 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
 
     final dialogBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
     final wheelBg = isDark ? const Color(0xFF1E242C) : const Color(0xFFF4F9FF);
-    final highlightBg = isDark ? theme.colorScheme.primary.withOpacity(0.25) : const Color(0xFFE2F0FE);
+    final highlightBg = isDark ? theme.colorScheme.primary.withValues(alpha: 0.25) : const Color(0xFFE2F0FE);
     final primaryBlue = isDark ? theme.colorScheme.primary : const Color(0xFF2B9DF0);
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      backgroundColor: dialogBg,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+    return Container(
+      decoration: BoxDecoration(
+        color: dialogBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const OneUiDragHandle(),
+            const SizedBox(height: 4),
             const Text(
               'Select Value',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 19,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -1606,7 +1823,7 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: wheelBg,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Stack(
                 alignment: Alignment.center,
@@ -1617,7 +1834,7 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
                     margin: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
                       color: highlightBg,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   ListWheelScrollView.useDelegate(
@@ -1626,6 +1843,7 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
                     perspective: 0.003,
                     physics: const FixedExtentScrollPhysics(),
                     onSelectedItemChanged: (index) {
+                      HapticFeedback.selectionClick();
                       setState(() {
                         _selectedIndex = index;
                       });
@@ -1640,6 +1858,7 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
                           onTap: () async {
                             if (_isSelecting) return;
                             _isSelecting = true;
+                            HapticFeedback.lightImpact();
                             if (index == _selectedIndex) {
                               if (context.mounted) {
                                 Navigator.of(context).pop();
@@ -1674,32 +1893,34 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryBlue,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(28),
                   ),
                 ),
                 onPressed: () {
+                  HapticFeedback.lightImpact();
                   Navigator.of(context).pop();
                   widget.onConfirm(widget.options[_selectedIndex]);
                 },
                 child: const Text(
                   'Confirm',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ),
+            const SizedBox(height: 12),
           ],
         ),
       ),
@@ -1750,21 +1971,25 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
 
     final dialogBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
     final wheelBg = isDark ? const Color(0xFF1E242C) : const Color(0xFFF4F9FF);
-    final highlightBg = isDark ? theme.colorScheme.primary.withOpacity(0.25) : const Color(0xFFE2F0FE);
+    final highlightBg = isDark ? theme.colorScheme.primary.withValues(alpha: 0.25) : const Color(0xFFE2F0FE);
     final primaryBlue = isDark ? theme.colorScheme.primary : const Color(0xFF2B9DF0);
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      backgroundColor: dialogBg,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+    return Container(
+      decoration: BoxDecoration(
+        color: dialogBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const OneUiDragHandle(),
+            const SizedBox(height: 4),
             const Text(
               'Select Value',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 19,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -1775,7 +2000,7 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: wheelBg,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Stack(
                 alignment: Alignment.center,
@@ -1786,7 +2011,7 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
                     margin: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
                       color: highlightBg,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   ListWheelScrollView.useDelegate(
@@ -1795,6 +2020,7 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
                     perspective: 0.003,
                     physics: const FixedExtentScrollPhysics(),
                     onSelectedItemChanged: (index) {
+                      HapticFeedback.selectionClick();
                       setState(() {
                         _selectedIndex = index;
                       });
@@ -1809,6 +2035,7 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
                           onTap: () async {
                             if (_isSelecting) return;
                             _isSelecting = true;
+                            HapticFeedback.lightImpact();
                             if (index == _selectedIndex) {
                               if (context.mounted) {
                                 Navigator.of(context).pop();
@@ -1843,32 +2070,34 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryBlue,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(28),
                   ),
                 ),
                 onPressed: () {
+                  HapticFeedback.lightImpact();
                   Navigator.of(context).pop();
                   widget.onConfirm(widget.range[_selectedIndex]);
                 },
                 child: const Text(
                   'Confirm',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ),
+            const SizedBox(height: 12),
           ],
         ),
       ),
@@ -1892,58 +2121,111 @@ class SortDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     SortType selectedType = currentType;
     SortDirection selectedDir = currentDirection;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final dialogBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
 
     return StatefulBuilder(
       builder: (context, setState) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: const Text('Sort By'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<SortType>(
-                title: const Text('Name'),
-                value: SortType.NAME,
-                groupValue: selectedType,
-                onChanged: (v) => setState(() => selectedType = v!),
-              ),
-              RadioListTile<SortType>(
-                title: const Text('Date'),
-                value: SortType.DATE,
-                groupValue: selectedType,
-                onChanged: (v) => setState(() => selectedType = v!),
-              ),
-              const Divider(),
-              RadioListTile<SortDirection>(
-                title: const Text('Ascending'),
-                value: SortDirection.ASCENDING,
-                groupValue: selectedDir,
-                onChanged: (v) => setState(() => selectedDir = v!),
-              ),
-              RadioListTile<SortDirection>(
-                title: const Text('Descending'),
-                value: SortDirection.DESCENDING,
-                groupValue: selectedDir,
-                onChanged: (v) => setState(() => selectedDir = v!),
-              ),
-            ],
+        return Container(
+          decoration: BoxDecoration(
+            color: dialogBg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const OneUiDragHandle(),
+                const SizedBox(height: 4),
+                const Text('Sort Options', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                RadioGroup<SortType>(
+                  groupValue: selectedType,
+                  onChanged: (v) {
+                    if (v != null) {
+                      HapticFeedback.selectionClick();
+                      setState(() => selectedType = v);
+                    }
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      RadioListTile<SortType>(
+                        title: Text('Name'),
+                        value: SortType.NAME,
+                      ),
+                      RadioListTile<SortType>(
+                        title: Text('Date'),
+                        value: SortType.DATE,
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+                RadioGroup<SortDirection>(
+                  groupValue: selectedDir,
+                  onChanged: (v) {
+                    if (v != null) {
+                      HapticFeedback.selectionClick();
+                      setState(() => selectedDir = v);
+                    }
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      RadioListTile<SortDirection>(
+                        title: Text('Ascending'),
+                        value: SortDirection.ASCENDING,
+                      ),
+                      RadioListTile<SortDirection>(
+                        title: Text('Descending'),
+                        value: SortDirection.DESCENDING,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                          ),
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: theme.colorScheme.onPrimary,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                          ),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.of(context).pop();
+                            onApply(selectedType, selectedDir);
+                          },
+                          child: const Text('Apply', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-                onApply(selectedType, selectedDir);
-              },
-              child: const Text('Apply'),
-            ),
-          ],
+          ),
         );
       },
     );

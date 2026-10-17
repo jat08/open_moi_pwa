@@ -65,7 +65,6 @@ class OpenMOIApp extends ConsumerWidget {
         themeMode = ThemeMode.dark;
         break;
       case AppThemeMode.SYSTEM:
-      default:
         themeMode = ThemeMode.system;
         break;
     }
@@ -101,8 +100,6 @@ class MainNavigationScaffold extends ConsumerStatefulWidget {
 }
 
 class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold> {
-  int _currentIndex = 0;
-
   @override
   Widget build(BuildContext context) {
     final uiState = ref.watch(moiProvider);
@@ -116,61 +113,92 @@ class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold>
         uiState.editingExpectedValueTarget == null;
 
     Widget body;
+    String screenKey;
 
     if (uiState.editingAttributesGroupId != null && uiState.currentAttributeGroup != null) {
       body = GroupAttributesScreen(group: uiState.currentAttributeGroup!);
+      screenKey = 'attributes_${uiState.editingAttributesGroupId}';
     } else if (uiState.editingExpectedValueTarget != null) {
       body = CalibrationInfoScreen(target: uiState.editingExpectedValueTarget!);
+      screenKey = 'expected_${uiState.editingExpectedValueTarget}';
     } else if (uiState.selectedMeasurement != null) {
       body = MeasurementDetailScreen(measurement: uiState.selectedMeasurement!);
+      screenKey = 'measurement_${uiState.selectedMeasurement!.id}';
     } else if (uiState.selectedGroupId != null) {
       body = GroupDetailScreen(groupId: uiState.selectedGroupId!);
+      screenKey = 'group_${uiState.selectedGroupId}';
     } else if (uiState.selectedEstimationGroupId != null && uiState.currentEstimationGroup != null) {
       body = EstimateDetailScreen(group: uiState.currentEstimationGroup!);
+      screenKey = 'estimation_${uiState.selectedEstimationGroupId}';
     } else if (uiState.selectedCalibrationTarget != null) {
       body = CalibrationDetailScreen(target: uiState.selectedCalibrationTarget!);
+      screenKey = 'calibration_${uiState.selectedCalibrationTarget}';
     } else {
       switch (uiState.activeTab) {
         case 0:
           body = const MeasureScreen();
+          screenKey = 'tab_0';
           break;
         case 1:
           body = const EstimateScreen();
+          screenKey = 'tab_1';
           break;
         case 2:
           body = const CalibrationScreen();
+          screenKey = 'tab_2';
           break;
         case 3:
           body = const SettingsScreen();
+          screenKey = 'tab_3';
           break;
         default:
           body = const MeasureScreen();
+          screenKey = 'tab_0';
       }
     }
 
     return Scaffold(
-      body: body,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey<String>(screenKey),
+          child: body,
+        ),
+      ),
       bottomNavigationBar: showBottomBar
           ? NavigationBar(
               selectedIndex: uiState.activeTab,
               onDestinationSelected: (index) {
+                HapticFeedback.selectionClick();
                 ref.read(moiProvider.notifier).setTab(index);
               },
               destinations: const [
                 NavigationDestination(
-                  icon: Icon(Icons.timer),
+                  icon: Icon(Icons.timer_outlined),
+                  selectedIcon: Icon(Icons.timer),
                   label: 'Measure',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.functions),
+                  icon: Icon(Icons.functions_outlined),
+                  selectedIcon: Icon(Icons.functions),
                   label: 'Estimate',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.tune),
+                  icon: Icon(Icons.tune_outlined),
+                  selectedIcon: Icon(Icons.tune),
                   label: 'Calibrate',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.settings),
+                  icon: Icon(Icons.settings_outlined),
+                  selectedIcon: Icon(Icons.settings),
                   label: 'Settings',
                 ),
               ],

@@ -10,24 +10,24 @@ class AppTheme {
       elevation: 0,
       color: Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(24),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: Colors.white,
       indicatorColor: const Color(0xFFD8EEFF),
       indicatorShape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(28),
       ),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
@@ -37,9 +37,9 @@ class AppTheme {
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(color: Color(0xFF34A4EB), size: 32);
+          return const IconThemeData(color: Color(0xFF34A4EB), size: 28);
         }
-        return const IconThemeData(color: Color(0xFF70787D), size: 32);
+        return const IconThemeData(color: Color(0xFF70787D), size: 28);
       }),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -48,13 +48,19 @@ class AppTheme {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: AppColors.lightColorScheme.outline.withOpacity(0.4)),
+        borderSide: BorderSide(color: AppColors.lightColorScheme.outline.withValues(alpha: 0.4)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: AppColors.lightColorScheme.primary, width: 2.0),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+    ),
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: ZoomPageTransitionsBuilder(),
+        TargetPlatform.iOS: FadeUpwardsPageTransitionsBuilder(),
+      },
     ),
   );
 
@@ -64,26 +70,26 @@ class AppTheme {
     scaffoldBackgroundColor: const Color(0xFF121212),
     cardTheme: CardThemeData(
       elevation: 0,
-      color: AppColors.darkColorScheme.surfaceVariant,
+      color: AppColors.darkColorScheme.surfaceContainerHighest,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(24),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      style: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: const Color(0xFF1C222A),
       indicatorColor: const Color(0xFF004977),
       indicatorShape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(28),
       ),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
@@ -93,9 +99,9 @@ class AppTheme {
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(color: Color(0xFF34A4EB), size: 32);
+          return const IconThemeData(color: Color(0xFF34A4EB), size: 28);
         }
-        return const IconThemeData(color: Color(0xFF8A9296), size: 32);
+        return const IconThemeData(color: Color(0xFF8A9296), size: 28);
       }),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -104,13 +110,19 @@ class AppTheme {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: AppColors.darkColorScheme.outline.withOpacity(0.4)),
+        borderSide: BorderSide(color: AppColors.darkColorScheme.outline.withValues(alpha: 0.4)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: AppColors.darkColorScheme.primary, width: 2.0),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+    ),
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: ZoomPageTransitionsBuilder(),
+        TargetPlatform.iOS: FadeUpwardsPageTransitionsBuilder(),
+      },
     ),
   );
 }

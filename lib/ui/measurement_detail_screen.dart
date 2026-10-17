@@ -66,7 +66,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         notifier.selectMeasurement(null);
       },
@@ -81,17 +81,20 @@ class MeasurementDetailScreen extends ConsumerWidget {
                 Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface, size: 26),
-                      onPressed: () => notifier.selectMeasurement(null),
+                      icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface, size: 28),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        notifier.selectMeasurement(null);
+                      },
                     ),
                     Text(
                       'Measurement Data',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                      style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
 
                 Expanded(
                   child: SingleChildScrollView(
@@ -99,10 +102,10 @@ class MeasurementDetailScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Card(
-                          color: theme.colorScheme.surfaceVariant,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                             child: Column(
                               children: [
                                 Row(
@@ -117,7 +120,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
                                     ),
                                   ],
                                 ),
-                                Divider(height: 10, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                Divider(height: 16, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                                 Row(
                                   children: [
                                     Expanded(
@@ -126,6 +129,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
                                         label: 'MOI',
                                         value: '$finalMoiText kg·cm²',
                                         onLongClick: () {
+                                          HapticFeedback.lightImpact();
                                           Clipboard.setData(ClipboardData(text: finalMoiValue.toStringAsFixed(uiState.moiUnitsResolution)));
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(content: Text('Copied MOI: ${finalMoiValue.toStringAsFixed(uiState.moiUnitsResolution)}')),
@@ -139,6 +143,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
                                         label: 'Period',
                                         value: periodText,
                                         onLongClick: () {
+                                          HapticFeedback.lightImpact();
                                           Clipboard.setData(ClipboardData(text: avgMeasured.toStringAsFixed(uiState.periodUnitsResolution)));
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(content: Text('Copied Period: ${avgMeasured.toStringAsFixed(uiState.periodUnitsResolution)}')),
@@ -148,7 +153,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
                                     ),
                                   ],
                                 ),
-                                Divider(height: 10, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                Divider(height: 16, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                                 Row(
                                   children: [
                                     Expanded(
@@ -166,25 +171,29 @@ class MeasurementDetailScreen extends ConsumerWidget {
                           ),
                         ),
 
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 14),
 
                         Text(
                           'Oscillation Graph',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                        ),
+                        Text(
+                          'Touch & drag to scrub across the graph',
+                          style: TextStyle(fontSize: 12, color: theme.colorScheme.outline),
                         ),
 
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
 
                         OscillationGraph(measurement: measurement),
 
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 14),
 
                         Text(
                           'Cycle Analysis',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
                         ),
 
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
 
                         if (cycles.isNotEmpty) ...[
                           Builder(builder: (context) {
@@ -201,10 +210,10 @@ class MeasurementDetailScreen extends ConsumerWidget {
                             final margin = isTW ? uiState.twMargin : uiState.swMargin;
 
                             return Card(
-                              color: theme.colorScheme.surfaceVariant,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                              color: theme.colorScheme.surfaceContainerHighest,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                 child: Column(
                                   children: cycles.asMap().entries.map((entry) {
                                     final index = entry.key;
@@ -224,7 +233,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
                                     return Column(
                                       children: [
                                         Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 4),
+                                          padding: const EdgeInsets.symmetric(vertical: 6),
                                           child: Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
@@ -232,15 +241,15 @@ class MeasurementDetailScreen extends ConsumerWidget {
                                                 children: [
                                                   Text(
                                                     'Cycle #${index + 1}',
-                                                    style: TextStyle(fontSize: 14, color: periodColor, fontWeight: isRef ? FontWeight.bold : FontWeight.normal),
+                                                    style: TextStyle(fontSize: 14.5, color: periodColor, fontWeight: isRef ? FontWeight.bold : FontWeight.normal),
                                                   ),
                                                   if (isRef) ...[
                                                     const SizedBox(width: 8),
                                                     Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                                       decoration: BoxDecoration(
-                                                        color: theme.colorScheme.primary.withOpacity(0.15),
-                                                        borderRadius: BorderRadius.circular(6),
+                                                        color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                                                        borderRadius: BorderRadius.circular(8),
                                                       ),
                                                       child: Text(
                                                         'REFERENCE',
@@ -251,10 +260,10 @@ class MeasurementDetailScreen extends ConsumerWidget {
                                                   if (isTrimmed) ...[
                                                     const SizedBox(width: 8),
                                                     Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                                       decoration: BoxDecoration(
-                                                        color: Colors.red.withOpacity(0.2),
-                                                        borderRadius: BorderRadius.circular(6),
+                                                        color: Colors.red.withValues(alpha: 0.2),
+                                                        borderRadius: BorderRadius.circular(8),
                                                       ),
                                                       child: Text(
                                                         'TRIMMED',
@@ -264,10 +273,10 @@ class MeasurementDetailScreen extends ConsumerWidget {
                                                   ] else if (isExcluded) ...[
                                                     const SizedBox(width: 8),
                                                     Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                                       decoration: BoxDecoration(
-                                                        color: Colors.amber.withOpacity(0.25),
-                                                        borderRadius: BorderRadius.circular(6),
+                                                        color: Colors.amber.withValues(alpha: 0.25),
+                                                        borderRadius: BorderRadius.circular(8),
                                                       ),
                                                       child: Text(
                                                         'DEVIATION',
@@ -279,6 +288,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
                                               ),
                                               GestureDetector(
                                                 onLongPress: () {
+                                                  HapticFeedback.lightImpact();
                                                   Clipboard.setData(ClipboardData(text: period.toStringAsFixed(uiState.periodUnitsResolution)));
                                                   ScaffoldMessenger.of(context).showSnackBar(
                                                     SnackBar(content: Text('Copied: ${period.toStringAsFixed(uiState.periodUnitsResolution)}s')),
@@ -286,14 +296,14 @@ class MeasurementDetailScreen extends ConsumerWidget {
                                                 },
                                                 child: Text(
                                                   '${period.toStringAsFixed(uiState.periodUnitsResolution)}s',
-                                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: periodColor),
+                                                  style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: periodColor),
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ),
                                         if (index < cycles.length - 1)
-                                          Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                          Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                                       ],
                                     );
                                   }).toList(),
@@ -303,7 +313,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
                           }),
                         ],
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 28),
                       ],
                     ),
                   ),
@@ -333,12 +343,17 @@ class InfoBit extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return GestureDetector(
-      onLongPress: onLongClick,
+      onLongPress: () {
+        if (onLongClick != null) {
+          HapticFeedback.lightImpact();
+          onLongClick!();
+        }
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme.colorScheme.outline)),
-          const SizedBox(height: 1),
+          Text(label, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: theme.colorScheme.outline)),
+          const SizedBox(height: 2),
           Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
         ],
       ),
@@ -346,7 +361,7 @@ class InfoBit extends StatelessWidget {
   }
 }
 
-class OscillationGraph extends StatelessWidget {
+class OscillationGraph extends StatefulWidget {
   final Measurement measurement;
 
   const OscillationGraph({
@@ -355,15 +370,22 @@ class OscillationGraph extends StatelessWidget {
   });
 
   @override
+  State<OscillationGraph> createState() => _OscillationGraphState();
+}
+
+class _OscillationGraphState extends State<OscillationGraph> {
+  double? _touchedDx;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final rawData = measurement.rawData
+    final rawData = widget.measurement.rawData
         .split(',')
         .where((s) => s.isNotEmpty)
         .map((s) => double.tryParse(s) ?? 0.0)
         .toList();
 
-    if (rawData.isEmpty || measurement.totalDuration <= 0) {
+    if (rawData.isEmpty || widget.measurement.totalDuration <= 0) {
       return Container(
         height: 160,
         alignment: Alignment.center,
@@ -375,29 +397,53 @@ class OscillationGraph extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 12, left: 8, right: 8, bottom: 8),
+      padding: const EdgeInsets.only(top: 14, left: 12, right: 12, bottom: 12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(18),
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         children: [
-          SizedBox(
-            height: 150,
-            width: double.infinity,
-            child: CustomPaint(
-              painter: WaveformPainter(
-                rawData: rawData,
-                maxAmp: maxAmp,
-                totalDuration: measurement.totalDuration,
-                period: measurement.period,
-                primaryColor: theme.colorScheme.primary,
-                secondaryColor: theme.colorScheme.secondary,
-                axisColor: theme.colorScheme.outline,
+          GestureDetector(
+            onPanDown: (details) {
+              HapticFeedback.selectionClick();
+              setState(() {
+                _touchedDx = details.localPosition.dx;
+              });
+            },
+            onPanUpdate: (details) {
+              setState(() {
+                _touchedDx = details.localPosition.dx;
+              });
+            },
+            onPanEnd: (_) {
+              setState(() {
+                _touchedDx = null;
+              });
+            },
+            onPanCancel: () {
+              setState(() {
+                _touchedDx = null;
+              });
+            },
+            child: SizedBox(
+              height: 160,
+              width: double.infinity,
+              child: CustomPaint(
+                painter: WaveformPainter(
+                  rawData: rawData,
+                  maxAmp: maxAmp,
+                  totalDuration: widget.measurement.totalDuration,
+                  period: widget.measurement.period,
+                  primaryColor: theme.colorScheme.primary,
+                  secondaryColor: theme.colorScheme.secondary,
+                  axisColor: theme.colorScheme.outline,
+                  touchedDx: _touchedDx,
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -420,6 +466,7 @@ class WaveformPainter extends CustomPainter {
   final Color primaryColor;
   final Color secondaryColor;
   final Color axisColor;
+  final double? touchedDx;
 
   WaveformPainter({
     required this.rawData,
@@ -429,6 +476,7 @@ class WaveformPainter extends CustomPainter {
     required this.primaryColor,
     required this.secondaryColor,
     required this.axisColor,
+    this.touchedDx,
   });
 
   @override
@@ -447,7 +495,7 @@ class WaveformPainter extends CustomPainter {
 
       if (isFullSecond) {
         final linePaint = Paint()
-          ..color = axisColor.withOpacity(0.4)
+          ..color = axisColor.withValues(alpha: 0.3)
           ..strokeWidth = 1.5;
         canvas.drawLine(Offset(xMark, 0), Offset(xMark, height), linePaint);
 
@@ -467,7 +515,7 @@ class WaveformPainter extends CustomPainter {
 
     // Center axis
     final centerPaint = Paint()
-      ..color = axisColor.withOpacity(0.5)
+      ..color = axisColor.withValues(alpha: 0.4)
       ..strokeWidth = 1.5;
     canvas.drawLine(Offset(0, centerY), Offset(width, centerY), centerPaint);
 
@@ -476,7 +524,7 @@ class WaveformPainter extends CustomPainter {
     // Theoretical Sine Wave (Dashed)
     if (period > 0) {
       final theoreticalPaint = Paint()
-        ..color = secondaryColor.withOpacity(0.8)
+        ..color = secondaryColor.withValues(alpha: 0.8)
         ..strokeWidth = 1.5
         ..style = PaintingStyle.stroke;
 
@@ -537,10 +585,65 @@ class WaveformPainter extends CustomPainter {
       }
     }
     canvas.drawPath(actualPath, actualPaint);
+
+    // Interactive Touch Crosshair & Tooltip Overlay
+    if (touchedDx != null && touchedDx! >= 0 && touchedDx! <= width) {
+      final clampedX = touchedDx!.clamp(0.0, width);
+      final idx = ((clampedX / width) * (rawData.length - 1)).round().clamp(0, rawData.length - 1);
+      final timeAtTouch = (idx / max(1, rawData.length - 1)) * totalDuration;
+      final valueAtTouch = rawData[idx];
+
+      final pointY = centerY - (valueAtTouch / (maxAmp == 0 ? 1 : maxAmp)) * (height / 2.2);
+
+      // Crosshair Line
+      final crosshairPaint = Paint()
+        ..color = primaryColor.withValues(alpha: 0.5)
+        ..strokeWidth = 1.5;
+      canvas.drawLine(Offset(clampedX, 0), Offset(clampedX, height), crosshairPaint);
+
+      // Highlight Dot
+      final dotPaint = Paint()
+        ..color = primaryColor
+        ..style = PaintingStyle.fill;
+      final dotBorderPaint = Paint()
+        ..color = Colors.white
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke;
+
+      canvas.drawCircle(Offset(clampedX, pointY), 6, dotPaint);
+      canvas.drawCircle(Offset(clampedX, pointY), 6, dotBorderPaint);
+
+      // Tooltip Text
+      final tooltipText = '${timeAtTouch.toStringAsFixed(2)}s  |  ${valueAtTouch.toStringAsFixed(2)} rad/s';
+      final tp = TextPainter(
+        text: TextSpan(
+          text: tooltipText,
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        textDirection: ui.TextDirection.ltr,
+      )..layout();
+
+      final tooltipWidth = tp.width + 16;
+      final tooltipHeight = tp.height + 8;
+
+      double tooltipX = clampedX - tooltipWidth / 2;
+      if (tooltipX < 4) tooltipX = 4;
+      if (tooltipX + tooltipWidth > width - 4) tooltipX = width - tooltipWidth - 4;
+
+      final tooltipRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(tooltipX, 4, tooltipWidth, tooltipHeight),
+        const Radius.circular(8),
+      );
+
+      final bgPaint = Paint()..color = primaryColor;
+      canvas.drawRRect(tooltipRect, bgPaint);
+      tp.paint(canvas, Offset(tooltipX + 8, 4 + 4));
+    }
   }
 
   @override
-  bool shouldRepaint(covariant WaveformPainter oldDelegate) => true;
+  bool shouldRepaint(covariant WaveformPainter oldDelegate) =>
+      oldDelegate.touchedDx != touchedDx || oldDelegate.rawData != rawData;
 }
 
 class _LegendItem extends StatelessWidget {
@@ -566,7 +669,7 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           label,
-          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.colorScheme.outline),
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme.colorScheme.outline),
         ),
       ],
     );

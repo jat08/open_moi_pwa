@@ -1,10 +1,6 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import '../core/theme/app_colors.dart';
 import '../core/theme/page_typography.dart';
 import '../data/models.dart';
 import '../logic/moi_calculator.dart';
@@ -34,18 +30,48 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
   }
 
   void _showSectionDescription(BuildContext context, String title, String description) {
-    showDialog(
+    HapticFeedback.lightImpact();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
+
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Text(description, style: const TextStyle(fontSize: 15)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('OK'),
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: sheetBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const OneUiDragHandle(),
+              const SizedBox(height: 4),
+              Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Text(description, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15)),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -113,26 +139,66 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        final shouldExit = await showDialog<bool>(
+        final shouldExit = await showModalBottomSheet<bool>(
           context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Exit OpenMOI?'),
-            content: const Text('Are you sure you want to exit the app?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('No'),
+          backgroundColor: Colors.transparent,
+          builder: (ctx) {
+            final isDark = theme.brightness == Brightness.dark;
+            final sheetBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
+            return Container(
+              decoration: BoxDecoration(
+                color: sheetBg,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const OneUiDragHandle(),
+                    const SizedBox(height: 4),
+                    const Text('Exit OpenMOI?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    const Text('Are you sure you want to exit the app?', style: TextStyle(fontSize: 15)),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                              ),
+                              onPressed: () => Navigator.of(ctx).pop(false),
+                              child: const Text('No'),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: theme.colorScheme.primary,
+                                foregroundColor: theme.colorScheme.onPrimary,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                              ),
+                              onPressed: () => Navigator.of(ctx).pop(true),
+                              child: const Text('Yes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                 ),
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Yes'),
               ),
-            ],
-          ),
+            );
+          },
         );
         if (shouldExit == true) {
           SystemNavigator.pop();
@@ -140,20 +206,70 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
       },
       child: Scaffold(
         body: SafeArea(
-          child: Stack(
-            children: [
-              SingleChildScrollView(
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 120,
+                floating: false,
+                pinned: true,
+                backgroundColor: theme.scaffoldBackgroundColor,
+                elevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  centerTitle: false,
+                  titlePadding: const EdgeInsets.only(left: 16, bottom: 14),
+                  title: Text(
+                    'Calibration',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ),
+              ),
+
+              SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8, bottom: 2),
-                      child: Text(
-                        'Calibration',
-                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    // Device Calibration Health Banner
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: uiState.isCalibrated
+                            ? (theme.brightness == Brightness.dark ? const Color(0xFF003828) : const Color(0xFFE6F4EA))
+                            : theme.colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            uiState.isCalibrated ? Icons.check_circle : Icons.warning_amber_rounded,
+                            color: uiState.isCalibrated ? const Color(0xFF34A853) : theme.colorScheme.onErrorContainer,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              uiState.isCalibrated
+                                  ? 'Device Calibrated  •  K = $displayKappa  •  I = $displayI'
+                                  : 'Device Not Calibrated  •  Measure Object A & B',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: uiState.isCalibrated
+                                    ? (theme.brightness == Brightness.dark ? const Color(0xFFA8FABD) : const Color(0xFF137333))
+                                    : theme.colorScheme.onErrorContainer,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Text(
@@ -165,7 +281,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                     _sectionHeader(
                       context,
                       'Known Calibration Objects',
-                      'Measure oscillation periods for two objects with distinct, known inertia to compute device spring constant and device inertia.',
+                      'Measure oscillation periods for two objects with distinct, known inertia to compute device spring constant and device inertia.\n\nNote: Updates to these calibration parameters will not affect existing measurements.',
                     ),
                     const SizedBox(height: 4),
 
@@ -176,7 +292,10 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                       trimLast: uiState.trimLastCycle,
                       periodResolution: uiState.periodUnitsResolution,
                       isTareCard: false,
-                      onClick: () => notifier.selectCalibrationTarget(CalibrationTarget.OBJECT_A),
+                      onClick: () {
+                        HapticFeedback.lightImpact();
+                        notifier.selectCalibrationTarget(CalibrationTarget.OBJECT_A);
+                      },
                     ),
 
                     CalibrationObjectCard(
@@ -186,19 +305,26 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                       trimLast: uiState.trimLastCycle,
                       periodResolution: uiState.periodUnitsResolution,
                       isTareCard: false,
-                      onClick: () => notifier.selectCalibrationTarget(CalibrationTarget.OBJECT_B),
+                      onClick: () {
+                        HapticFeedback.lightImpact();
+                        notifier.selectCalibrationTarget(CalibrationTarget.OBJECT_B);
+                      },
                     ),
 
                     if (uiState.measurementsA.isNotEmpty || uiState.measurementsB.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       SizedBox(
                         width: double.infinity,
-                        height: 40,
+                        height: 44,
                         child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.red),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                          ),
                           onPressed: () {
-                            showDialog(
+                            showModalBottomSheet(
                               context: context,
+                              backgroundColor: Colors.transparent,
                               builder: (ctx) => DeleteConfirmationDialog(
                                 title: 'Recalibrate?',
                                 text: 'This will delete all measurements for both Object A and Object B. Are you sure?',
@@ -206,25 +332,25 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                               ),
                             );
                           },
-                          child: const Text('Recalibrate', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                          child: const Text('Recalibrate', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 15)),
                         ),
                       ),
                     ],
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
 
                     _sectionHeader(
                       context,
                       'Calibration Objects MOI',
-                      'Enter the exact known moment of inertia values for Object A and Object B.',
+                      'Enter the exact known moment of inertia values for Object A and Object B.\n\nNote: Updates to these calibration parameters will not affect existing measurements.',
                     ),
                     const SizedBox(height: 4),
 
                     Card(
-                      color: theme.colorScheme.surfaceVariant,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         child: Column(
                           children: [
                             Row(
@@ -250,8 +376,8 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                                       decoration: InputDecoration(
                                         filled: true,
                                         fillColor: theme.colorScheme.surface,
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                                       ),
                                       onChanged: (val) {
                                         final d = double.tryParse(val);
@@ -265,7 +391,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                                 ),
                               ],
                             ),
-                            Divider(height: 12, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                            Divider(height: 12, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -289,8 +415,8 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                                       decoration: InputDecoration(
                                         filled: true,
                                         fillColor: theme.colorScheme.surface,
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                                       ),
                                       onChanged: (val) {
                                         final d = double.tryParse(val);
@@ -309,20 +435,20 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
 
                     _sectionHeader(
                       context,
                       'Derived Device Parameters',
-                      'Calculated spring constant and internal device inertia derived from Object A and Object B calibration measurements.',
+                      'Calculated spring constant and internal device inertia derived from Object A and Object B calibration measurements.\n\nNote: Updates to these calibration parameters will not affect existing measurements.',
                     ),
                     const SizedBox(height: 4),
 
                     Card(
-                      color: theme.colorScheme.surfaceVariant,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         child: Column(
                           children: [
                             ReadOnlySettingField(
@@ -331,19 +457,21 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                               width: 130,
                               onLongClick: () {
                                 if (uiState.isCalibrated) {
+                                  HapticFeedback.lightImpact();
                                   final numStr = (uiState.deviceKappa / MomentOfInertiaCalculator.kappaConversion).toString();
                                   Clipboard.setData(ClipboardData(text: numStr));
                                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Copied Spring Constant: $numStr')));
                                 }
                               },
                             ),
-                            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                             ReadOnlySettingField(
                               label: 'Device Inertia\n(kg·cm²)',
                               value: displayI,
                               width: 130,
                               onLongClick: () {
                                 if (uiState.isCalibrated) {
+                                  HapticFeedback.lightImpact();
                                   final numStr = uiState.deviceInertia.toString();
                                   Clipboard.setData(ClipboardData(text: numStr));
                                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Copied Device Inertia: $numStr')));
@@ -355,12 +483,12 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
 
                     _sectionHeader(
                       context,
                       'Tare Adapters',
-                      'Measure adapter periods so the system can automatically tare adapter inertia from paddle measurements.',
+                      'Measure adapter periods so the system can automatically tare adapter inertia from paddle measurements.\n\nNote: Updates to these calibration parameters will not affect existing measurements.',
                     ),
                     const SizedBox(height: 4),
 
@@ -372,7 +500,10 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                       periodResolution: uiState.periodUnitsResolution,
                       moiResolution: uiState.moiUnitsResolution,
                       isTareCard: true,
-                      onClick: () => notifier.selectCalibrationTarget(CalibrationTarget.TARE_PB),
+                      onClick: () {
+                        HapticFeedback.lightImpact();
+                        notifier.selectCalibrationTarget(CalibrationTarget.TARE_PB);
+                      },
                     ),
 
                     CalibrationObjectCard(
@@ -383,19 +514,26 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                       periodResolution: uiState.periodUnitsResolution,
                       moiResolution: uiState.moiUnitsResolution,
                       isTareCard: true,
-                      onClick: () => notifier.selectCalibrationTarget(CalibrationTarget.TARE_TW),
+                      onClick: () {
+                        HapticFeedback.lightImpact();
+                        notifier.selectCalibrationTarget(CalibrationTarget.TARE_TW);
+                      },
                     ),
 
                     if (uiState.measurementsTarePB.isNotEmpty || uiState.measurementsTareTW.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       SizedBox(
                         width: double.infinity,
-                        height: 40,
+                        height: 44,
                         child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.red),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                          ),
                           onPressed: () {
-                            showDialog(
+                            showModalBottomSheet(
                               context: context,
+                              backgroundColor: Colors.transparent,
                               builder: (ctx) => DeleteConfirmationDialog(
                                 title: 'Re-Tare?',
                                 text: 'This will delete all measurements for both Tare adapters. Are you sure?',
@@ -403,13 +541,13 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                               ),
                             );
                           },
-                          child: const Text('Re-Tare', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                          child: const Text('Re-Tare', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 15)),
                         ),
                       ),
                     ],
 
-                    const SizedBox(height: 24),
-                  ],
+                    const SizedBox(height: 28),
+                  ]),
                 ),
               ),
             ],
@@ -462,26 +600,20 @@ class CalibrationObjectCard extends StatelessWidget {
 
     final avgPeriod = mPeriods.isNotEmpty ? mPeriods.reduce((a, b) => a + b) / mPeriods.length : 0.0;
 
-    double periodStdDev = 0.0;
-    if (mPeriods.length > 1) {
-      final variance = mPeriods.map((p) => pow(p - avgPeriod, 2)).reduce((a, b) => a + b) / mPeriods.length;
-      periodStdDev = sqrt(variance);
-    }
-
     if (!isTareCard) {
       final periodText = filtered.isEmpty || avgPeriod <= 0
           ? 'T: No Data'
           : 'T: ${avgPeriod.toStringAsFixed(periodResolution)}';
       return Card(
         elevation: 0,
-        color: theme.colorScheme.surfaceVariant,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        margin: const EdgeInsets.symmetric(vertical: 1.0),
+        color: theme.colorScheme.surfaceContainerHighest,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        margin: const EdgeInsets.symmetric(vertical: 2.0),
         child: InkWell(
           onTap: onClick,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(24),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -550,14 +682,14 @@ class CalibrationObjectCard extends StatelessWidget {
 
         return Card(
           elevation: 0,
-          color: theme.colorScheme.surfaceVariant,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          margin: const EdgeInsets.symmetric(vertical: 1.5),
+          color: theme.colorScheme.surfaceContainerHighest,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          margin: const EdgeInsets.symmetric(vertical: 2.0),
           child: InkWell(
             onTap: onClick,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(24),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -579,12 +711,12 @@ class CalibrationObjectCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                           decoration: BoxDecoration(
                             color: swBg,
                             borderRadius: BorderRadius.circular(12),
@@ -606,7 +738,7 @@ class CalibrationObjectCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                           decoration: BoxDecoration(
                             color: twBg,
                             borderRadius: BorderRadius.circular(12),
@@ -627,7 +759,7 @@ class CalibrationObjectCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 1),
+                  const SizedBox(height: 3),
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(

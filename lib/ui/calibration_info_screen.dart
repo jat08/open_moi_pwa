@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/moi_provider.dart';
 import 'components.dart';
@@ -77,11 +78,40 @@ class _CalibrationInfoScreenState extends ConsumerState<CalibrationInfoScreen> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         notifier.selectEditingExpectedValue(null);
       },
       child: Scaffold(
+        bottomNavigationBar: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            border: Border(top: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.15))),
+          ),
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                ),
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  final val = double.tryParse(_controller.text);
+                  if (val != null) {
+                    notifier.updateExpectedValue(widget.target, val);
+                  }
+                },
+                child: const Text('Save Expected Value', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ),
+        ),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -92,7 +122,10 @@ class _CalibrationInfoScreenState extends ConsumerState<CalibrationInfoScreen> {
                   children: [
                     IconButton(
                       icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface, size: 28),
-                      onPressed: () => notifier.selectEditingExpectedValue(null),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        notifier.selectEditingExpectedValue(null);
+                      },
                     ),
                     Expanded(
                       child: DynamicTitleText(
@@ -111,8 +144,8 @@ class _CalibrationInfoScreenState extends ConsumerState<CalibrationInfoScreen> {
                 const SizedBox(height: 6),
 
                 Card(
-                  color: theme.colorScheme.surfaceVariant,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -134,7 +167,7 @@ class _CalibrationInfoScreenState extends ConsumerState<CalibrationInfoScreen> {
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: theme.colorScheme.surface,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           ),
                         ),
@@ -144,25 +177,6 @@ class _CalibrationInfoScreenState extends ConsumerState<CalibrationInfoScreen> {
                 ),
 
                 const SizedBox(height: 24),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                    ),
-                    onPressed: () {
-                      final val = double.tryParse(_controller.text);
-                      if (val != null) {
-                        notifier.updateExpectedValue(widget.target, val);
-                      }
-                    },
-                    child: const Text('Save Expected Value', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  ),
-                ),
               ],
             ),
           ),

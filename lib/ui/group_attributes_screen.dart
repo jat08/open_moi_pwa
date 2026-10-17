@@ -80,11 +80,50 @@ class _GroupAttributesScreenState extends ConsumerState<GroupAttributesScreen> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         notifier.selectEditingAttributesGroup(null);
       },
       child: Scaffold(
+        bottomNavigationBar: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            border: Border(top: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.15))),
+          ),
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                ),
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  final mVal = double.tryParse(m) ?? 0.0;
+                  final lVal = double.tryParse(l) ?? 0.0;
+                  final wVal = double.tryParse(w) ?? 0.0;
+                  notifier.updateGroupAttributes(
+                    group,
+                    mVal,
+                    mUnit,
+                    lVal,
+                    lUnit,
+                    wVal,
+                    wUnit,
+                    type,
+                  );
+                  notifier.selectEditingAttributesGroup(null);
+                },
+                child: const Text('Save Attributes', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ),
+        ),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -95,7 +134,10 @@ class _GroupAttributesScreenState extends ConsumerState<GroupAttributesScreen> {
                   children: [
                     IconButton(
                       icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface, size: 28),
-                      onPressed: () => notifier.selectEditingAttributesGroup(null),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        notifier.selectEditingAttributesGroup(null);
+                      },
                     ),
                     Expanded(
                       child: DynamicTitleText(
@@ -122,10 +164,10 @@ class _GroupAttributesScreenState extends ConsumerState<GroupAttributesScreen> {
                         const SizedBox(height: 6),
 
                         Card(
-                          color: theme.colorScheme.surfaceVariant,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             child: Column(
                               children: [
                                 ReadOnlySettingField(
@@ -133,31 +175,34 @@ class _GroupAttributesScreenState extends ConsumerState<GroupAttributesScreen> {
                                   value: swDisplay,
                                   width: 178,
                                   onLongClick: () {
+                                    HapticFeedback.lightImpact();
                                     Clipboard.setData(ClipboardData(text: uiState.currentSWAverage.toStringAsFixed(res)));
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('Copied SW: ${uiState.currentSWAverage.toStringAsFixed(res)}')),
                                     );
                                   },
                                 ),
-                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                                 ReadOnlySettingField(
                                   label: 'Measured TW',
                                   value: twDisplay,
                                   width: 178,
                                   onLongClick: () {
+                                    HapticFeedback.lightImpact();
                                     Clipboard.setData(ClipboardData(text: uiState.currentTWAverage.toStringAsFixed(res)));
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('Copied TW: ${uiState.currentTWAverage.toStringAsFixed(res)}')),
                                     );
                                   },
                                 ),
-                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                                 ReadOnlySettingField(
                                   label: 'Calculated BP',
                                   value: bpDisplay,
                                   width: 178,
                                   onLongClick: calculatedBP != null
                                       ? () {
+                                          HapticFeedback.lightImpact();
                                           final bpVal = calculatedBP!;
                                           Clipboard.setData(ClipboardData(text: bpVal.toStringAsFixed(res)));
                                           ScaffoldMessenger.of(context).showSnackBar(
@@ -180,10 +225,10 @@ class _GroupAttributesScreenState extends ConsumerState<GroupAttributesScreen> {
                         const SizedBox(height: 6),
 
                         Card(
-                          color: theme.colorScheme.surfaceVariant,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             child: Column(
                               children: [
                                 EstimationInputField(
@@ -194,7 +239,7 @@ class _GroupAttributesScreenState extends ConsumerState<GroupAttributesScreen> {
                                   onValueChange: (v) => setState(() => m = v),
                                   onUnitChange: (u) => setState(() => mUnit = u),
                                 ),
-                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                                 EstimationInputField(
                                   label: 'Length',
                                   value: l,
@@ -203,7 +248,7 @@ class _GroupAttributesScreenState extends ConsumerState<GroupAttributesScreen> {
                                   onValueChange: (v) => setState(() => l = v),
                                   onUnitChange: (u) => setState(() => lUnit = u),
                                 ),
-                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                                 EstimationInputField(
                                   label: 'Width',
                                   value: w,
@@ -212,7 +257,7 @@ class _GroupAttributesScreenState extends ConsumerState<GroupAttributesScreen> {
                                   onValueChange: (v) => setState(() => w = v),
                                   onUnitChange: (u) => setState(() => wUnit = u),
                                 ),
-                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                                Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                                 TypeSelector(
                                   label: 'Type',
                                   current: type,
@@ -225,37 +270,6 @@ class _GroupAttributesScreenState extends ConsumerState<GroupAttributesScreen> {
                         ),
 
                         const SizedBox(height: 24),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: theme.colorScheme.primary,
-                              foregroundColor: theme.colorScheme.onPrimary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                            ),
-                            onPressed: () {
-                              final mVal = double.tryParse(m) ?? 0.0;
-                              final lVal = double.tryParse(l) ?? 0.0;
-                              final wVal = double.tryParse(w) ?? 0.0;
-                              notifier.updateGroupAttributes(
-                                group,
-                                mVal,
-                                mUnit,
-                                lVal,
-                                lUnit,
-                                wVal,
-                                wUnit,
-                                type,
-                              );
-                              notifier.selectEditingAttributesGroup(null);
-                            },
-                            child: const Text('Save Attributes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-
-                        const SizedBox(height: 32),
                       ],
                     ),
                   ),

@@ -18,48 +18,98 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
   Set<int> selectedIds = {};
   bool isSelectionMode = false;
 
-  void _showNewGroupDialog(BuildContext context, UiState uiState, MoiNotifier notifier) {
-    showDialog(
+  void _showNewGroupBottomSheet(BuildContext context, UiState uiState, MoiNotifier notifier) {
+    HapticFeedback.lightImpact();
+    final controller = TextEditingController(text: 'Group ${uiState.groups.length + 1}');
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
+
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) {
-        final controller = TextEditingController(text: 'Group ${uiState.groups.length + 1}');
-        return AlertDialog(
-          title: const Text('New Measurement Group'),
-          content: TextField(
-            controller: controller,
-            maxLength: 40,
-            decoration: const InputDecoration(labelText: 'Group Name'),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: BoxDecoration(
+            color: sheetBg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const OneUiDragHandle(),
+                const SizedBox(height: 4),
+                const Text('New Measurement Group', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  maxLength: 40,
+                  autofocus: true,
+                  decoration: const InputDecoration(labelText: 'Group Name'),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                          ),
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: theme.colorScheme.onPrimary,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                          ),
+                          onPressed: () async {
+                            final text = controller.text.trim();
+                            if (text.isNotEmpty) {
+                              HapticFeedback.lightImpact();
+                              final messenger = ScaffoldMessenger.of(context);
+                              Navigator.of(ctx).pop();
+                              try {
+                                await notifier.addGroup(text);
+                                if (mounted) {
+                                  setState(() {
+                                    selectedIds.clear();
+                                    isSelectionMode = false;
+                                  });
+                                }
+                              } catch (e) {
+                                messenger.showSnackBar(
+                                  SnackBar(content: Text('Error creating group: $e')),
+                                );
+                              }
+                            }
+                          },
+                          child: const Text('Create', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
             ),
-            ElevatedButton(
-              onPressed: () async {
-                final text = controller.text;
-                Navigator.of(ctx).pop();
-                try {
-                  await notifier.addGroup(text);
-                  if (mounted) {
-                    setState(() {
-                      selectedIds.clear();
-                      isSelectionMode = false;
-                    });
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error creating group: $e')),
-                    );
-                  }
-                }
-              },
-              child: const Text('Create'),
-            ),
-          ],
-        );
-      },
+          ),
+        ),
+      ),
     );
   }
 
@@ -79,26 +129,66 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
             isSelectionMode = false;
           });
         } else {
-          final shouldExit = await showDialog<bool>(
+          final shouldExit = await showModalBottomSheet<bool>(
             context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Exit OpenMOI?'),
-              content: const Text('Are you sure you want to exit the app?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text('No'),
+            backgroundColor: Colors.transparent,
+            builder: (ctx) {
+              final isDark = theme.brightness == Brightness.dark;
+              final sheetBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
+              return Container(
+                decoration: BoxDecoration(
+                  color: sheetBg,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                 ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                child: SafeArea(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const OneUiDragHandle(),
+                      const SizedBox(height: 4),
+                      const Text('Exit OpenMOI?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      const Text('Are you sure you want to exit the app?', style: TextStyle(fontSize: 15)),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                                ),
+                                onPressed: () => Navigator.of(ctx).pop(false),
+                                child: const Text('No'),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: theme.colorScheme.primary,
+                                  foregroundColor: theme.colorScheme.onPrimary,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                                ),
+                                onPressed: () => Navigator.of(ctx).pop(true),
+                                child: const Text('Yes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                   ),
-                  onPressed: () => Navigator.of(ctx).pop(true),
-                  child: const Text('Yes'),
                 ),
-              ],
-            ),
+              );
+            },
           );
           if (shouldExit == true) {
             SystemNavigator.pop();
@@ -106,47 +196,44 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
         }
       },
       child: Scaffold(
+        floatingActionButton: !isSelectionMode
+            ? FloatingActionButton.extended(
+                elevation: 3,
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                icon: const Icon(Icons.add, size: 22),
+                label: const Text('New Group', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                onPressed: () => _showNewGroupBottomSheet(context, uiState, notifier),
+              )
+            : null,
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 8),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Measurements',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: TextButton.icon(
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            foregroundColor: theme.colorScheme.onPrimary,
-                          ),
-                          icon: const Icon(Icons.add, size: 22),
-                          label: const Text('New', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          onPressed: () => _showNewGroupDialog(context, uiState, notifier),
-                        ),
-                      ),
-                    ],
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 120,
+                floating: false,
+                pinned: true,
+                backgroundColor: theme.scaffoldBackgroundColor,
+                elevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  centerTitle: false,
+                  titlePadding: const EdgeInsets.only(left: 16, bottom: 14),
+                  title: Text(
+                    'Measurements',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: -0.5,
+                    ),
                   ),
                 ),
+              ),
 
-                SizedBox(
-                  height: 48,
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: isSelectionMode
                       ? SelectionTopBar(
                           count: selectedIds.length,
@@ -188,20 +275,20 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                                     hintStyle: TextStyle(color: theme.colorScheme.outline, fontSize: 15),
                                     prefixIcon: Icon(Icons.search, color: theme.colorScheme.primary, size: 22),
                                     filled: true,
-                                    fillColor: theme.colorScheme.surfaceVariant,
+                                    fillColor: theme.colorScheme.surfaceContainerHighest,
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18),
+                                      borderRadius: BorderRadius.circular(24),
                                       borderSide: BorderSide.none,
                                     ),
                                     enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18),
+                                      borderRadius: BorderRadius.circular(24),
                                       borderSide: BorderSide.none,
                                     ),
                                     focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18),
+                                      borderRadius: BorderRadius.circular(24),
                                       borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
                                     ),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
                                   ),
                                 ),
                               ),
@@ -211,15 +298,17 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                               width: 48,
                               height: 48,
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceVariant,
-                                borderRadius: BorderRadius.circular(18),
+                                color: theme.colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(24),
                               ),
                               child: IconButton(
                                 padding: EdgeInsets.zero,
                                 icon: Icon(Icons.swap_vert, size: 24, color: theme.colorScheme.primary),
                                 onPressed: () {
-                                  showDialog(
+                                  HapticFeedback.lightImpact();
+                                  showModalBottomSheet(
                                     context: context,
+                                    backgroundColor: Colors.transparent,
                                     builder: (ctx) => SortDialog(
                                       currentType: uiState.sortType,
                                       currentDirection: uiState.sortDirection,
@@ -232,49 +321,96 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                           ],
                         ),
                 ),
+              ),
 
-                const SizedBox(height: 8),
+              if (uiState.groups.isEmpty)
+                const SliverFillRemaining(
+                  child: Center(
+                    child: Text('No groups found.', style: TextStyle(color: Colors.grey, fontSize: 15)),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 10, bottom: 80),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final summary = uiState.groups[index];
+                        final isSelected = selectedIds.contains(summary.group.id);
 
-                Expanded(
-                  child: uiState.groups.isEmpty
-                      ? const Center(child: Text('No groups found.', style: TextStyle(color: Colors.grey)))
-                      : ListView.builder(
-                          itemCount: uiState.groups.length,
-                          itemBuilder: (context, index) {
-                            final summary = uiState.groups[index];
-                            final isSelected = selectedIds.contains(summary.group.id);
-
-                            return GroupItemCard(
-                              summary: summary,
-                              resolution: uiState.moiUnitsResolution,
-                              selected: isSelected,
-                              onClick: () {
-                                if (isSelectionMode) {
-                                  setState(() {
-                                    if (isSelected) {
-                                      selectedIds.remove(summary.group.id);
-                                    } else {
-                                      selectedIds.add(summary.group.id!);
-                                    }
-                                  });
-                                } else {
-                                  notifier.selectGroup(summary.group.id);
-                                }
-                              },
-                              onLongClick: () {
-                                if (!isSelectionMode) {
-                                  setState(() {
-                                    selectedIds = {summary.group.id!};
-                                    isSelectionMode = true;
-                                  });
-                                }
-                              },
+                        return Dismissible(
+                          key: ValueKey<int>(summary.group.id!),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 3.5),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 20),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: const [
+                                Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                                SizedBox(width: 6),
+                                Icon(Icons.delete, color: Colors.white, size: 22),
+                              ],
+                            ),
+                          ),
+                          confirmDismiss: (direction) async {
+                            HapticFeedback.mediumImpact();
+                            bool confirmed = false;
+                            await showModalBottomSheet(
+                              context: context,
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) => DeleteConfirmationDialog(
+                                title: 'Delete Group?',
+                                text: 'Are you sure you want to delete "${summary.group.name}" and all its measurements?',
+                                onConfirm: () => confirmed = true,
+                              ),
                             );
+                            return confirmed;
                           },
-                        ),
+                          onDismissed: (direction) {
+                            notifier.deleteGroups({summary.group.id!});
+                          },
+                          child: GroupItemCard(
+                            summary: summary,
+                            resolution: uiState.moiUnitsResolution,
+                            selected: isSelected,
+                            onClick: () {
+                              if (isSelectionMode) {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  if (isSelected) {
+                                    selectedIds.remove(summary.group.id);
+                                  } else {
+                                    selectedIds.add(summary.group.id!);
+                                  }
+                                });
+                              } else {
+                                HapticFeedback.lightImpact();
+                                notifier.selectGroup(summary.group.id);
+                              }
+                            },
+                            onLongClick: () {
+                              HapticFeedback.mediumImpact();
+                              if (!isSelectionMode) {
+                                setState(() {
+                                  selectedIds = {summary.group.id!};
+                                  isSelectionMode = true;
+                                });
+                              }
+                            },
+                          ),
+                        );
+                      },
+                      childCount: uiState.groups.length,
+                    ),
+                  ),
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
@@ -332,18 +468,18 @@ class GroupItemCard extends StatelessWidget {
 
         return Card(
           elevation: 0,
-          color: selected ? theme.colorScheme.primaryContainer : theme.colorScheme.surfaceVariant,
+          color: selected ? theme.colorScheme.primaryContainer : theme.colorScheme.surfaceContainerHighest,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(24),
             side: selected ? BorderSide(color: theme.colorScheme.primary, width: 2) : BorderSide.none,
           ),
-          margin: const EdgeInsets.symmetric(vertical: 2.5),
+          margin: const EdgeInsets.symmetric(vertical: 3.5),
           child: InkWell(
             onTap: onClick,
             onLongPress: onLongClick,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(24),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -365,15 +501,15 @@ class GroupItemCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
                             color: swBg,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           child: Row(
                             children: [
@@ -389,13 +525,13 @@ class GroupItemCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
                             color: twBg,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           child: Row(
                             children: [
@@ -413,7 +549,7 @@ class GroupItemCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 5),
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(

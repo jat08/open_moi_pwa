@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/app_preferences.dart';
 import '../data/database.dart';
@@ -309,6 +307,7 @@ class MoiNotifier extends StateNotifier<UiState> {
   late AppPreferences _prefs;
   OscillationDetector? _detector;
   Timer? _cooldownTimer;
+  Timer? _prepTimer;
 
   MoiNotifier() : super(UiState()) {
     _init();
@@ -703,14 +702,21 @@ class MoiNotifier extends StateNotifier<UiState> {
     }
   }
 
-  Future<void> startMeasurement() async {
+  void startMeasurement() {
     if (state.cooldownRemaining > 0) return;
+
+    _prepTimer?.cancel();
+    _cooldownTimer?.cancel();
+
+    _detector?.setMaxDuration(state.measuringDuration);
+    _detector?.setRequiredCycles(state.cyclesToMeasure);
+    _detector?.setSkipFirstCycles(state.skipFirstCycles);
 
     final prepTime = state.preparationTime;
     if (prepTime > 0) {
       state = state.copyWith(preparationRemaining: prepTime);
       var remaining = prepTime;
-      Timer.periodic(const Duration(seconds: 1), (timer) {
+      _prepTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
         remaining--;
         state = state.copyWith(preparationRemaining: remaining);
         if (remaining <= 0) {
@@ -721,6 +727,18 @@ class MoiNotifier extends StateNotifier<UiState> {
     } else {
       _detector?.arm();
     }
+  }
+
+  void cancelMeasurement() {
+    _prepTimer?.cancel();
+    _cooldownTimer?.cancel();
+    _detector?.reset();
+    state = state.copyWith(
+      detectorState: OscillationState.READY,
+      progress: 0.0,
+      preparationRemaining: 0,
+      cooldownRemaining: 0.0,
+    );
   }
 
   Future<void> handleMeasurementComplete(OscillationResult result) async {
@@ -1306,6 +1324,7 @@ class MoiNotifier extends StateNotifier<UiState> {
 
   @override
   void dispose() {
+    _prepTimer?.cancel();
     _cooldownTimer?.cancel();
     _detector?.dispose();
     super.dispose();

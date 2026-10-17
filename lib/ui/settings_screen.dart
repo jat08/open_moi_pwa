@@ -184,26 +184,66 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        final shouldExit = await showDialog<bool>(
+        final shouldExit = await showModalBottomSheet<bool>(
           context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Exit OpenMOI?'),
-            content: const Text('Are you sure you want to exit the app?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('No'),
+          backgroundColor: Colors.transparent,
+          builder: (ctx) {
+            final isDark = theme.brightness == Brightness.dark;
+            final sheetBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
+            return Container(
+              decoration: BoxDecoration(
+                color: sheetBg,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const OneUiDragHandle(),
+                    const SizedBox(height: 4),
+                    const Text('Exit OpenMOI?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    const Text('Are you sure you want to exit the app?', style: TextStyle(fontSize: 15)),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                              ),
+                              onPressed: () => Navigator.of(ctx).pop(false),
+                              child: const Text('No'),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: theme.colorScheme.primary,
+                                foregroundColor: theme.colorScheme.onPrimary,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                              ),
+                              onPressed: () => Navigator.of(ctx).pop(true),
+                              child: const Text('Yes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                 ),
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Yes'),
               ),
-            ],
-          ),
+            );
+          },
         );
         if (shouldExit == true) {
           SystemNavigator.pop();
@@ -211,32 +251,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       },
       child: Scaffold(
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 2),
-                  child: Text(
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 120,
+                floating: false,
+                pinned: true,
+                backgroundColor: theme.scaffoldBackgroundColor,
+                elevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  centerTitle: false,
+                  titlePadding: const EdgeInsets.only(left: 16, bottom: 14),
+                  title: Text(
                     'Settings',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: -0.5,
+                    ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Text(
-                    "Tap any setting's name for more info.",
-                    style: TextStyle(fontSize: 13, color: theme.colorScheme.outline),
-                  ),
-                ),
+              ),
+
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Text(
+                          "Tap any setting's name for more info.",
+                          style: TextStyle(fontSize: 13, color: theme.colorScheme.outline),
+                        ),
+                      ),
 
                 Text('Theme & Display', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
                 const SizedBox(height: 4),
 
                 Card(
-                  color: theme.colorScheme.surfaceVariant,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     child: Column(
@@ -268,7 +325,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
@@ -290,7 +347,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
@@ -311,7 +368,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
@@ -341,8 +398,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 const SizedBox(height: 4),
 
                 Card(
-                  color: theme.colorScheme.surfaceVariant,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     child: Column(
@@ -364,7 +421,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
@@ -383,7 +440,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
@@ -402,7 +459,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
@@ -421,7 +478,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
@@ -440,7 +497,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
@@ -459,7 +516,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
@@ -478,7 +535,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
@@ -498,7 +555,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
@@ -518,7 +575,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.3)),
+                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
@@ -551,38 +608,77 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   children: [
                     Expanded(
                       child: SizedBox(
-                        height: 44,
+                        height: 48,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: theme.colorScheme.primary,
                             foregroundColor: theme.colorScheme.onPrimary,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                           ),
                           icon: const Icon(Icons.upload_file, size: 18),
                           label: const Text('Export', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                           onPressed: () {
-                            showDialog(
+                            showModalBottomSheet(
                               context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: const Text('Export CSV'),
-                                content: const Text('Select database to export.'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(ctx).pop();
-                                      _exportCsv('MEASURE');
-                                    },
-                                    child: const Text('Measure Database'),
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) {
+                                final isDark = theme.brightness == Brightness.dark;
+                                final sheetBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: sheetBg,
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                                   ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(ctx).pop();
-                                      _exportCsv('ESTIMATE');
-                                    },
-                                    child: const Text('Estimate Database'),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  child: SafeArea(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const OneUiDragHandle(),
+                                        const SizedBox(height: 4),
+                                        const Text('Export CSV', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                        const SizedBox(height: 12),
+                                        const Text('Select database to export.', textAlign: TextAlign.center, style: TextStyle(fontSize: 15)),
+                                        const SizedBox(height: 20),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          height: 48,
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: theme.colorScheme.primary,
+                                              foregroundColor: theme.colorScheme.onPrimary,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                                            ),
+                                            onPressed: () {
+                                              HapticFeedback.lightImpact();
+                                              Navigator.of(ctx).pop();
+                                              _exportCsv('MEASURE');
+                                            },
+                                            child: const Text('Measure Database', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          height: 48,
+                                          child: OutlinedButton(
+                                            style: OutlinedButton.styleFrom(
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                                            ),
+                                            onPressed: () {
+                                              HapticFeedback.lightImpact();
+                                              Navigator.of(ctx).pop();
+                                              _exportCsv('ESTIMATE');
+                                            },
+                                            child: const Text('Estimate Database', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                      ],
+                                    ),
                                   ),
-                                ],
-                              ),
+                                );
+                              },
                             );
                           },
                         ),
@@ -591,38 +687,77 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: SizedBox(
-                        height: 44,
+                        height: 48,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: theme.colorScheme.primary,
                             foregroundColor: theme.colorScheme.onPrimary,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                           ),
                           icon: const Icon(Icons.download_for_offline, size: 18),
                           label: const Text('Import', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                           onPressed: () {
-                            showDialog(
+                            showModalBottomSheet(
                               context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: const Text('Import CSV'),
-                                content: const Text('Select which database to import. Data will be appended.'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(ctx).pop();
-                                      _importCsv('MEASURE');
-                                    },
-                                    child: const Text('Measure Database'),
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) {
+                                final isDark = theme.brightness == Brightness.dark;
+                                final sheetBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: sheetBg,
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                                   ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(ctx).pop();
-                                      _importCsv('ESTIMATE');
-                                    },
-                                    child: const Text('Estimate Database'),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  child: SafeArea(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const OneUiDragHandle(),
+                                        const SizedBox(height: 4),
+                                        const Text('Import CSV', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                        const SizedBox(height: 12),
+                                        const Text('Select which database to import. Data will be appended.', textAlign: TextAlign.center, style: TextStyle(fontSize: 15)),
+                                        const SizedBox(height: 20),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          height: 48,
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: theme.colorScheme.primary,
+                                              foregroundColor: theme.colorScheme.onPrimary,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                                            ),
+                                            onPressed: () {
+                                              HapticFeedback.lightImpact();
+                                              Navigator.of(ctx).pop();
+                                              _importCsv('MEASURE');
+                                            },
+                                            child: const Text('Measure Database', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          height: 48,
+                                          child: OutlinedButton(
+                                            style: OutlinedButton.styleFrom(
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                                            ),
+                                            onPressed: () {
+                                              HapticFeedback.lightImpact();
+                                              Navigator.of(ctx).pop();
+                                              _importCsv('ESTIMATE');
+                                            },
+                                            child: const Text('Estimate Database', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                      ],
+                                    ),
                                   ),
-                                ],
-                              ),
+                                );
+                              },
                             );
                           },
                         ),
@@ -644,12 +779,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
               ],
             ),
           ),
         ),
-      ),
-    );
+      ],
+    ),
+  ),
+),
+);
   }
 }

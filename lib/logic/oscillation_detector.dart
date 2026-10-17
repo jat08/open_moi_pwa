@@ -368,6 +368,11 @@ class OscillationDetector {
     }
   }
 
+  void reset() {
+    _resetMeasurement();
+    _updateState(OscillationState.READY);
+  }
+
   void arm() {
     if (_currentState == OscillationState.READY) {
       _updateState(OscillationState.ARMED);

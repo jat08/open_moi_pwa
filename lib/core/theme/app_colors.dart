@@ -17,10 +17,10 @@ class AppColors {
     onSecondary: Colors.white,                          // #FFFFFF
     secondaryContainer: Color(0xFFB2DFDB),
     onSecondaryContainer: Color(0xFF00201A),
-    surface: const Color(0xFFF4F8FC),                     // Soft Light Surface for Input Fields
+    surface: Color(0xFFF4F8FC),                     // Soft Light Surface for Input Fields
     onSurface: Colors.black,                            // #000000
-    surfaceVariant: Colors.white,                       // White Card Background
-    onSurfaceVariant: const Color(0xFF40484C),
+    surfaceContainerHighest: Colors.white,                       // White Card Background
+    onSurfaceVariant: Color(0xFF40484C),
     outline: Color(0xFF70787D),
     error: Color(0xFFB3261E),
     onError: Colors.white,
@@ -41,7 +41,7 @@ class AppColors {
     onSecondaryContainer: Color(0xFFB2DFDB),
     surface: Color(0xFF1E1E1E),                         // Dark Surface
     onSurface: Colors.white,                            // #FFFFFF
-    surfaceVariant: Color(0xFF2B2B2B),                  // Dark Card Background
+    surfaceContainerHighest: Color(0xFF2B2B2B),                  // Dark Card Background
     onSurfaceVariant: Color(0xFFC0C7CC),
     outline: Color(0xFF8A9296),
     error: Color(0xFFF2B8B5),
@@ -86,7 +86,7 @@ class AppColors {
     } else if (isOutlier) {
       return isDark ? warningYellowDark : warningYellowLight;
     } else {
-      return Theme.of(context).colorScheme.surfaceVariant;
+      return Theme.of(context).colorScheme.surfaceContainerHighest;
     }
   }
 }
