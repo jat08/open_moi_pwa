@@ -1,43 +1,8 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:js_interop';
 import 'package:flutter/foundation.dart';
 import 'package:sensors_plus/sensors_plus.dart';
-
-@JS('window.addEventListener')
-external void _addEventListener(String type, JSFunction listener);
-
-@JS('window.removeEventListener')
-external void _removeEventListener(String type, JSFunction listener);
-
-@JS('window.Gyroscope')
-external JSAny? get _windowGyroscope;
-
-bool get _hasGenericSensorApi {
-  try {
-    return _windowGyroscope != null;
-  } catch (_) {
-    return false;
-  }
-}
-
-extension type _DeviceMotionEvent(JSObject _) implements JSObject {
-  external _DeviceAcceleration? get accelerationIncludingGravity;
-  external _DeviceRotationRate? get rotationRate;
-  external double get timeStamp;
-}
-
-extension type _DeviceAcceleration(JSObject _) implements JSObject {
-  external double? get x;
-  external double? get y;
-  external double? get z;
-}
-
-extension type _DeviceRotationRate(JSObject _) implements JSObject {
-  external double? get alpha;
-  external double? get beta;
-  external double? get gamma;
-}
+import 'web_helper.dart';
 
 enum OscillationState {
   WRONG_ORIENTATION,
@@ -102,7 +67,6 @@ class OscillationDetector {
 
   StreamSubscription<AccelerometerEvent>? _accelSub;
   StreamSubscription<GyroscopeEvent>? _gyroSub;
-  JSFunction? _webMotionListener;
 
   OscillationDetector({
     required this.onStateChanged,
@@ -113,32 +77,14 @@ class OscillationDetector {
   void startListening() {
     sampleCount = 0;
 
-    final useFallback = kIsWeb && !_hasGenericSensorApi;
-
-    if (useFallback) {
-      _webMotionListener = ((_DeviceMotionEvent event) {
-        // timeStamp is in milliseconds since page load
-        final stampMicros = (event.timeStamp * 1000).toInt();
-        final dt = DateTime.fromMicrosecondsSinceEpoch(stampMicros);
-
-        final accel = event.accelerationIncludingGravity;
-        if (accel != null) {
-          final ax = accel.x ?? 0.0;
-          final ay = accel.y ?? 0.0;
-          final az = accel.z ?? 0.0;
-          sampleCount++;
-          handleAccelerometer(AccelerometerEvent(ax, ay, az, dt));
-        }
-        final rot = event.rotationRate;
-        if (rot != null) {
-          final rx = (rot.beta ?? 0.0) * pi / 180.0;
-          final ry = (rot.gamma ?? 0.0) * pi / 180.0;
-          final rz = (rot.alpha ?? 0.0) * pi / 180.0;
-          sampleCount++;
-          handleGyroscope(GyroscopeEvent(rx, ry, rz, dt));
-        }
-      }).toJS;
-      _addEventListener('devicemotion', _webMotionListener!);
+    if (kIsWeb) {
+      registerWebMotionListener((gx, gy, gz, ax, ay, az) {
+        final dt = DateTime.now();
+        sampleCount++;
+        handleAccelerometer(AccelerometerEvent(ax, ay, az, dt));
+        sampleCount++;
+        handleGyroscope(GyroscopeEvent(gx, gy, gz, dt));
+      });
     } else {
       final interval = SensorInterval.fastestInterval;
 
@@ -167,9 +113,8 @@ class OscillationDetector {
   }
 
   void stopListening() {
-    if (_webMotionListener != null) {
-      _removeEventListener('devicemotion', _webMotionListener!);
-      _webMotionListener = null;
+    if (kIsWeb) {
+      unregisterWebMotionListener();
     } else {
       _accelSub?.cancel();
       _gyroSub?.cancel();

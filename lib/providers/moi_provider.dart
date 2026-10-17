@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:js_interop';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -11,25 +10,11 @@ import '../data/database.dart';
 import '../data/models.dart';
 import '../logic/moi_calculator.dart';
 import '../logic/oscillation_detector.dart';
+import '../logic/web_helper.dart';
 
 enum SortType { NAME, DATE }
 enum SortDirection { ASCENDING, DESCENDING }
 enum CalibrationTarget { NONE, OBJECT_A, OBJECT_B, TARE_PB, TARE_TW }
-
-@JS('requestMotionPermission')
-external JSPromise<JSBoolean> jsRequestMotionPermission();
-
-Future<bool> requestWebMotionPermission() async {
-  if (!kIsWeb) return true;
-  try {
-    final promise = jsRequestMotionPermission();
-    final result = await promise.toDart;
-    return result.toDart;
-  } catch (e) {
-    print('Web motion permission request exception: $e');
-  }
-  return true;
-}
 
 class UiState {
   final OscillationState detectorState;
