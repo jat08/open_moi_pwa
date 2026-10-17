@@ -148,7 +148,7 @@ class UiState {
     this.cyclesToMeasure = 4,
     this.swMargin = 0.003,
     this.twMargin = 0.01,
-    this.fitResidualExclusion = 1.0,
+    this.fitResidualExclusion = 1.5,
     this.trimLastCycle = false,
     this.skipFirstCycles = 1,
     this.cycleReference = 0,

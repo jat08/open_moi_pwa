@@ -484,7 +484,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _settingLabel('Low Margin', 'The maximum allowable percentage variation threshold for Swing Weight (SW) / low inertia cycle periods before flagging an outlier.'),
+                              _settingLabel('Low Margin', 'The maximum allowable percentage variation threshold applied to Swing Weight (SW) and low inertia measurements (including Object A calibration). Measurements whose value deviates from the group mean by more than this percentage margin are highlighted as statistical outliers.'),
                               NumberWheelPicker(
                                 value: uiState.swMargin,
                                 range: marginRange,
@@ -504,7 +504,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _settingLabel('High Margin', 'The maximum allowable percentage variation threshold for Twist Weight (TW) / high inertia cycle periods before flagging an outlier.'),
+                              _settingLabel('High Margin', 'The maximum allowable percentage variation threshold applied to Twist Weight (TW) and high inertia measurements (including Object B calibration). Measurements whose value deviates from the group mean by more than this percentage margin are highlighted as statistical outliers.'),
                               NumberWheelPicker(
                                 value: uiState.twMargin,
                                 range: marginRange,
@@ -524,7 +524,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _settingLabel('Fit Residual Exclusion', 'The threshold for sine-wave fit quality. Measurements with a fit residual equal to or exceeding this threshold are marked as poor fit quality.'),
+                              _settingLabel('Fit Residual Exclusion', 'The threshold for sine-wave fit quality. Measurements with a fit residual equal to or exceeding this threshold are marked as poor fit quality. It is best to keep this setting at 1.5 for optimal accuracy.'),
                               NumberWheelPicker(
                                 value: uiState.fitResidualExclusion,
                                 range: fitExclusionRange,

@@ -110,7 +110,7 @@ class AppPreferences {
   double get twMargin => _prefs.getDouble(keyTwMargin) ?? 0.01;
   Future<void> saveTwMargin(double margin) => _prefs.setDouble(keyTwMargin, margin);
 
-  double get fitResidualExclusion => _prefs.getDouble(keyFitResidualExclusion) ?? 1.0;
+  double get fitResidualExclusion => _prefs.getDouble(keyFitResidualExclusion) ?? 1.5;
   Future<void> saveFitResidualExclusion(double threshold) => _prefs.setDouble(keyFitResidualExclusion, threshold);
 
   bool get keepScreenOn => _prefs.getBool(keyKeepScreenOn) ?? true;
