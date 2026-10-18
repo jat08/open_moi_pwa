@@ -107,7 +107,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
               const SizedBox(height: 14),
               Text(
                 '1. Prepare 2 Calibration Objects:\n'
-                'You will need two objects (Object A and Object B) with known, distinct Moment of Inertia (MOI) values.\n\n'
+                'You will need two objects (Object A and Object B) with known, distinct Moment of Inertia (MOI) values. Object A should be a low inertia object (preferably under 25 kg·cm²), and Object B should be a high inertia object (preferably over 140 kg·cm²).\n\n'
                 '2. Enter Known MOI Values:\n'
                 'Scroll to the "Calibration Objects MOI" section below and enter the known MOI values in the corresponding Object A (kg·cm²) and Object B (kg·cm²) fields.\n\n'
                 '3. Perform Period Measurements:\n'
