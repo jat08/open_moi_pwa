@@ -582,47 +582,22 @@ class MeasurementControlButton extends StatelessWidget {
         ),
       );
     } else if (state == OscillationState.WRONG_ORIENTATION) {
-      content = Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            height: 52,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.errorContainer,
-              borderRadius: BorderRadius.circular(28),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              'Hold Phone at 45°',
-              style: TextStyle(
-                color: theme.colorScheme.onErrorContainer,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
+      content = Container(
+        height: 52,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(28),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          'Hold Phone at 45°',
+          style: TextStyle(
+            color: theme.colorScheme.onErrorContainer,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
-          if (kIsWeb) ...[
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 52,
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                ),
-                icon: const Icon(Icons.sensors, size: 20),
-                label: const Text('Enable Motion and Orientation', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  onRequestPermission?.call();
-                },
-              ),
-            ),
-          ],
-        ],
+        ),
       );
     } else if (preparationRemaining > 0) {
       content = SizedBox(

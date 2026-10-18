@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -53,6 +54,69 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
               Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               Text(description, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15)),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCalibrationGuideDialog(BuildContext context) {
+    HapticFeedback.lightImpact();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: sheetBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const OneUiDragHandle(),
+              const SizedBox(height: 4),
+              const Text(
+                'How to Calibrate Device',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                '1. Prepare 2 Calibration Objects:\n'
+                'You will need two objects (Object A and Object B) with known, distinct Moment of Inertia (MOI) values.\n\n'
+                '2. Enter Known MOI Values:\n'
+                'Scroll to the "Calibration Objects MOI" section below and enter the known MOI values in the corresponding Object A (kg·cm²) and Object B (kg·cm²) fields.\n\n'
+                '3. Perform Period Measurements:\n'
+                'Tap the Object A and Object B cards to open the measurement screen and collect period data for both objects.\n\n'
+                '4. Automatic Calculation:\n'
+                'Once valid period measurements are recorded for both objects, OpenMOI automatically calculates the device spring constant (K) and internal device inertia (I).',
+                textAlign: TextAlign.left,
+                style: TextStyle(fontSize: 14.5, height: 1.35, color: theme.colorScheme.onSurface),
+              ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -233,42 +297,87 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    // Device Calibration Health Banner
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: uiState.isCalibrated
-                            ? (theme.brightness == Brightness.dark ? const Color(0xFF003828) : const Color(0xFFE6F4EA))
-                            : theme.colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            uiState.isCalibrated ? Icons.check_circle : Icons.warning_amber_rounded,
-                            color: uiState.isCalibrated ? const Color(0xFF34A853) : theme.colorScheme.onErrorContainer,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              uiState.isCalibrated
-                                  ? 'Device Calibrated  •  K = $displayKappa  •  I = $displayI'
-                                  : 'Device Not Calibrated  •  Measure Object A & B',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: uiState.isCalibrated
-                                    ? (theme.brightness == Brightness.dark ? const Color(0xFFA8FABD) : const Color(0xFF137333))
-                                    : theme.colorScheme.onErrorContainer,
+                    if (kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: SizedBox(
+                          height: 48,
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: theme.colorScheme.primary,
+                              foregroundColor: theme.colorScheme.onPrimary,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
                               ),
                             ),
+                            icon: const Icon(Icons.sensors, size: 20),
+                            label: const Text(
+                              'Enable Motion and Orientation',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              notifier.requestPermission();
+                            },
                           ),
-                        ],
+                        ),
+                      ),
+                    ],
+
+                    // Device Calibration Health Banner
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: uiState.isCalibrated
+                            ? null
+                            : () => _showCalibrationGuideDialog(context),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Ink(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: uiState.isCalibrated
+                                ? (theme.brightness == Brightness.dark ? const Color(0xFF003828) : const Color(0xFFE6F4EA))
+                                : theme.colorScheme.errorContainer,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                uiState.isCalibrated ? Icons.check_circle : Icons.warning_amber_rounded,
+                                color: uiState.isCalibrated ? const Color(0xFF34A853) : theme.colorScheme.onErrorContainer,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  uiState.isCalibrated
+                                      ? 'Device Calibrated'
+                                      : 'Device Not Calibrated  •  Tap for Help',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: uiState.isCalibrated
+                                        ? (theme.brightness == Brightness.dark ? const Color(0xFFA8FABD) : const Color(0xFF137333))
+                                        : theme.colorScheme.onErrorContainer,
+                                  ),
+                                ),
+                              ),
+                              if (!uiState.isCalibrated) ...[
+                                Icon(
+                                  Icons.info_outline,
+                                  color: theme.colorScheme.onErrorContainer,
+                                  size: 18,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                       ),
                     ),
+                    const SizedBox(height: 12),
 
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
