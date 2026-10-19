@@ -70,7 +70,7 @@ class OpenMOIApp extends ConsumerWidget {
     }
 
     return MaterialApp(
-      title: 'OpenMOI',
+      title: AppVersion.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
