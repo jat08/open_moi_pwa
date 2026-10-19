@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/app_version.dart';
 import '../data/app_preferences.dart';
 import '../providers/moi_provider.dart';
@@ -797,6 +798,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
 
                 const SizedBox(height: 28),
+
+                GestureDetector(
+                  onTap: () async {
+                    HapticFeedback.lightImpact();
+                    final uri = Uri.parse('https://jat08.github.io/OpenMOI-Home/');
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                  child: Center(
+                    child: Text(
+                      'For more information, visit OpenMOI',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
 
                 Center(
                   child: Text(

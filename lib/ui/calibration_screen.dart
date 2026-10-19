@@ -140,6 +140,233 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
     );
   }
 
+  void _showTareGuideDialog(BuildContext context) {
+    HapticFeedback.lightImpact();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: sheetBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const OneUiDragHandle(),
+              const SizedBox(height: 4),
+              const Text(
+                'How to Tare Adapters',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                '1. Prepare Tare Adapters:\n'
+                'Attach the Pickleball or Twist Weight adapter to your device without any paddle installed.\n\n'
+                '2. Measure Empty Adapter Period:\n'
+                'Tap the Pickleball Adapter or Twist Weight Adapter card below to open the detail screen and record oscillation measurements for the empty adapter.\n\n'
+                '3. Automatic Tare Offset Calculation:\n'
+                'OpenMOI automatically calculates the tare offset inertia for each adapter using the calibrated device spring constant and device inertia.\n\n'
+                '4. Automatic Inertia Subtraction:\n'
+                'When measuring paddles on the Measure page, selecting the active Tare Adapter mode will automatically subtract the adapter\'s inertia from your total measurement.',
+                textAlign: TextAlign.left,
+                style: TextStyle(fontSize: 14.5, height: 1.35, color: theme.colorScheme.onSurface),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _startNfcScan(BuildContext context, MoiNotifier notifier) async {
+    final theme = Theme.of(context);
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('NFC tag reading is supported on Android devices.')),
+      );
+      return;
+    }
+
+    const channel = MethodChannel('com.openmoi.open_moi_cp/nfc');
+
+    try {
+      final bool available = await channel.invokeMethod('isNfcAvailable') ?? false;
+      if (!available) {
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('NFC Unavailable'),
+              content: const Text('NFC is disabled or not available on this device. Please enable NFC in system settings.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    channel.invokeMethod('openNfcSettings');
+                  },
+                  child: const Text('Settings'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+
+      await channel.invokeMethod('enableNfc');
+
+      bool isScanning = true;
+
+      channel.setMethodCallHandler((call) async {
+        if (call.method == 'onNfcScanned') {
+          final List<dynamic>? rawRecords = call.arguments as List<dynamic>?;
+          if (rawRecords != null && rawRecords.isNotEmpty && isScanning) {
+            isScanning = false;
+            await channel.invokeMethod('disableNfc');
+            if (context.mounted && Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+
+            bool updated = false;
+            for (final record in rawRecords) {
+              final str = record.toString();
+              final clean = str.toUpperCase().replaceAll(' ', '');
+              final numMatch = RegExp(r'[-+]?[0-9]*\.?[0-9]+').firstMatch(str);
+              if (numMatch != null) {
+                final value = double.tryParse(numMatch.group(0)!);
+                if (value != null) {
+                  if (clean.startsWith('OBJAT')) {
+                    await notifier.prefs.saveExpectedValue('OBJECT_A', value);
+                    updated = true;
+                  } else if (clean.startsWith('OBJBT')) {
+                    await notifier.prefs.saveExpectedValue('OBJECT_B', value);
+                    updated = true;
+                  } else if (clean.startsWith('OBJA')) {
+                    await notifier.prefs.saveKnownObjectAInertia(value);
+                    updated = true;
+                  } else if (clean.startsWith('OBJB')) {
+                    await notifier.prefs.saveKnownObjectBInertia(value);
+                    updated = true;
+                  } else if (clean.startsWith('PB')) {
+                    await notifier.prefs.saveExpectedValue('TARE_PB', value);
+                    updated = true;
+                  } else if (clean.startsWith('TW')) {
+                    await notifier.prefs.saveExpectedValue('TARE_TW', value);
+                    updated = true;
+                  }
+                }
+              }
+            }
+
+            if (updated) {
+              notifier.loadPreferences();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('NFC Calibration Data Updated Successfully!')),
+                );
+              }
+            } else {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No valid calibration records found on NFC tag.')),
+                );
+              }
+            }
+          }
+        }
+      });
+
+      if (context.mounted) {
+        showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.transparent,
+          isDismissible: true,
+          builder: (ctx) => Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const OneUiDragHandle(),
+                  const SizedBox(height: 12),
+                  Icon(Icons.nfc, size: 48, color: theme.colorScheme.primary),
+                  const SizedBox(height: 12),
+                  const Text('Ready to Scan NFC Tag', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Hold your device near the calibration NFC tag...',
+                    style: TextStyle(fontSize: 14, color: theme.colorScheme.outline),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                      ),
+                      onPressed: () {
+                        isScanning = false;
+                        channel.invokeMethod('disableNfc');
+                        Navigator.of(ctx).pop();
+                      },
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ).then((_) {
+          if (isScanning) {
+            isScanning = false;
+            channel.invokeMethod('disableNfc');
+          }
+        });
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('NFC Error: $e')),
+        );
+      }
+    }
+  }
+
   Widget _sectionHeader(BuildContext context, String title, String description) {
     final theme = Theme.of(context);
     return GestureDetector(
@@ -198,6 +425,8 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
     final displayI = uiState.isCalibrated
         ? uiState.deviceInertia.toStringAsFixed(4)
         : 'No Data';
+
+    final areAdaptersTared = uiState.measurementsTarePB.isNotEmpty && uiState.measurementsTareTW.isNotEmpty;
 
     return PopScope(
       canPop: false,
@@ -281,22 +510,61 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                 flexibleSpace: FlexibleSpaceBar(
                   centerTitle: false,
                   titlePadding: const EdgeInsets.only(left: 16, bottom: 14),
-                  title: Text(
-                    'Calibration',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                      letterSpacing: -0.5,
-                    ),
+                  title: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Calibration',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          _startNfcScan(context, notifier);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.5), width: 1),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.nfc, size: 14, color: theme.colorScheme.primary),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Read NFC',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
 
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                     if (kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) ...[
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
@@ -601,6 +869,57 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                     ),
                     const SizedBox(height: 4),
 
+                    // Tare Adapters Health Banner
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _showTareGuideDialog(context),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Ink(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: areAdaptersTared
+                                ? (theme.brightness == Brightness.dark ? const Color(0xFF003828) : const Color(0xFFE6F4EA))
+                                : theme.colorScheme.errorContainer,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                areAdaptersTared ? Icons.check_circle : Icons.warning_amber_rounded,
+                                color: areAdaptersTared ? const Color(0xFF34A853) : theme.colorScheme.onErrorContainer,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  areAdaptersTared
+                                      ? 'Adapters Tared'
+                                      : 'Adapters Not Tared  •  Tap for Help',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: areAdaptersTared
+                                        ? (theme.brightness == Brightness.dark ? const Color(0xFFA8FABD) : const Color(0xFF137333))
+                                        : theme.colorScheme.onErrorContainer,
+                                  ),
+                                ),
+                              ),
+                              if (!areAdaptersTared) ...[
+                                Icon(
+                                  Icons.info_outline,
+                                  color: theme.colorScheme.onErrorContainer,
+                                  size: 18,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
                     CalibrationObjectCard(
                       title: 'Pickleball Adapter',
                       measurements: uiState.measurementsTarePB,
@@ -656,9 +975,10 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                     ],
 
                     const SizedBox(height: 28),
-                  ]),
+                  ],
                 ),
               ),
+            ),
             ],
           ),
         ),
