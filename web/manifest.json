@@ -1,6 +1,6 @@
 {
-    "name": "OpenMOI",
-    "short_name": "OpenMOI",
+    "name": "OpenMOI WebApp",
+    "short_name": "OpenMOI WebApp",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#EDF5FE",

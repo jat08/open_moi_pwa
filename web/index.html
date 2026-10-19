@@ -11,7 +11,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="OpenMOI">
+  <meta name="apple-mobile-web-app-title" content="OpenMOI WebApp">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Viewport settings for standalone PWA presentation -->
@@ -22,7 +22,7 @@
   <link rel="icon" type="image/png" href="favicon.png"/>
   <link rel="manifest" href="manifest.json">
 
-  <title>OpenMOI</title>
+  <title>OpenMOI WebApp</title>
 
   <style>
     html, body {
@@ -107,7 +107,7 @@
       }
       if ('serviceWorker' in navigator) {
         var baseHref = document.querySelector('base') ? document.querySelector('base').getAttribute('href') : './';
-        var swUrl = (baseHref.endsWith('/') ? baseHref : baseHref + '/') + 'sw.js?v=1.2.3';
+        var swUrl = (baseHref.endsWith('/') ? baseHref : baseHref + '/') + 'sw.js?v=1.2.4';
         navigator.serviceWorker.register(swUrl, { scope: baseHref })
           .then(function(reg) {
             console.log('PWA Service Worker registered with scope: ', reg.scope);
