@@ -10,7 +10,7 @@
   <!-- Mobile & iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="OpenMOI">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
@@ -25,11 +25,30 @@
   <title>OpenMOI</title>
 
   <style>
-    body {
+    html, body {
       background-color: #EDF5FE;
       margin: 0;
       padding: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       overflow: hidden;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    flutter-view, flt-glass-pane, flt-scene-host {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
     }
     @media screen and (orientation: landscape) and (max-device-width: 900px) {
       body {
@@ -76,13 +95,19 @@
       });
     };
 
+    window.addEventListener('scroll', function() {
+      if (window.scrollY !== 0 || window.scrollX !== 0) {
+        window.scrollTo(0, 0);
+      }
+    }, { passive: false });
+
     window.addEventListener('load', function() {
       if (screen.orientation && screen.orientation.lock) {
         screen.orientation.lock('portrait-primary').catch(function() {});
       }
       if ('serviceWorker' in navigator) {
         var baseHref = document.querySelector('base') ? document.querySelector('base').getAttribute('href') : './';
-        var swUrl = (baseHref.endsWith('/') ? baseHref : baseHref + '/') + 'sw.js?v=1.2.2';
+        var swUrl = (baseHref.endsWith('/') ? baseHref : baseHref + '/') + 'sw.js?v=1.2.3';
         navigator.serviceWorker.register(swUrl, { scope: baseHref })
           .then(function(reg) {
             console.log('PWA Service Worker registered with scope: ', reg.scope);
