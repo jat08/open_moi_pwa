@@ -6,6 +6,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import 'core/app_version.dart';
 import 'data/app_preferences.dart';
 import 'providers/moi_provider.dart';
 import 'ui/calibration_detail_screen.dart';
