@@ -48,6 +48,7 @@ class OscillationDetector {
   int _tEndNs = 0;
   int _lastCrossingTimeNs = 0;
   double _lastGyroValue = 0.0;
+  int _lastSampleTimeNs = 0;
 
   int _maxMeasurementDurationNs = 8000000000; // Default 8s in ns
   int _measurementStartTimeNs = 0;
@@ -78,8 +79,10 @@ class OscillationDetector {
     sampleCount = 0;
 
     if (kIsWeb) {
-      registerWebMotionListener((gx, gy, gz, ax, ay, az) {
-        final dt = DateTime.now();
+      registerWebMotionListener((gx, gy, gz, ax, ay, az, timeStampMs) {
+        final dt = timeStampMs > 0
+            ? DateTime.fromMicrosecondsSinceEpoch((timeStampMs * 1000).toInt())
+            : DateTime.now();
         sampleCount++;
         handleAccelerometer(AccelerometerEvent(ax, ay, az, dt));
         sampleCount++;
@@ -228,31 +231,42 @@ class OscillationDetector {
         break;
     }
     _lastGyroValue = vRot;
+    _lastSampleTimeNs = timestampNs;
   }
 
   void _detectZeroCrossing(double currentGyro, int timestampNs) {
     // Positive-slope zero crossing detection against dynamic baseline
     if (_lastGyroValue <= _gyroBaseline && currentGyro > _gyroBaseline) {
-      if (timestampNs - _lastCrossingTimeNs < debounceNs) return;
+      // Sub-sample linear interpolation for sub-millisecond zero-crossing timestamp precision
+      final double deltaGyro = currentGyro - _lastGyroValue;
+      final int exactCrossingNs;
+      if (deltaGyro > 0 && _lastSampleTimeNs > 0 && timestampNs > _lastSampleTimeNs) {
+        final double fraction = (_gyroBaseline - _lastGyroValue) / deltaGyro;
+        exactCrossingNs = _lastSampleTimeNs + (fraction * (timestampNs - _lastSampleTimeNs)).round();
+      } else {
+        exactCrossingNs = timestampNs;
+      }
+
+      if (exactCrossingNs - _lastCrossingTimeNs < debounceNs) return;
 
       final prevCrossingTime = _lastCrossingTimeNs;
-      _lastCrossingTimeNs = timestampNs;
+      _lastCrossingTimeNs = exactCrossingNs;
       _detectedCycles++;
 
       switch (_currentState) {
         case OscillationState.SETTLING:
           if (_detectedCycles > _skipFirstCycles) {
-            _tStartNs = timestampNs;
+            _tStartNs = exactCrossingNs;
             _updateState(OscillationState.ACTIVE_COUNTING);
             _detectedCycles = 0; // Reset for active counting
           }
           break;
         case OscillationState.ACTIVE_COUNTING:
-          final cycleDuration = (timestampNs - prevCrossingTime) / 1000000000.0;
+          final cycleDuration = (exactCrossingNs - prevCrossingTime) / 1000000000.0;
           _cycleDurations.add(cycleDuration);
 
           if (_detectedCycles >= _requiredCycles) {
-            _tEndNs = timestampNs;
+            _tEndNs = exactCrossingNs;
             _finishMeasurement();
           }
           break;
@@ -355,6 +369,7 @@ class OscillationDetector {
     _tEndNs = 0;
     _lastCrossingTimeNs = 0;
     _lastGyroValue = 0.0;
+    _lastSampleTimeNs = 0;
     _rawGyroSamples.clear();
     _cycleDurations.clear();
     _measurementStartTimeNs = 0;

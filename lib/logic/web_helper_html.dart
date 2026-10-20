@@ -23,6 +23,7 @@ external void _removeEventListener(String type, JSFunction listener);
 extension type _DeviceMotionEvent(JSObject _) implements JSObject {
   external _DeviceAcceleration? get accelerationIncludingGravity;
   external _DeviceRotationRate? get rotationRate;
+  external double? get timeStamp;
 }
 
 extension type _DeviceAcceleration(JSObject _) implements JSObject {
@@ -39,11 +40,12 @@ extension type _DeviceRotationRate(JSObject _) implements JSObject {
 
 JSFunction? _webMotionListener;
 
-void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz, double ax, double ay, double az) onMotion) {
+void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz, double ax, double ay, double az, double timeStampMs) onMotion) {
   unregisterWebMotionListenerImpl();
   _webMotionListener = ((_DeviceMotionEvent event) {
     final rot = event.rotationRate;
     final acc = event.accelerationIncludingGravity;
+    final ts = event.timeStamp ?? 0.0;
 
     final alpha = rot?.alpha ?? 0.0;
     final beta = rot?.beta ?? 0.0;
@@ -57,7 +59,7 @@ void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz
     final ay = acc?.y ?? 0.0;
     final az = acc?.z ?? 9.8;
 
-    onMotion(gx, gy, gz, ax, ay, az);
+    onMotion(gx, gy, gz, ax, ay, az, ts);
   }).toJS;
 
   _addEventListener('devicemotion', _webMotionListener!);
