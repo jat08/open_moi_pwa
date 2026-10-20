@@ -308,11 +308,11 @@ class SelectionTopBar extends StatelessWidget {
     final bool? checkboxValue = isAllSelected ? true : (isPartialSelected ? null : false);
 
     return Container(
-      height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
         children: [
@@ -325,9 +325,10 @@ class SelectionTopBar extends StatelessWidget {
               onToggleAll();
             },
           ),
-          const SizedBox(width: 4),
           IconButton(
-            icon: const Icon(Icons.close),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+            icon: const Icon(Icons.close, size: 22),
             onPressed: () {
               HapticFeedback.lightImpact();
               onClear();
@@ -340,12 +341,15 @@ class SelectionTopBar extends StatelessWidget {
           ),
           const Spacer(),
           IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+            icon: const Icon(Icons.delete, color: Colors.red, size: 22),
             onPressed: () {
               HapticFeedback.mediumImpact();
               onDelete();
             },
           ),
+          const SizedBox(width: 4),
         ],
       ),
     );
