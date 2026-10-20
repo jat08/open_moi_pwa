@@ -37,6 +37,7 @@ class OscillationDetector(
     private var tEndNs: Long = 0
     private var lastCrossingTimeNs: Long = 0
     private var lastGyroValue: Float = 0f
+    private var lastSampleTimeNs: Long = 0L
     
     private var maxMeasurementDurationNs = 8_000_000_000L // Default 8s
     private var measurementStartTimeNs: Long = 0
@@ -153,33 +154,43 @@ class OscillationDetector(
             }
         }
         lastGyroValue = vRot
+        lastSampleTimeNs = timestampNs
     }
 
     private fun detectZeroCrossing(currentGyro: Float, timestampNs: Long) {
         // Positive-slope zero crossing detection against dynamic thermal baseline: prev <= baseline && current > baseline
         if (lastGyroValue <= gyroBaseline && currentGyro > gyroBaseline) {
+            // Sub-sample linear interpolation for sub-millisecond zero-crossing timestamp precision
+            val deltaGyro = currentGyro - lastGyroValue
+            val exactCrossingNs: Long = if (deltaGyro > 0f && lastSampleTimeNs > 0L && timestampNs > lastSampleTimeNs) {
+                val fraction = (gyroBaseline - lastGyroValue) / deltaGyro
+                lastSampleTimeNs + (fraction * (timestampNs - lastSampleTimeNs)).toLong()
+            } else {
+                timestampNs
+            }
+
             // Debounce to prevent noise triggers
-            if (timestampNs - lastCrossingTimeNs < debounceNs) return
+            if (exactCrossingNs - lastCrossingTimeNs < debounceNs) return
             
             val prevCrossingTime = lastCrossingTimeNs
-            lastCrossingTimeNs = timestampNs
+            lastCrossingTimeNs = exactCrossingNs
             detectedCycles++
             
             when (currentState) {
                 State.SETTLING -> {
                     if (detectedCycles > skipFirstCycles) {
-                        tStartNs = timestampNs
+                        tStartNs = exactCrossingNs
                         updateState(State.ACTIVE_COUNTING)
                         detectedCycles = 0 // Reset for active counting phase
                     }
                 }
                 State.ACTIVE_COUNTING -> {
                     // Record cycle duration
-                    val cycleDuration = (timestampNs - prevCrossingTime).toDouble() / 1_000_000_000.0
+                    val cycleDuration = (exactCrossingNs - prevCrossingTime).toDouble() / 1_000_000_000.0
                     cycleDurations.add(cycleDuration)
                     
                     if (detectedCycles >= requiredCycles) {
-                        tEndNs = timestampNs
+                        tEndNs = exactCrossingNs
                         finishMeasurement()
                     }
                 }
@@ -218,6 +229,7 @@ class OscillationDetector(
         tEndNs = 0
         lastCrossingTimeNs = 0
         lastGyroValue = 0f
+        lastSampleTimeNs = 0L
         rawGyroSamples.clear()
         cycleDurations.clear()
         measurementStartTimeNs = 0
