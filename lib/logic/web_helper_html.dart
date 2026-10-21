@@ -43,8 +43,8 @@ extension type _DeviceRotationRate(JSObject _) implements JSObject {
 @JS('Gyroscope')
 external JSFunction get _gyroscopeConstructor;
 
-@JS('LinearAccelerationSensor')
-external JSFunction get _linearAccelerationSensorConstructor;
+@JS('Accelerometer')
+external JSFunction get _accelerometerConstructor;
 
 JSFunction? _webMotionListener;
 JSObject? _gyroscope;
@@ -55,13 +55,13 @@ void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz
 
   // Feature detection for Generic Sensor API (Supported in Chrome/Android, not Safari/iOS)
   bool hasGenericSensors = js_util.hasProperty(web.window, 'Gyroscope') && 
-                           js_util.hasProperty(web.window, 'LinearAccelerationSensor');
+                           js_util.hasProperty(web.window, 'Accelerometer');
 
   if (hasGenericSensors) {
     try {
       final config = js_util.jsify({'frequency': 100});
       _gyroscope = js_util.callConstructor(_gyroscopeConstructor, [config]) as JSObject;
-      _accelerometer = js_util.callConstructor(_linearAccelerationSensorConstructor, [config]) as JSObject;
+      _accelerometer = js_util.callConstructor(_accelerometerConstructor, [config]) as JSObject;
 
       double ax = 0.0;
       double ay = 0.0;

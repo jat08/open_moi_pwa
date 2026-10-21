@@ -1,8 +1,8 @@
 class AppVersion {
   static const String appName = 'OpenMOI WebApp';
-  static const String versionName = '1.2.9';
-  static const int buildNumber = 29;
-  static const String buildDate = '2026-10-20';
+  static const String versionName = '1.2.11';
+  static const int buildNumber = 31;
+  static const String buildDate = '2026-10-21';
 
   static String get displayVersion => 'v$versionName';
   static String get fullVersionNote => '$appName $displayVersion';
