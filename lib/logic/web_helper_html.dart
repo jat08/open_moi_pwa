@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:js_interop';
+import 'dart:js_util' as js_util;
+import 'package:web/web.dart' as web;
 
 @JS('requestMotionPermission')
 external JSPromise<JSBoolean> jsRequestMotionPermission();
@@ -38,10 +40,64 @@ extension type _DeviceRotationRate(JSObject _) implements JSObject {
   external double? get gamma;
 }
 
+@JS('Gyroscope')
+external JSFunction get _gyroscopeConstructor;
+
+@JS('LinearAccelerationSensor')
+external JSFunction get _linearAccelerationSensorConstructor;
+
 JSFunction? _webMotionListener;
+JSObject? _gyroscope;
+JSObject? _accelerometer;
 
 void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz, double ax, double ay, double az, double timeStampMs) onMotion) {
   unregisterWebMotionListenerImpl();
+
+  // Feature detection for Generic Sensor API (Supported in Chrome/Android, not Safari/iOS)
+  bool hasGenericSensors = js_util.hasProperty(web.window, 'Gyroscope') && 
+                           js_util.hasProperty(web.window, 'LinearAccelerationSensor');
+
+  if (hasGenericSensors) {
+    try {
+      final config = js_util.jsify({'frequency': 100});
+      _gyroscope = js_util.callConstructor(_gyroscopeConstructor, [config]) as JSObject;
+      _accelerometer = js_util.callConstructor(_linearAccelerationSensorConstructor, [config]) as JSObject;
+
+      double ax = 0.0;
+      double ay = 0.0;
+      double az = 9.8;
+
+      final accListener = ((web.Event e) {
+        if (_accelerometer != null) {
+          ax = js_util.getProperty(_accelerometer!, 'x') as double? ?? 0.0;
+          ay = js_util.getProperty(_accelerometer!, 'y') as double? ?? 0.0;
+          az = js_util.getProperty(_accelerometer!, 'z') as double? ?? 9.8;
+        }
+      }).toJS;
+      (_accelerometer as web.EventTarget).addEventListener('reading', accListener);
+      js_util.callMethod(_accelerometer!, 'start', []);
+
+      final gyroListener = ((web.Event e) {
+        if (_gyroscope != null) {
+          final gx = js_util.getProperty(_gyroscope!, 'x') as double? ?? 0.0;
+          final gy = js_util.getProperty(_gyroscope!, 'y') as double? ?? 0.0;
+          final gz = js_util.getProperty(_gyroscope!, 'z') as double? ?? 0.0;
+          final ts = js_util.getProperty(_gyroscope!, 'timestamp') as double? ?? 0.0;
+
+          onMotion(gx, gy, gz, ax, ay, az, ts);
+        }
+      }).toJS;
+      (_gyroscope as web.EventTarget).addEventListener('reading', gyroListener);
+      js_util.callMethod(_gyroscope!, 'start', []);
+
+      _webMotionListener = null; // Mark that we aren't using DeviceMotionEvent
+      return;
+    } catch (e) {
+      // Fallback if sensor creation fails (e.g. strict Permissions-Policy)
+    }
+  }
+
+  // Fallback to DeviceMotionEvent (Used by iOS Safari)
   _webMotionListener = ((_DeviceMotionEvent event) {
     final rot = event.rotationRate;
     final acc = event.accelerationIncludingGravity;
@@ -66,6 +122,15 @@ void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz
 }
 
 void unregisterWebMotionListenerImpl() {
+  if (_gyroscope != null) {
+    js_util.callMethod(_gyroscope!, 'stop', []);
+    _gyroscope = null;
+  }
+  if (_accelerometer != null) {
+    js_util.callMethod(_accelerometer!, 'stop', []);
+    _accelerometer = null;
+  }
+  
   if (_webMotionListener != null) {
     _removeEventListener('devicemotion', _webMotionListener!);
     _webMotionListener = null;
