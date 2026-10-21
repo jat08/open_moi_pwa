@@ -30,6 +30,7 @@ class AppPreferences {
   static const String keyExpectedPeriodB = 'expected_period_b';
   static const String keyExpectedMoiPb = 'expected_moi_pb';
   static const String keyExpectedMoiTw = 'expected_moi_tw';
+  static const String keyApplyOptimization = 'apply_optimization';
 
   static const double defaultKnownAInertia = 13.2135;
   static const double defaultKnownBInertia = 177.1500;
@@ -133,6 +134,9 @@ class AppPreferences {
 
   int get cycleReference => _prefs.getInt(keyCycleReference) ?? 0;
   Future<void> saveCycleReference(int index) => _prefs.setInt(keyCycleReference, index);
+
+  bool get applyOptimization => _prefs.getBool(keyApplyOptimization) ?? false;
+  Future<void> saveApplyOptimization(bool apply) => _prefs.setBool(keyApplyOptimization, apply);
 
   Future<void> saveCalibration(double kappa, double deviceInertia) async {
     await saveDeviceKappa(kappa);

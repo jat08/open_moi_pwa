@@ -63,6 +63,7 @@ class UiState {
   final double fitResidualExclusion;
   final bool trimLastCycle;
   final int skipFirstCycles;
+  final bool applyOptimization;
 
   final int cycleReference;
   final bool keepScreenOn;
@@ -134,6 +135,7 @@ class UiState {
     this.fitResidualExclusion = 1.5,
     this.trimLastCycle = false,
     this.skipFirstCycles = 1,
+    this.applyOptimization = false,
     this.cycleReference = 0,
     this.keepScreenOn = true,
     this.preparationTime = 2,
@@ -201,6 +203,7 @@ class UiState {
     double? fitResidualExclusion,
     bool? trimLastCycle,
     int? skipFirstCycles,
+    bool? applyOptimization,
     int? cycleReference,
     bool? keepScreenOn,
     int? preparationTime,
@@ -267,6 +270,7 @@ class UiState {
       fitResidualExclusion: fitResidualExclusion ?? this.fitResidualExclusion,
       trimLastCycle: trimLastCycle ?? this.trimLastCycle,
       skipFirstCycles: skipFirstCycles ?? this.skipFirstCycles,
+      applyOptimization: applyOptimization ?? this.applyOptimization,
       cycleReference: cycleReference ?? this.cycleReference,
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
       preparationTime: preparationTime ?? this.preparationTime,
@@ -361,12 +365,14 @@ class MoiNotifier extends StateNotifier<UiState> {
       sortDirection: SortDirection.values.firstWhere((e) => e.name == _prefs.sortDirection, orElse: () => SortDirection.ASCENDING),
       trimLastCycle: _prefs.trimLastCycle,
       skipFirstCycles: _prefs.skipFirstCycles,
+      applyOptimization: _prefs.applyOptimization,
       cycleReference: _prefs.cycleReference,
     );
 
     _detector?.setMaxDuration(state.measuringDuration);
     _detector?.setRequiredCycles(state.cyclesToMeasure);
     _detector?.setSkipFirstCycles(state.skipFirstCycles);
+    _detector?.applyOptimization = state.applyOptimization;
   }
 
   AppPreferences get prefs => _prefs;
@@ -1002,6 +1008,12 @@ class MoiNotifier extends StateNotifier<UiState> {
   void setEstimationSearchQuery(String query) {
     state = state.copyWith(estimationSearchQuery: query);
     refreshEstimationGroups();
+  }
+
+  void setApplyOptimization(bool apply) {
+    _prefs.saveApplyOptimization(apply);
+    state = state.copyWith(applyOptimization: apply);
+    _detector?.applyOptimization = apply;
   }
 
   void selectEstimationGroup(int? groupId) async {

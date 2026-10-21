@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'web_helper.dart';
+import 'curve_fitter.dart';
 
 enum OscillationState {
   WRONG_ORIENTATION,
@@ -53,6 +54,8 @@ class OscillationDetector {
   int _maxMeasurementDurationNs = 8000000000; // Default 8s in ns
   int _measurementStartTimeNs = 0;
 
+  bool applyOptimization = false;
+
   static const double orientationThreshold = 10.0;
   static const double targetAngle = 45.0;
   static const double nudgeThreshold = 0.3;
@@ -64,6 +67,7 @@ class OscillationDetector {
   double _gyroBaseline = 0.0; // Dynamically tracks DC bias
 
   final List<_GyroSample> _rawGyroSamples = [];
+  final List<Point<double>> _rawGyroDataPoints = []; // Used for Curve Fitting
   final List<double> _cycleDurations = [];
 
   StreamSubscription<AccelerometerEvent>? _accelSub;
@@ -212,6 +216,9 @@ class OscillationDetector {
 
         if (_currentState == OscillationState.ACTIVE_COUNTING) {
           _rawGyroSamples.add(_GyroSample(timestampNs, vRot));
+          // Store point in seconds relative to measurement start for optimizer
+          double tSeconds = (timestampNs - _measurementStartTimeNs) / 1000000000.0;
+          _rawGyroDataPoints.add(Point<double>(tSeconds, vRot));
         }
 
         final elapsedNs = timestampNs - _measurementStartTimeNs;
@@ -335,8 +342,20 @@ class OscillationDetector {
       final actualCycleCount = _cycleDurations.length;
 
       if (actualCycleCount > 0) {
-        final avgPeriod = _cycleDurations.reduce((a, b) => a + b) / actualCycleCount;
+        double avgPeriod = _cycleDurations.reduce((a, b) => a + b) / actualCycleCount;
         final totalDurSec = durationNs / 1000000000.0;
+
+        if (applyOptimization) {
+          try {
+            final fitter = CurveFitter(_rawGyroDataPoints);
+            final optimizedPeriod = fitter.optimizePeriod();
+            if (optimizedPeriod != null && optimizedPeriod > 0) {
+              avgPeriod = optimizedPeriod;
+            }
+          } catch (e) {
+            debugPrint("Optimization failed: $e. Falling back to zero-crossing.");
+          }
+        }
 
         final uniformSamples = _resampleUniformly(_rawGyroSamples, _tStartNs, endTimeNs);
 
@@ -371,6 +390,7 @@ class OscillationDetector {
     _lastGyroValue = 0.0;
     _lastSampleTimeNs = 0;
     _rawGyroSamples.clear();
+    _rawGyroDataPoints.clear();
     _cycleDurations.clear();
     _measurementStartTimeNs = 0;
     onProgressUpdate(0.0);
