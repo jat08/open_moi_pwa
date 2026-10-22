@@ -871,7 +871,6 @@ class MoiNotifier extends StateNotifier<UiState> {
           state = state.copyWith(calculatedMOI: finalMoi);
           break;
       }
-    }
     startCooldown();
   }
 
