@@ -751,6 +751,7 @@ class MoiNotifier extends StateNotifier<UiState> {
     final kappa = state.deviceKappa;
     final deviceI = state.deviceInertia;
     final trimLast = state.trimLastCycle;
+    final applyOpt = state.applyOptimization;
 
     final rawCycles = result.cyclePeriods
         .split(',')
@@ -758,17 +759,28 @@ class MoiNotifier extends StateNotifier<UiState> {
         .map((s) => double.tryParse(s) ?? 0.0)
         .toList();
 
-    if (rawCycles.isNotEmpty) {
-      final rawPeriod = (trimLast && rawCycles.length > 1)
+    double rawPeriod = 0.0;
+    if (applyOpt) {
+      rawPeriod = result.averagePeriod;
+    } else if (rawCycles.isNotEmpty) {
+      rawPeriod = (trimLast && rawCycles.length > 1)
           ? rawCycles.sublist(0, rawCycles.length - 1).reduce((a, b) => a + b) / (rawCycles.length - 1)
           : rawCycles.reduce((a, b) => a + b) / rawCycles.length;
+    }
 
-      final uniformMeasuredCycles = List.filled(
-        rawCycles.length,
-        rawPeriod.toStringAsFixed(6),
-      ).join(',');
+    if (rawPeriod <= 0.0) {
+      debugPrint('Measurement invalid or optimization failed (rawPeriod <= 0). Skipping record.');
+      startCooldown();
+      return;
+    }
 
-      final residual = calculateFitResidual(result.rawData, rawPeriod, result.totalDuration);
+    final cycleCount = rawCycles.isNotEmpty ? rawCycles.length : 1;
+    final uniformMeasuredCycles = List.filled(
+      cycleCount,
+      rawPeriod.toStringAsFixed(6),
+    ).join(',');
+
+    final residual = calculateFitResidual(result.rawData, rawPeriod, result.totalDuration);
 
       final target = (state.selectedCalibrationTarget != null && state.selectedCalibrationTarget != CalibrationTarget.NONE)
           ? state.selectedCalibrationTarget!

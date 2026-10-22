@@ -342,7 +342,7 @@ class OscillationDetector {
       final actualCycleCount = _cycleDurations.length;
 
       if (actualCycleCount > 0) {
-        double avgPeriod = _cycleDurations.reduce((a, b) => a + b) / actualCycleCount;
+        double avgPeriod = 0.0;
         final totalDurSec = durationNs / 1000000000.0;
 
         if (applyOptimization) {
@@ -351,10 +351,16 @@ class OscillationDetector {
             final optimizedPeriod = fitter.optimizePeriod();
             if (optimizedPeriod != null && optimizedPeriod > 0) {
               avgPeriod = optimizedPeriod;
+            } else {
+              avgPeriod = 0.0; // Strict mode: Optimization failed, no fallback
             }
           } catch (e) {
-            debugPrint("Optimization failed: $e. Falling back to zero-crossing.");
+            debugPrint("Curve fitting optimization failed: $e");
+            avgPeriod = 0.0;
           }
+        } else {
+          // Pure Sub-Sample Zero-Crossing Mode
+          avgPeriod = _cycleDurations.reduce((a, b) => a + b) / actualCycleCount;
         }
 
         final uniformSamples = _resampleUniformly(_rawGyroSamples, _tStartNs, endTimeNs);

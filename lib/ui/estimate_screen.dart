@@ -266,7 +266,7 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                           children: [
                             Expanded(
                               child: SizedBox(
-                                height: 48,
+                                height: kMultipurposeBarHeight,
                                 child: TextField(
                                   onChanged: (query) => notifier.setEstimationSearchQuery(query),
                                   style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15),
@@ -277,29 +277,29 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                                     filled: true,
                                     fillColor: theme.colorScheme.surfaceContainerHighest,
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(24),
+                                      borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
                                       borderSide: BorderSide.none,
                                     ),
                                     enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(24),
+                                      borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
                                       borderSide: BorderSide.none,
                                     ),
                                     focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(24),
+                                      borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
                                       borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
                                     ),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14),
                                   ),
                                 ),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Container(
-                              width: 48,
-                              height: 48,
+                              width: kMultipurposeBarHeight,
+                              height: kMultipurposeBarHeight,
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
                               ),
                               child: IconButton(
                                 padding: EdgeInsets.zero,

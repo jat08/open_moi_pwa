@@ -1,6 +1,6 @@
 import 'dart:math';
 
-/// A pure-Dart implementation of a Gauss-Newton non-linear least squares optimizer
+/// A pure-Dart implementation of the Levenberg-Marquardt non-linear least squares algorithm
 /// to fit raw gyroscope data to a damped sine wave formula:
 /// y(t) = A * exp(-d*t) * sin(w*t + phi) + C
 class CurveFitter {
@@ -8,18 +8,20 @@ class CurveFitter {
 
   CurveFitter(this.dataPoints);
 
-  /// Analyzes the dataset and returns the optimized period (in seconds)
+  /// Analyzes the dataset using Levenberg-Marquardt non-linear curve fitting
+  /// and returns the analytically optimized period (in seconds), or null if fitting fails.
   double? optimizePeriod() {
     if (dataPoints.length < 10) return null;
 
-    // 1. Initial Guesses
+    // 1. Initial Data Analysis & Seed Generation
     double tMin = dataPoints.first.x;
     double tMax = dataPoints.last.x;
     double duration = tMax - tMin;
+    if (duration <= 0) return null;
 
     double yMax = -double.infinity;
     double yMin = double.infinity;
-    double ySum = 0;
+    double ySum = 0.0;
 
     int zeroCrossings = 0;
     bool wasPositive = dataPoints.first.y > 0;
@@ -36,30 +38,29 @@ class CurveFitter {
       }
     }
 
-    double C = ySum / dataPoints.length; // DC Bias
-    double A = (yMax - yMin) / 2.0;      // Amplitude
-    double d = 0.05;                     // Damping factor guess
+    double C = ySum / dataPoints.length;          // Initial DC Bias seed
+    double A = max(0.01, (yMax - yMin) / 2.0);   // Initial Amplitude seed
+    double d = 0.05;                              // Initial Damping factor seed
 
-    // Estimate frequency based on zero crossings (2 crossings = 1 full cycle)
     double cycles = zeroCrossings / 2.0;
-    double w = (cycles / duration) * 2 * pi;
-
-    double phi = 0.0; // Phase shift guess
+    if (cycles < 0.5) return null;
+    double w = (cycles / duration) * 2 * pi;      // Initial Angular Frequency seed
+    double phi = 0.0;                             // Initial Phase shift seed
 
     // Parameters vector: [A, d, w, phi, C]
     List<double> params = [A, d, w, phi, C];
 
-    // Gauss-Newton Iterations
-    int maxIterations = 20;
-    double tolerance = 1e-6;
-    double lastRmse = double.infinity;
+    // 2. Levenberg-Marquardt Parameters
+    double lambda = 1e-3; // Initial Marquardt damping parameter
+    int maxIterations = 100;
+    double tolerance = 1e-10;
+
+    double currentSse = _calculateSse(params);
 
     for (int iter = 0; iter < maxIterations; iter++) {
-      // Create Jacobian (J) and Residuals (R)
+      // Build Jacobian (J) and Residuals (R)
       List<List<double>> J = List.generate(dataPoints.length, (_) => List.filled(5, 0.0));
       List<double> R = List.filled(dataPoints.length, 0.0);
-
-      double sse = 0.0;
 
       for (int i = 0; i < dataPoints.length; i++) {
         double t = dataPoints[i].x;
@@ -72,81 +73,108 @@ class CurveFitter {
         double pC = params[4];
 
         double expPart = exp(-pd * t);
-        double sinPart = sin(pw * t + pphi);
-        double cosPart = cos(pw * t + pphi);
+        double angle = pw * t + pphi;
+        double sinPart = sin(angle);
+        double cosPart = cos(angle);
 
-        // Theoretical y value
         double yModel = pA * expPart * sinPart + pC;
+        R[i] = y - yModel;
 
-        // Residual
-        double residual = y - yModel;
-        R[i] = residual;
-        sse += residual * residual;
-
-        // Partial derivatives for Jacobian matrix
-        J[i][0] = expPart * sinPart;                               // d/dA
-        J[i][1] = -pA * t * expPart * sinPart;                     // d/dd
-        J[i][2] = pA * t * expPart * cosPart;                      // d/dw
-        J[i][3] = pA * expPart * cosPart;                          // d/dphi
-        J[i][4] = 1.0;                                             // d/dC
+        // Partial Derivatives
+        J[i][0] = expPart * sinPart;                      // d/dA
+        J[i][1] = -pA * t * expPart * sinPart;            // d/dd
+        J[i][2] = pA * t * expPart * cosPart;             // d/dw
+        J[i][3] = pA * expPart * cosPart;                 // d/dphi
+        J[i][4] = 1.0;                                    // d/dC
       }
 
-      double rmse = sqrt(sse / dataPoints.length);
-      if ((lastRmse - rmse).abs() < tolerance) {
-        break; // Converged
-      }
-      lastRmse = rmse;
-
-      // J^T * J
+      // Compute J^T * J (5x5) and J^T * R (5x1)
       List<List<double>> JtJ = List.generate(5, (_) => List.filled(5, 0.0));
+      List<double> JtR = List.filled(5, 0.0);
+
       for (int i = 0; i < 5; i++) {
         for (int j = 0; j < 5; j++) {
-          double sum = 0;
+          double sum = 0.0;
           for (int k = 0; k < dataPoints.length; k++) {
             sum += J[k][i] * J[k][j];
           }
           JtJ[i][j] = sum;
         }
-      }
 
-      // J^T * R
-      List<double> JtR = List.filled(5, 0.0);
-      for (int i = 0; i < 5; i++) {
-        double sum = 0;
+        double sumR = 0.0;
         for (int k = 0; k < dataPoints.length; k++) {
-          sum += J[k][i] * R[k];
+          sumR += J[k][i] * R[k];
         }
-        JtR[i] = sum;
+        JtR[i] = sumR;
       }
 
-      // Solve (J^T * J) * delta = J^T * R using Gaussian Elimination
-      List<double>? delta = _solveGaussian(JtJ, JtR);
-      if (delta == null) {
-        // Singular matrix, optimization failed to invert
-        return null;
-      }
-
-      // Update parameters
+      // Apply Levenberg-Marquardt diagonal damping: JtJ[i][i] * (1 + lambda)
+      List<List<double>> JtJ_damped = List.generate(5, (i) => List.from(JtJ[i]));
       for (int i = 0; i < 5; i++) {
-        params[i] += delta[i];
+        double diag = JtJ[i][i];
+        JtJ_damped[i][i] = diag * (1.0 + lambda) + (diag == 0.0 ? lambda : 0.0);
+      }
+
+      // Solve damped system for parameter step delta
+      List<double>? delta = _solveGaussian(JtJ_damped, JtR);
+      if (delta == null) {
+        lambda *= 10.0; // Increase damping on singular matrix step
+        if (lambda > 1e9) return null;
+        continue;
+      }
+
+      // Evaluate candidate parameters
+      List<double> candidateParams = List.generate(5, (i) => params[i] + delta[i]);
+      double candidateSse = _calculateSse(candidateParams);
+
+      if (candidateSse < currentSse) {
+        // Accept LM step
+        double sseDiff = currentSse - candidateSse;
+        params = candidateParams;
+        currentSse = candidateSse;
+        lambda = max(1e-7, lambda / 10.0); // Shift towards Gauss-Newton speed
+
+        if (sseDiff / max(1e-6, currentSse) < tolerance) {
+          break; // Convergence reached
+        }
+      } else {
+        // Reject LM step and increase damping (shift towards Gradient Descent safety)
+        lambda *= 10.0;
+        if (lambda > 1e9) break;
       }
     }
 
     // Final optimized frequency
-    double finalW = params[2];
-    if (finalW <= 0) return null;
+    double finalW = params[2].abs();
+    if (finalW <= 0.1 || finalW > 200.0) return null;
 
-    // Period = 2 * pi / w
-    return (2 * pi) / finalW.abs();
+    return (2 * pi) / finalW;
   }
 
-  /// Basic Gaussian Elimination to solve Ax = b
+  double _calculateSse(List<double> p) {
+    double sse = 0.0;
+    double pA = p[0];
+    double pd = p[1];
+    double pw = p[2];
+    double pphi = p[3];
+    double pC = p[4];
+
+    for (var pt in dataPoints) {
+      double t = pt.x;
+      double yModel = pA * exp(-pd * t) * sin(pw * t + pphi) + pC;
+      double r = pt.y - yModel;
+      sse += r * r;
+    }
+    return sse;
+  }
+
+  /// Gaussian Elimination to solve matrix equation Ax = b
   List<double>? _solveGaussian(List<List<double>> A, List<double> b) {
     int n = b.length;
     List<List<double>> matrix = List.generate(n, (i) => List.from(A[i])..add(b[i]));
 
     for (int i = 0; i < n; i++) {
-      // Pivot
+      // Pivot search
       double maxEl = matrix[i][i].abs();
       int maxRow = i;
       for (int k = i + 1; k < n; k++) {
@@ -156,19 +184,19 @@ class CurveFitter {
         }
       }
 
-      if (maxEl < 1e-12) return null; // Singular
+      if (maxEl < 1e-12) return null; // Singular matrix
 
-      // Swap
+      // Swap max row to current row
       List<double> tmp = matrix[maxRow];
       matrix[maxRow] = matrix[i];
       matrix[i] = tmp;
 
-      // Eliminate
+      // Eliminate column entries below pivot
       for (int k = i + 1; k < n; k++) {
         double c = -matrix[k][i] / matrix[i][i];
         for (int j = i; j < n + 1; j++) {
           if (i == j) {
-            matrix[k][j] = 0;
+            matrix[k][j] = 0.0;
           } else {
             matrix[k][j] += c * matrix[i][j];
           }

@@ -11,6 +11,10 @@ import '../data/models.dart';
 import '../logic/oscillation_detector.dart';
 import '../providers/moi_provider.dart';
 
+/// Constants for multipurpose bars (Top Search Bar, Sort Button, Selection Top Bar, Measurement Control Button)
+const double kMultipurposeBarHeight = 52.0;
+const double kMultipurposeBarRadius = 26.0;
+
 /// One UI Drag Handle Bar Component for Bottom Sheets
 class OneUiDragHandle extends StatelessWidget {
   const OneUiDragHandle({super.key});
@@ -308,33 +312,40 @@ class SelectionTopBar extends StatelessWidget {
     final bool? checkboxValue = isAllSelected ? true : (isPartialSelected ? null : false);
 
     return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      height: kMultipurposeBarHeight,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Checkbox(
-            value: checkboxValue,
-            tristate: true,
-            activeColor: theme.colorScheme.primary,
-            onChanged: (_) {
-              HapticFeedback.selectionClick();
-              onToggleAll();
-            },
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: Checkbox(
+              value: checkboxValue,
+              tristate: true,
+              activeColor: theme.colorScheme.primary,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              onChanged: (_) {
+                HapticFeedback.selectionClick();
+                onToggleAll();
+              },
+            ),
           ),
+          const SizedBox(width: 8),
           IconButton(
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             icon: const Icon(Icons.close, size: 22),
             onPressed: () {
               HapticFeedback.lightImpact();
               onClear();
             },
           ),
-          const SizedBox(width: 4),
+          const Spacer(),
           Text(
             '$count Selected',
             style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onPrimaryContainer, fontSize: 15),
@@ -342,14 +353,13 @@ class SelectionTopBar extends StatelessWidget {
           const Spacer(),
           IconButton(
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             icon: const Icon(Icons.delete, color: Colors.red, size: 22),
             onPressed: () {
               HapticFeedback.mediumImpact();
               onDelete();
             },
           ),
-          const SizedBox(width: 4),
         ],
       ),
     );
@@ -771,10 +781,10 @@ class MeasurementControlButton extends StatelessWidget {
     }
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 52),
+      height: kMultipurposeBarHeight,
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(28)),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(kMultipurposeBarRadius)),
       child: content,
     );
   }
