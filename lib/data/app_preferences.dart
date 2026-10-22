@@ -32,8 +32,8 @@ class AppPreferences {
   static const String keyExpectedMoiTw = 'expected_moi_tw';
   static const String keyApplyOptimization = 'apply_optimization';
 
-  static const double defaultKnownAInertia = 13.2135;
-  static const double defaultKnownBInertia = 177.1500;
+  static const double defaultKnownAInertia = 20.0000;
+  static const double defaultKnownBInertia = 200.0000;
   static const double defaultExpectedPeriodA = 0.6947;
   static const double defaultExpectedPeriodB = 0.2607;
   static const double defaultExpectedMoiPb = 1.16;
@@ -102,7 +102,7 @@ class AppPreferences {
   double get waitDuration => _prefs.getDouble(keyWaitDuration) ?? 2.0;
   Future<void> saveWaitDuration(double seconds) => _prefs.setDouble(keyWaitDuration, seconds);
 
-  int get cyclesToMeasure => _prefs.getInt(keyCyclesToMeasure) ?? 4;
+  int get cyclesToMeasure => _prefs.getInt(keyCyclesToMeasure) ?? 5;
   Future<void> saveCyclesToMeasure(int count) => _prefs.setInt(keyCyclesToMeasure, count);
 
   double get swMargin => _prefs.getDouble(keySwMargin) ?? 0.003;
@@ -135,7 +135,7 @@ class AppPreferences {
   int get cycleReference => _prefs.getInt(keyCycleReference) ?? 0;
   Future<void> saveCycleReference(int index) => _prefs.setInt(keyCycleReference, index);
 
-  bool get applyOptimization => _prefs.getBool(keyApplyOptimization) ?? false;
+  bool get applyOptimization => _prefs.getBool(keyApplyOptimization) ?? true;
   Future<void> saveApplyOptimization(bool apply) => _prefs.setBool(keyApplyOptimization, apply);
 
   Future<void> saveCalibration(double kappa, double deviceInertia) async {

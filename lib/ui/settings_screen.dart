@@ -553,7 +553,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _settingLabel('Apply Optimization', 'When enabled, bypasses standard zero-crossing detection and uses a Gauss-Newton non-linear least squares optimizer to fit the recorded gyroscope data to a damped sine wave, analytically yielding highly precise periods resistant to noise and phase shift.'),
+                              _settingLabel('Apply Optimization', 'When enabled, bypasses standard zero-crossing detection and uses a Levenberg-Marquardt non-linear least squares optimizer to fit the recorded gyroscope data to a damped sine wave, analytically yielding highly precise periods resistant to noise and phase shift.'),
                               ItemWheelPicker<bool>(
                                 value: uiState.applyOptimization,
                                 options: const [true, false],

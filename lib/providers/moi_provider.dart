@@ -129,13 +129,13 @@ class UiState {
     this.twistTareOffset = 0.0,
     this.measuringDuration = 8.0,
     this.waitDuration = 2.0,
-    this.cyclesToMeasure = 4,
+    this.cyclesToMeasure = 5,
     this.swMargin = 0.003,
     this.twMargin = 0.01,
     this.fitResidualExclusion = 1.5,
     this.trimLastCycle = false,
     this.skipFirstCycles = 1,
-    this.applyOptimization = false,
+    this.applyOptimization = true,
     this.cycleReference = 0,
     this.keepScreenOn = true,
     this.preparationTime = 2,
@@ -652,6 +652,11 @@ class MoiNotifier extends StateNotifier<UiState> {
   }
 
   Future<void> deleteGroups(Set<int> ids) async {
+    if (ids.isEmpty) return;
+
+    final updatedGroups = state.groups.where((g) => !ids.contains(g.group.id)).toList();
+    state = state.copyWith(groups: updatedGroups);
+
     await _db.deleteGroupsByIds(ids.toList());
     await refreshGroups();
   }
@@ -959,12 +964,44 @@ class MoiNotifier extends StateNotifier<UiState> {
 
   Future<void> deleteMeasurement(Measurement measurement) async {
     if (measurement.id != null) {
-      await _db.deleteMeasurement(measurement.id!);
-      await refreshData();
+      await deleteMeasurements({measurement.id!});
     }
   }
 
   Future<void> deleteMeasurements(Set<int> ids) async {
+    if (ids.isEmpty) return;
+
+    final updatedGroupMeasurements = state.selectedGroupMeasurements.where((m) => !ids.contains(m.id)).toList();
+    final updatedA = state.measurementsA.where((m) => !ids.contains(m.id)).toList();
+    final updatedB = state.measurementsB.where((m) => !ids.contains(m.id)).toList();
+    final updatedTarePB = state.measurementsTarePB.where((m) => !ids.contains(m.id)).toList();
+    final updatedTareTW = state.measurementsTareTW.where((m) => !ids.contains(m.id)).toList();
+
+    final swMeasurements = updatedGroupMeasurements.where((m) => m.moi >= 40).toList();
+    final twMeasurements = updatedGroupMeasurements.where((m) => m.moi < 40).toList();
+    final swStats = calculateStats(swMeasurements, state.fitResidualExclusion);
+    final twStats = calculateStats(twMeasurements, state.fitResidualExclusion);
+    final swPeriodStats = calculatePeriodStats(swMeasurements, state.fitResidualExclusion);
+    final twPeriodStats = calculatePeriodStats(twMeasurements, state.fitResidualExclusion);
+
+    state = state.copyWith(
+      selectedGroupMeasurements: updatedGroupMeasurements,
+      measurementsA: updatedA,
+      measurementsB: updatedB,
+      measurementsTarePB: updatedTarePB,
+      measurementsTareTW: updatedTareTW,
+      currentSWAverage: swStats.average,
+      currentSWStdDev: swStats.stdDev,
+      currentTWAverage: twStats.average,
+      currentTWStdDev: twStats.stdDev,
+      currentSWPeriodAverage: swPeriodStats.average,
+      currentSWPeriodStdDev: swPeriodStats.stdDev,
+      currentTWPeriodAverage: twPeriodStats.average,
+      currentTWPeriodStdDev: twPeriodStats.stdDev,
+    );
+
+    updateCalibrationStats();
+
     await _db.deleteMeasurementsByIds(ids.toList());
     await refreshData();
   }
@@ -1051,6 +1088,11 @@ class MoiNotifier extends StateNotifier<UiState> {
   }
 
   Future<void> deleteEstimationGroups(Set<int> ids) async {
+    if (ids.isEmpty) return;
+
+    final updatedEst = state.estimationGroups.where((g) => !ids.contains(g.id)).toList();
+    state = state.copyWith(estimationGroups: updatedEst);
+
     await _db.deleteEstimationGroupsByIds(ids.toList());
     await refreshEstimationGroups();
   }
