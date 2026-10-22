@@ -13,20 +13,25 @@ class CurveFitter {
   double? optimizePeriod() {
     if (dataPoints.length < 10) return null;
 
-    // 1. Initial Data Analysis & Seed Generation
-    double tMin = dataPoints.first.x;
-    double tMax = dataPoints.last.x;
-    double duration = tMax - tMin;
+    // 1. Initial Data Analysis & Time Normalization
+    double tStart = dataPoints.first.x;
+    double tEnd = dataPoints.last.x;
+    double duration = tEnd - tStart;
     if (duration <= 0) return null;
+
+    // Normalize time points so t'_0 = 0.0 for numerical stability
+    List<Point<double>> normPoints = dataPoints
+        .map((p) => Point<double>(p.x - tStart, p.y))
+        .toList();
 
     double yMax = -double.infinity;
     double yMin = double.infinity;
     double ySum = 0.0;
 
     int zeroCrossings = 0;
-    bool wasPositive = dataPoints.first.y > 0;
+    bool wasPositive = normPoints.first.y > 0;
 
-    for (var p in dataPoints) {
+    for (var p in normPoints) {
       if (p.y > yMax) yMax = p.y;
       if (p.y < yMin) yMin = p.y;
       ySum += p.y;
@@ -38,33 +43,35 @@ class CurveFitter {
       }
     }
 
-    double C = ySum / dataPoints.length;          // Initial DC Bias seed
-    double A = max(0.01, (yMax - yMin) / 2.0);   // Initial Amplitude seed
+    double C = ySum / normPoints.length;           // Initial DC Bias seed
+    double A = max(0.01, (yMax - yMin) / 2.0);    // Initial Amplitude seed
     double d = 0.05;                              // Initial Damping factor seed
 
     double cycles = zeroCrossings / 2.0;
-    if (cycles < 0.5) return null;
+    if (cycles < 0.25) cycles = 1.0;              // Fallback if zero crossings are sparse
     double w = (cycles / duration) * 2 * pi;      // Initial Angular Frequency seed
     double phi = 0.0;                             // Initial Phase shift seed
 
     // Parameters vector: [A, d, w, phi, C]
     List<double> params = [A, d, w, phi, C];
+    List<double> bestParams = List.from(params);
 
     // 2. Levenberg-Marquardt Parameters
     double lambda = 1e-3; // Initial Marquardt damping parameter
     int maxIterations = 100;
-    double tolerance = 1e-10;
+    double tolerance = 1e-8;
 
-    double currentSse = _calculateSse(params);
+    double currentSse = _calculateSse(normPoints, params);
+    double bestSse = currentSse;
 
     for (int iter = 0; iter < maxIterations; iter++) {
       // Build Jacobian (J) and Residuals (R)
-      List<List<double>> J = List.generate(dataPoints.length, (_) => List.filled(5, 0.0));
-      List<double> R = List.filled(dataPoints.length, 0.0);
+      List<List<double>> J = List.generate(normPoints.length, (_) => List.filled(5, 0.0));
+      List<double> R = List.filled(normPoints.length, 0.0);
 
-      for (int i = 0; i < dataPoints.length; i++) {
-        double t = dataPoints[i].x;
-        double y = dataPoints[i].y;
+      for (int i = 0; i < normPoints.length; i++) {
+        double t = normPoints[i].x;
+        double y = normPoints[i].y;
 
         double pA = params[0];
         double pd = params[1];
@@ -95,14 +102,14 @@ class CurveFitter {
       for (int i = 0; i < 5; i++) {
         for (int j = 0; j < 5; j++) {
           double sum = 0.0;
-          for (int k = 0; k < dataPoints.length; k++) {
+          for (int k = 0; k < normPoints.length; k++) {
             sum += J[k][i] * J[k][j];
           }
           JtJ[i][j] = sum;
         }
 
         double sumR = 0.0;
-        for (int k = 0; k < dataPoints.length; k++) {
+        for (int k = 0; k < normPoints.length; k++) {
           sumR += J[k][i] * R[k];
         }
         JtR[i] = sumR;
@@ -119,19 +126,25 @@ class CurveFitter {
       List<double>? delta = _solveGaussian(JtJ_damped, JtR);
       if (delta == null) {
         lambda *= 10.0; // Increase damping on singular matrix step
-        if (lambda > 1e9) return null;
+        if (lambda > 1e12) break;
         continue;
       }
 
       // Evaluate candidate parameters
       List<double> candidateParams = List.generate(5, (i) => params[i] + delta[i]);
-      double candidateSse = _calculateSse(candidateParams);
+      double candidateSse = _calculateSse(normPoints, candidateParams);
 
       if (candidateSse < currentSse) {
         // Accept LM step
         double sseDiff = currentSse - candidateSse;
         params = candidateParams;
         currentSse = candidateSse;
+
+        if (candidateSse < bestSse) {
+          bestSse = candidateSse;
+          bestParams = List.from(candidateParams);
+        }
+
         lambda = max(1e-7, lambda / 10.0); // Shift towards Gauss-Newton speed
 
         if (sseDiff / max(1e-6, currentSse) < tolerance) {
@@ -140,18 +153,18 @@ class CurveFitter {
       } else {
         // Reject LM step and increase damping (shift towards Gradient Descent safety)
         lambda *= 10.0;
-        if (lambda > 1e9) break;
+        if (lambda > 1e12) break;
       }
     }
 
-    // Final optimized frequency
-    double finalW = params[2].abs();
+    // Final optimized frequency from best parameters
+    double finalW = bestParams[2].abs();
     if (finalW <= 0.1 || finalW > 200.0) return null;
 
     return (2 * pi) / finalW;
   }
 
-  double _calculateSse(List<double> p) {
+  double _calculateSse(List<Point<double>> pts, List<double> p) {
     double sse = 0.0;
     double pA = p[0];
     double pd = p[1];
@@ -159,7 +172,7 @@ class CurveFitter {
     double pphi = p[3];
     double pC = p[4];
 
-    for (var pt in dataPoints) {
+    for (var pt in pts) {
       double t = pt.x;
       double yModel = pA * exp(-pd * t) * sin(pw * t + pphi) + pC;
       double r = pt.y - yModel;
