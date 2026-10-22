@@ -393,17 +393,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                             ),
                             confirmDismiss: (direction) async {
                               HapticFeedback.mediumImpact();
-                              bool confirmed = false;
-                              await showModalBottomSheet(
-                                context: context,
-                                backgroundColor: Colors.transparent,
-                                builder: (ctx) => DeleteConfirmationDialog(
-                                  title: 'Delete Measurement?',
-                                  text: 'Are you sure you want to delete measurement #$mIndex?',
-                                  onConfirm: () => confirmed = true,
-                                ),
-                              );
-                              return confirmed;
+                              return true;
                             },
                             onDismissed: (direction) {
                               notifier.deleteMeasurement(m);
@@ -490,17 +480,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                             ),
                             confirmDismiss: (direction) async {
                               HapticFeedback.mediumImpact();
-                              bool confirmed = false;
-                              await showModalBottomSheet(
-                                context: context,
-                                backgroundColor: Colors.transparent,
-                                builder: (ctx) => DeleteConfirmationDialog(
-                                  title: 'Delete Measurement?',
-                                  text: 'Are you sure you want to delete measurement #$mIndex?',
-                                  onConfirm: () => confirmed = true,
-                                ),
-                              );
-                              return confirmed;
+                              return true;
                             },
                             onDismissed: (direction) {
                               notifier.deleteMeasurement(m);

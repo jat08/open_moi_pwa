@@ -107,7 +107,7 @@
       }
       if ('serviceWorker' in navigator) {
         var baseHref = document.querySelector('base') ? document.querySelector('base').getAttribute('href') : './';
-        var swUrl = (baseHref.endsWith('/') ? baseHref : baseHref + '/') + 'sw.js?v=1.2.14';
+        var swUrl = (baseHref.endsWith('/') ? baseHref : baseHref + '/') + 'sw.js?v=1.2.15';
         navigator.serviceWorker.register(swUrl, { scope: baseHref })
           .then(function(reg) {
             console.log('PWA Service Worker registered with scope: ', reg.scope);

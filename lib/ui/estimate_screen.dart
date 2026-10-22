@@ -255,11 +255,21 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                             });
                           },
                           onDelete: () {
-                            notifier.deleteEstimationGroups(selectedIds);
-                            setState(() {
-                              selectedIds.clear();
-                              isSelectionMode = false;
-                            });
+                            showModalBottomSheet(
+                              context: context,
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) => DeleteConfirmationDialog(
+                                title: 'Delete Selected Estimations?',
+                                text: 'Are you sure you want to delete ${selectedIds.length} selected estimation group(s)?',
+                                onConfirm: () {
+                                  notifier.deleteEstimationGroups(selectedIds);
+                                  setState(() {
+                                    selectedIds.clear();
+                                    isSelectionMode = false;
+                                  });
+                                },
+                              ),
+                            );
                           },
                         )
                       : Row(
