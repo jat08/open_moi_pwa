@@ -30,10 +30,11 @@ class AppPreferences {
   static const String keyExpectedPeriodB = 'expected_period_b';
   static const String keyExpectedMoiPb = 'expected_moi_pb';
   static const String keyExpectedMoiTw = 'expected_moi_tw';
+  static const String keyExpectedK = 'expected_k';
   static const String keyApplyOptimization = 'apply_optimization';
 
-  static const double defaultKnownAInertia = 20.0000;
-  static const double defaultKnownBInertia = 200.0000;
+  static const double defaultKnownAInertia = 20.0;
+  static const double defaultKnownBInertia = 200.0;
   static const double defaultExpectedPeriodA = 0.6947;
   static const double defaultExpectedPeriodB = 0.2607;
   static const double defaultExpectedMoiPb = 1.16;
@@ -71,6 +72,15 @@ class AppPreferences {
 
   double get expectedMoiTw => _prefs.getDouble(keyExpectedMoiTw) ?? defaultExpectedMoiTw;
   Future<void> saveExpectedMoiTw(double value) => _prefs.setDouble(keyExpectedMoiTw, value);
+
+  double? get expectedK => _prefs.containsKey(keyExpectedK) ? _prefs.getDouble(keyExpectedK) : null;
+  Future<void> saveExpectedK(double? value) async {
+    if (value == null) {
+      await _prefs.remove(keyExpectedK);
+    } else {
+      await _prefs.setDouble(keyExpectedK, value);
+    }
+  }
 
   AppThemeMode get themeMode {
     final name = _prefs.getString(keyThemeMode) ?? AppThemeMode.SYSTEM.name;

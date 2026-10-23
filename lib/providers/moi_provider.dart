@@ -82,14 +82,20 @@ class UiState {
   final double expectedPeriodB;
   final double expectedMoiPB;
   final double expectedMoiTW;
+  final double? expectedK;
 
   final String estimationSearchQuery;
   final int? selectedEstimationGroupId;
   final List<EstimationGroup> estimationGroups;
   final EstimationGroup? currentEstimationGroup;
 
+  final bool isNfcScanning;
+  final bool nfcEnabled;
+  final String? nfcStatus;
+
   final String? importError;
   final int activeTab;
+  final List<dynamic>? comparingGroups;
 
   UiState({
     this.detectorState = OscillationState.WRONG_ORIENTATION,
@@ -151,12 +157,17 @@ class UiState {
     this.expectedPeriodB = AppPreferences.defaultExpectedPeriodB,
     this.expectedMoiPB = AppPreferences.defaultExpectedMoiPb,
     this.expectedMoiTW = AppPreferences.defaultExpectedMoiTw,
+    this.expectedK,
     this.estimationSearchQuery = '',
     this.selectedEstimationGroupId,
     this.estimationGroups = const [],
     this.currentEstimationGroup,
+    this.isNfcScanning = false,
+    this.nfcEnabled = true,
+    this.nfcStatus,
     this.importError,
     this.activeTab = 0,
+    this.comparingGroups,
   });
 
   UiState copyWith({
@@ -219,12 +230,17 @@ class UiState {
     double? expectedPeriodB,
     double? expectedMoiPB,
     double? expectedMoiTW,
+    double? Function()? expectedK,
     String? estimationSearchQuery,
     int? Function()? selectedEstimationGroupId,
     List<EstimationGroup>? estimationGroups,
     EstimationGroup? Function()? currentEstimationGroup,
+    bool? isNfcScanning,
+    bool? nfcEnabled,
+    String? Function()? nfcStatus,
     String? Function()? importError,
     int? activeTab,
+    List<dynamic>? Function()? comparingGroups,
   }) {
     return UiState(
       detectorState: detectorState ?? this.detectorState,
@@ -286,12 +302,17 @@ class UiState {
       expectedPeriodB: expectedPeriodB ?? this.expectedPeriodB,
       expectedMoiPB: expectedMoiPB ?? this.expectedMoiPB,
       expectedMoiTW: expectedMoiTW ?? this.expectedMoiTW,
+      expectedK: expectedK != null ? expectedK() : this.expectedK,
       estimationSearchQuery: estimationSearchQuery ?? this.estimationSearchQuery,
       selectedEstimationGroupId: selectedEstimationGroupId != null ? selectedEstimationGroupId() : this.selectedEstimationGroupId,
       estimationGroups: estimationGroups ?? this.estimationGroups,
       currentEstimationGroup: currentEstimationGroup != null ? currentEstimationGroup() : this.currentEstimationGroup,
+      isNfcScanning: isNfcScanning ?? this.isNfcScanning,
+      nfcEnabled: nfcEnabled ?? this.nfcEnabled,
+      nfcStatus: nfcStatus != null ? nfcStatus() : this.nfcStatus,
       importError: importError != null ? importError() : this.importError,
       activeTab: activeTab ?? this.activeTab,
+      comparingGroups: comparingGroups != null ? comparingGroups() : this.comparingGroups,
     );
   }
 }
@@ -1256,6 +1277,13 @@ class MoiNotifier extends StateNotifier<UiState> {
       return;
     }
 
+    final measurementsToInsert = <Measurement>[];
+    final groupMap = <String, MeasurementGroup>{};
+    final existingGroups = await _db.getAllGroups();
+    for (var g in existingGroups) {
+      groupMap[g.name] = g;
+    }
+
     for (var line in lines.skip(1)) {
       final parts = splitCsvLine(line);
       if (parts.length >= 9) {
@@ -1279,14 +1307,7 @@ class MoiNotifier extends StateNotifier<UiState> {
 
         final residual = parts.length > 16 ? double.tryParse(parts[16]) ?? 0.0 : 0.0;
 
-        final existingGroups = await _db.getAllGroups();
-        MeasurementGroup? group;
-        for (var g in existingGroups) {
-          if (g.name == groupName) {
-            group = g;
-            break;
-          }
-        }
+        MeasurementGroup? group = groupMap[groupName];
 
         if (group == null) {
           final id = await _db.insertGroup(MeasurementGroup(
@@ -1312,9 +1333,10 @@ class MoiNotifier extends StateNotifier<UiState> {
             widthUnit: wUnit,
             groupType: gType,
           );
+          groupMap[groupName] = group;
         }
 
-        await _db.insertMeasurement(Measurement(
+        measurementsToInsert.add(Measurement(
           groupId: group.id,
           type: type,
           period: period,
@@ -1328,6 +1350,9 @@ class MoiNotifier extends StateNotifier<UiState> {
         ));
       }
     }
+    if (measurementsToInsert.isNotEmpty) {
+      await _db.insertMeasurementsBatch(measurementsToInsert);
+    }
     await refreshData();
   }
 
@@ -1338,10 +1363,11 @@ class MoiNotifier extends StateNotifier<UiState> {
       return;
     }
 
+    final estimationGroupsToInsert = <EstimationGroup>[];
     for (var line in lines.skip(1)) {
       final parts = splitCsvLine(line);
       if (parts.length >= 15) {
-        await _db.insertEstimationGroup(EstimationGroup(
+        estimationGroupsToInsert.add(EstimationGroup(
           name: parts[0],
           mass: double.tryParse(parts[1]) ?? 0.0,
           massUnit: parts[2],
@@ -1360,11 +1386,22 @@ class MoiNotifier extends StateNotifier<UiState> {
         ));
       }
     }
+    if (estimationGroupsToInsert.isNotEmpty) {
+      await _db.insertEstimationGroupsBatch(estimationGroupsToInsert);
+    }
     await refreshEstimationGroups();
   }
 
   void clearImportError() {
     state = state.copyWith(importError: () => null);
+  }
+
+  void openComparison(List<dynamic> groups) {
+    state = state.copyWith(comparingGroups: () => groups);
+  }
+
+  void closeComparison() {
+    state = state.copyWith(comparingGroups: () => null);
   }
 
   List<String> splitCsvLine(String line) {

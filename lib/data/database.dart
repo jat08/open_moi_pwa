@@ -124,6 +124,18 @@ class DatabaseHelper {
     return await db.insert('measurements', measurement.toMap());
   }
 
+  Future<void> insertMeasurementsBatch(List<Measurement> measurements) async {
+    if (measurements.isEmpty) return;
+    final db = await database;
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final m in measurements) {
+        batch.insert('measurements', m.toMap());
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
   Future<int> deleteMeasurement(int id) async {
     final db = await database;
     return await db.delete('measurements', where: 'id = ?', whereArgs: [id]);
@@ -254,6 +266,18 @@ class DatabaseHelper {
   Future<int> insertEstimationGroup(EstimationGroup group) async {
     final db = await database;
     return await db.insert('estimation_groups', group.toMap());
+  }
+
+  Future<void> insertEstimationGroupsBatch(List<EstimationGroup> groups) async {
+    if (groups.isEmpty) return;
+    final db = await database;
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final g in groups) {
+        batch.insert('estimation_groups', g.toMap());
+      }
+      await batch.commit(noResult: true);
+    });
   }
 
   Future<int> updateEstimationGroup(EstimationGroup group) async {
