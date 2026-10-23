@@ -1,17 +1,13 @@
-const CACHE_NAME = 'openmoi-pwa-v1.2.18';
+const CACHE_NAME = 'openmoi-pwa-v1.2.19';
 
 // Core resources to pre-cache immediately upon installation
 const PRECACHE_RESOURCES = [
   './',
   'index.html',
   'flutter_bootstrap.js',
-  'main.dart.js',
   'manifest.json',
   'favicon.png',
   'sqlite3.wasm',
-  'assets/FontManifest.json',
-  'assets/AssetManifest.bin.json',
-  'assets/AssetManifest.json',
   'icons/Icon-192.png',
   'icons/Icon-512.png',
   'icons/Icon-maskable-192.png',
@@ -23,8 +19,14 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_RESOURCES).catch((error) => {
-        console.warn('PWA Pre-cache partial warning:', error);
+      return Promise.allSettled(
+        PRECACHE_RESOURCES.map((resource) => cache.add(resource))
+      ).then((results) => {
+        results.forEach((result, idx) => {
+          if (result.status === 'rejected') {
+            console.warn('Pre-cache failed for resource:', PRECACHE_RESOURCES[idx], result.reason);
+          }
+        });
       });
     })
   );
@@ -83,11 +85,13 @@ self.addEventListener('fetch', (event) => {
         .catch((error) => {
           // Navigation fallback for offline HTML launch
           if (event.request.mode === 'navigate') {
-            return (
-              caches.match('index.html') ||
-              caches.match('./') ||
-              caches.match(location.origin + location.pathname)
-            );
+            return caches.match('index.html').then((response) => {
+              if (response) return response;
+              return caches.match('./').then((fallbackResponse) => {
+                if (fallbackResponse) return fallbackResponse;
+                return caches.match('index.html', { ignoreSearch: true });
+              });
+            });
           }
           throw error;
         });
