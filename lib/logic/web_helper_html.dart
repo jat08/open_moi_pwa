@@ -22,6 +22,9 @@ JSExportedDartFunction? _webOrientationListener;
 double _latestAx = 0.0;
 double _latestAy = 0.0;
 double _latestAz = 9.8;
+double _latestGx = 0.0;
+double _latestGy = 0.0;
+double _latestGz = 0.0;
 bool _hasValidMotionAcc = false;
 
 void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz, double ax, double ay, double az, double timeStampMs) onMotion) {
@@ -31,6 +34,9 @@ void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz
   _latestAx = 0.0;
   _latestAy = 0.0;
   _latestAz = 9.8;
+  _latestGx = 0.0;
+  _latestGy = 0.0;
+  _latestGz = 0.0;
 
   // 1. DeviceOrientation listener provides pitch (beta) and roll (gamma) angles natively
   // on 100% of mobile browsers (Android Chrome & iOS Safari).
@@ -38,15 +44,22 @@ void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz
     final orientEvent = event as web.DeviceOrientationEvent;
     final beta = orientEvent.beta?.toDouble() ?? 0.0;
     final gamma = orientEvent.gamma?.toDouble() ?? 0.0;
+    final ts = orientEvent.timeStamp.toDouble();
+
+    final rBeta = (beta * pi) / 180.0;
+    final rGamma = (gamma * pi) / 180.0;
+
+    final orientAx = 9.81 * sin(rGamma);
+    final orientAy = 9.81 * sin(rBeta) * cos(rGamma);
+    final orientAz = 9.81 * cos(rBeta) * cos(rGamma);
 
     if (!_hasValidMotionAcc) {
-      final rBeta = (beta * pi) / 180.0;
-      final rGamma = (gamma * pi) / 180.0;
-
-      _latestAx = 9.81 * sin(rGamma);
-      _latestAy = 9.81 * sin(rBeta) * cos(rGamma);
-      _latestAz = 9.81 * cos(rBeta) * cos(rGamma);
+      _latestAx = orientAx;
+      _latestAy = orientAy;
+      _latestAz = orientAz;
     }
+
+    onMotion(_latestGx, _latestGy, _latestGz, _latestAx, _latestAy, _latestAz, ts);
   }).toJS;
 
   web.window.addEventListener('deviceorientation', _webOrientationListener);
@@ -62,9 +75,9 @@ void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz
     final beta = rot?.beta?.toDouble() ?? 0.0;
     final gamma = rot?.gamma?.toDouble() ?? 0.0;
 
-    final gx = (alpha * pi) / 180.0;
-    final gy = (beta * pi) / 180.0;
-    final gz = (gamma * pi) / 180.0;
+    _latestGx = (alpha * pi) / 180.0;
+    _latestGy = (beta * pi) / 180.0;
+    _latestGz = (gamma * pi) / 180.0;
 
     final rawAx = acc?.x?.toDouble();
     final rawAy = acc?.y?.toDouble();
@@ -80,7 +93,7 @@ void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz
       }
     }
 
-    onMotion(gx, gy, gz, _latestAx, _latestAy, _latestAz, ts);
+    onMotion(_latestGx, _latestGy, _latestGz, _latestAx, _latestAy, _latestAz, ts);
   }).toJS;
 
   web.window.addEventListener('devicemotion', _webMotionListener);
