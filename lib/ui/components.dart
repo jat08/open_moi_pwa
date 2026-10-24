@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -834,12 +835,31 @@ class MeasurementControlButton extends StatelessWidget {
           child: Container(
             color: theme.colorScheme.errorContainer,
             alignment: Alignment.center,
-            child: Text(
-              'Hold Phone at 45°',
-              style: TextStyle(
-                color: theme.colorScheme.onErrorContainer,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Hold Phone at 45°',
+                    style: TextStyle(
+                      color: theme.colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  if (kIsWeb)
+                    Text(
+                      'Tap Screen to Enable Motion Sensors',
+                      style: TextStyle(
+                        color: theme.colorScheme.onErrorContainer.withOpacity(0.8),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                ],
               ),
             ),
           ),

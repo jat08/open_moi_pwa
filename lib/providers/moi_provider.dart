@@ -340,6 +340,9 @@ class MoiNotifier extends StateNotifier<UiState> {
       },
     );
     _detector?.startListening();
+    if (kIsWeb) {
+      requestPermission();
+    }
 
     loadPreferences();
     await refreshData();
