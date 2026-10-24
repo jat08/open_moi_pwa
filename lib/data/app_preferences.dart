@@ -30,9 +30,11 @@ class AppPreferences {
   static const String keyExpectedPeriodB = 'expected_period_b';
   static const String keyExpectedMoiPb = 'expected_moi_pb';
   static const String keyExpectedMoiTw = 'expected_moi_tw';
+  static const String keyExpectedK = 'expected_k';
+  static const String keyApplyOptimization = 'apply_optimization';
 
-  static const double defaultKnownAInertia = 13.2135;
-  static const double defaultKnownBInertia = 177.1500;
+  static const double defaultKnownAInertia = 20.0;
+  static const double defaultKnownBInertia = 200.0;
   static const double defaultExpectedPeriodA = 0.6947;
   static const double defaultExpectedPeriodB = 0.2607;
   static const double defaultExpectedMoiPb = 1.16;
@@ -71,6 +73,15 @@ class AppPreferences {
   double get expectedMoiTw => _prefs.getDouble(keyExpectedMoiTw) ?? defaultExpectedMoiTw;
   Future<void> saveExpectedMoiTw(double value) => _prefs.setDouble(keyExpectedMoiTw, value);
 
+  double? get expectedK => _prefs.containsKey(keyExpectedK) ? _prefs.getDouble(keyExpectedK) : null;
+  Future<void> saveExpectedK(double? value) async {
+    if (value == null) {
+      await _prefs.remove(keyExpectedK);
+    } else {
+      await _prefs.setDouble(keyExpectedK, value);
+    }
+  }
+
   AppThemeMode get themeMode {
     final name = _prefs.getString(keyThemeMode) ?? AppThemeMode.SYSTEM.name;
     return AppThemeMode.values.firstWhere(
@@ -101,7 +112,7 @@ class AppPreferences {
   double get waitDuration => _prefs.getDouble(keyWaitDuration) ?? 2.0;
   Future<void> saveWaitDuration(double seconds) => _prefs.setDouble(keyWaitDuration, seconds);
 
-  int get cyclesToMeasure => _prefs.getInt(keyCyclesToMeasure) ?? 4;
+  int get cyclesToMeasure => _prefs.getInt(keyCyclesToMeasure) ?? 5;
   Future<void> saveCyclesToMeasure(int count) => _prefs.setInt(keyCyclesToMeasure, count);
 
   double get swMargin => _prefs.getDouble(keySwMargin) ?? 0.003;
@@ -133,6 +144,9 @@ class AppPreferences {
 
   int get cycleReference => _prefs.getInt(keyCycleReference) ?? 0;
   Future<void> saveCycleReference(int index) => _prefs.setInt(keyCycleReference, index);
+
+  bool get applyOptimization => _prefs.getBool(keyApplyOptimization) ?? true;
+  Future<void> saveApplyOptimization(bool apply) => _prefs.setBool(keyApplyOptimization, apply);
 
   Future<void> saveCalibration(double kappa, double deviceInertia) async {
     await saveDeviceKappa(kappa);

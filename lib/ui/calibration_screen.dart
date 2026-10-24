@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import '../core/theme/page_typography.dart';
 import '../data/models.dart';
 import '../logic/moi_calculator.dart';
+import '../logic/web_helper.dart';
 import '../providers/moi_provider.dart';
 import 'calibration_detail_screen.dart';
 import 'calibration_info_screen.dart';
@@ -203,169 +206,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
     );
   }
 
-  Future<void> _startNfcScan(BuildContext context, MoiNotifier notifier) async {
-    final theme = Theme.of(context);
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('NFC tag reading is supported on Android devices.')),
-      );
-      return;
-    }
 
-    const channel = MethodChannel('com.openmoi.open_moi_cp/nfc');
-
-    try {
-      final bool available = await channel.invokeMethod('isNfcAvailable') ?? false;
-      if (!available) {
-        if (context.mounted) {
-          showDialog(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('NFC Unavailable'),
-              content: const Text('NFC is disabled or not available on this device. Please enable NFC in system settings.'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    channel.invokeMethod('openNfcSettings');
-                  },
-                  child: const Text('Settings'),
-                ),
-              ],
-            ),
-          );
-        }
-        return;
-      }
-
-      await channel.invokeMethod('enableNfc');
-
-      bool isScanning = true;
-
-      channel.setMethodCallHandler((call) async {
-        if (call.method == 'onNfcScanned') {
-          final List<dynamic>? rawRecords = call.arguments as List<dynamic>?;
-          if (rawRecords != null && rawRecords.isNotEmpty && isScanning) {
-            isScanning = false;
-            await channel.invokeMethod('disableNfc');
-            if (context.mounted && Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
-
-            bool updated = false;
-            for (final record in rawRecords) {
-              final str = record.toString();
-              final clean = str.toUpperCase().replaceAll(' ', '');
-              final numMatch = RegExp(r'[-+]?[0-9]*\.?[0-9]+').firstMatch(str);
-              if (numMatch != null) {
-                final value = double.tryParse(numMatch.group(0)!);
-                if (value != null) {
-                  if (clean.startsWith('OBJAT')) {
-                    await notifier.prefs.saveExpectedValue('OBJECT_A', value);
-                    updated = true;
-                  } else if (clean.startsWith('OBJBT')) {
-                    await notifier.prefs.saveExpectedValue('OBJECT_B', value);
-                    updated = true;
-                  } else if (clean.startsWith('OBJA')) {
-                    await notifier.prefs.saveKnownObjectAInertia(value);
-                    updated = true;
-                  } else if (clean.startsWith('OBJB')) {
-                    await notifier.prefs.saveKnownObjectBInertia(value);
-                    updated = true;
-                  } else if (clean.startsWith('PB')) {
-                    await notifier.prefs.saveExpectedValue('TARE_PB', value);
-                    updated = true;
-                  } else if (clean.startsWith('TW')) {
-                    await notifier.prefs.saveExpectedValue('TARE_TW', value);
-                    updated = true;
-                  }
-                }
-              }
-            }
-
-            if (updated) {
-              notifier.loadPreferences();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('NFC Calibration Data Updated Successfully!')),
-                );
-              }
-            } else {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('No valid calibration records found on NFC tag.')),
-                );
-              }
-            }
-          }
-        }
-      });
-
-      if (context.mounted) {
-        showModalBottomSheet(
-          context: context,
-          backgroundColor: Colors.transparent,
-          isDismissible: true,
-          builder: (ctx) => Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const OneUiDragHandle(),
-                  const SizedBox(height: 12),
-                  Icon(Icons.nfc, size: 48, color: theme.colorScheme.primary),
-                  const SizedBox(height: 12),
-                  const Text('Ready to Scan NFC Tag', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Hold your device near the calibration NFC tag...',
-                    style: TextStyle(fontSize: 14, color: theme.colorScheme.outline),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                      ),
-                      onPressed: () {
-                        isScanning = false;
-                        channel.invokeMethod('disableNfc');
-                        Navigator.of(ctx).pop();
-                      },
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ).then((_) {
-          if (isScanning) {
-            isScanning = false;
-            channel.invokeMethod('disableNfc');
-          }
-        });
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('NFC Error: $e')),
-        );
-      }
-    }
-  }
 
   Widget _sectionHeader(BuildContext context, String title, String description) {
     final theme = Theme.of(context);
@@ -937,6 +778,17 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                       ),
                     ],
 
+                    const SizedBox(height: 14),
+
+                    _sectionHeader(
+                      context,
+                      'Sensor Warm-Up',
+                      'Runs high-frequency hardware motion sensors to warm up the device gyroscope ASIC to thermal equilibrium prior to taking high-precision calibration measurements.',
+                    ),
+                    const SizedBox(height: 4),
+
+                    const SensorWarmUpCard(),
+
                     const SizedBox(height: 28),
                   ],
                 ),
@@ -1165,6 +1017,177 @@ class CalibrationObjectCard extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class SensorWarmUpCard extends StatefulWidget {
+  const SensorWarmUpCard({super.key});
+
+  @override
+  State<SensorWarmUpCard> createState() => _SensorWarmUpCardState();
+}
+
+class _SensorWarmUpCardState extends State<SensorWarmUpCard> {
+  bool _isWarmingUp = false;
+  int _remainingSeconds = 30;
+  static const int _totalSeconds = 30;
+  Timer? _timer;
+  StreamSubscription<GyroscopeEvent>? _gyroSub;
+
+  void _startWarmUp() {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _isWarmingUp = true;
+      _remainingSeconds = _totalSeconds;
+    });
+
+    if (kIsWeb) {
+      registerWebMotionListener((gx, gy, gz, ax, ay, az, ts) {});
+    } else {
+      _gyroSub = gyroscopeEventStream(samplingPeriod: SensorInterval.fastestInterval).listen(
+        (_) {},
+        onError: (_) {},
+        cancelOnError: false,
+      );
+    }
+
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      setState(() {
+        _remainingSeconds--;
+      });
+
+      if (_remainingSeconds <= 0) {
+        _stopWarmUp(completed: true);
+      }
+    });
+  }
+
+  void _stopWarmUp({bool completed = false}) {
+    _timer?.cancel();
+    _timer = null;
+
+    if (kIsWeb) {
+      unregisterWebMotionListener();
+    } else {
+      _gyroSub?.cancel();
+      _gyroSub = null;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isWarmingUp = false;
+        _remainingSeconds = _totalSeconds;
+      });
+
+      if (completed) {
+        HapticFeedback.mediumImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sensor Warm-Up Complete! Gyroscope is at thermal equilibrium.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    if (kIsWeb) {
+      unregisterWebMotionListener();
+    } else {
+      _gyroSub?.cancel();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final progress = (_totalSeconds - _remainingSeconds) / _totalSeconds;
+
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: SizedBox(
+          width: double.infinity,
+          height: kMultipurposeBarHeight,
+          child: !_isWarmingUp
+              ? ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
+                    ),
+                  ),
+                  icon: const Icon(Icons.whatshot, size: 20),
+                  label: const Text(
+                    'Start 30s Warm-Up',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: _startWarmUp,
+                )
+              : Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _stopWarmUp(completed: false);
+                    },
+                    child: Stack(
+                      children: [
+                        Container(color: theme.colorScheme.primary.withOpacity(0.15)),
+                        FractionallySizedBox(
+                          widthFactor: progress.clamp(0.0, 1.0),
+                          child: Container(color: theme.colorScheme.primary.withOpacity(0.35)),
+                        ),
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Warming Up (${_remainingSeconds}s)...',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Tap to Cancel',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: theme.colorScheme.primary.withOpacity(0.8),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+        ),
+      ),
     );
   }
 }

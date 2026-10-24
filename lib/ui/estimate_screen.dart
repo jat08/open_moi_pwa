@@ -16,6 +16,7 @@ class EstimateScreen extends ConsumerStatefulWidget {
 
 class _EstimateScreenState extends ConsumerState<EstimateScreen> {
   Set<int> selectedIds = {};
+  Set<int> _dismissedIds = {};
   bool isSelectionMode = false;
 
   void _showNewGroupBottomSheet(BuildContext context, UiState uiState, MoiNotifier notifier) {
@@ -77,25 +78,16 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                             elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                           ),
-                          onPressed: () async {
+                          onPressed: () {
                             final text = controller.text.trim();
                             if (text.isNotEmpty) {
                               HapticFeedback.lightImpact();
-                              final messenger = ScaffoldMessenger.of(context);
                               Navigator.of(ctx).pop();
-                              try {
-                                await notifier.addEstimationGroup(text);
-                                if (mounted) {
-                                  setState(() {
-                                    selectedIds.clear();
-                                    isSelectionMode = false;
-                                  });
-                                }
-                              } catch (e) {
-                                messenger.showSnackBar(
-                                  SnackBar(content: Text('Error creating estimation group: $e')),
-                                );
-                              }
+                              notifier.addEstimationGroup(text);
+                              setState(() {
+                                selectedIds.clear();
+                                isSelectionMode = false;
+                              });
                             }
                           },
                           child: const Text('Create', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -255,18 +247,50 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                             });
                           },
                           onDelete: () {
-                            notifier.deleteEstimationGroups(selectedIds);
-                            setState(() {
-                              selectedIds.clear();
-                              isSelectionMode = false;
-                            });
+                            showModalBottomSheet(
+                              context: context,
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) => DeleteConfirmationDialog(
+                                title: 'Delete Selected Estimations?',
+                                text: 'Are you sure you want to delete ${selectedIds.length} selected estimation group(s)?',
+                                onConfirm: () {
+                                  notifier.deleteEstimationGroups(selectedIds);
+                                  setState(() {
+                                    selectedIds.clear();
+                                    isSelectionMode = false;
+                                  });
+                                },
+                              ),
+                            );
+                          },
+                          onCompare: () {
+                            final visible = uiState.estimationGroups.where((g) => !_dismissedIds.contains(g.id)).toList();
+                            final selected = visible.where((g) => selectedIds.contains(g.id)).toList();
+
+                            if (selected.length > 2) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please select only 2 groups to compare (remove extra selections).'),
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
+                            } else if (selected.length < 2) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please select 1 more group to compare.'),
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
+                            } else {
+                              notifier.openComparison(selected);
+                            }
                           },
                         )
                       : Row(
                           children: [
                             Expanded(
                               child: SizedBox(
-                                height: 48,
+                                height: kMultipurposeBarHeight,
                                 child: TextField(
                                   onChanged: (query) => notifier.setEstimationSearchQuery(query),
                                   style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15),
@@ -277,29 +301,29 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                                     filled: true,
                                     fillColor: theme.colorScheme.surfaceContainerHighest,
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(24),
+                                      borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
                                       borderSide: BorderSide.none,
                                     ),
                                     enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(24),
+                                      borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
                                       borderSide: BorderSide.none,
                                     ),
                                     focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(24),
+                                      borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
                                       borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
                                     ),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14),
                                   ),
                                 ),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Container(
-                              width: 48,
-                              height: 48,
+                              width: kMultipurposeBarHeight,
+                              height: kMultipurposeBarHeight,
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
                               ),
                               child: IconButton(
                                 padding: EdgeInsets.zero,
@@ -308,8 +332,6 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                                   HapticFeedback.lightImpact();
                                   showModalBottomSheet(
                                     context: context,
-                                    isScrollControlled: true,
-                                    useSafeArea: true,
                                     backgroundColor: Colors.transparent,
                                     builder: (ctx) => SortDialog(
                                       currentType: uiState.sortType,
@@ -325,59 +347,70 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                 ),
               ),
 
-              if (uiState.estimationGroups.isEmpty)
-                const SliverFillRemaining(
-                  child: Center(
-                    child: Text('No estimation groups found.', style: TextStyle(color: Colors.grey, fontSize: 15)),
+              if (uiState.estimationGroups.where((g) => !_dismissedIds.contains(g.id)).isEmpty)
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  sliver: SliverToBoxAdapter(
+                    child: const EmptyStateCard(
+                      icon: Icons.functions,
+                      title: 'No Estimations Saved',
+                      description: 'Estimate Swing Weight and Twist Weight directly from physical paddle dimensions like mass, length, width, and balance point.',
+                    ),
                   ),
                 )
               else
-                SliverPadding(
-                  padding: const EdgeInsets.only(left: 16, right: 16, top: 10, bottom: 80),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final group = uiState.estimationGroups[index];
-                        final isSelected = selectedIds.contains(group.id);
+                Builder(
+                  builder: (context) {
+                    final visibleGroups = uiState.estimationGroups.where((g) => !_dismissedIds.contains(g.id)).toList();
+                    return SliverPadding(
+                      padding: const EdgeInsets.only(left: 16, right: 16, top: 10, bottom: 80),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final group = visibleGroups[index];
+                            final isSelected = selectedIds.contains(group.id);
 
-                        return Dismissible(
-                          key: ValueKey<int>(group.id!),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 3.5),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: const [
-                                Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                                SizedBox(width: 6),
-                                Icon(Icons.delete, color: Colors.white, size: 22),
-                              ],
-                            ),
-                          ),
-                          confirmDismiss: (direction) async {
-                            HapticFeedback.mediumImpact();
-                            bool confirmed = false;
-                            await showModalBottomSheet(
-                              context: context,
-                              backgroundColor: Colors.transparent,
-                              builder: (ctx) => DeleteConfirmationDialog(
-                                title: 'Delete Estimation?',
-                                text: 'Are you sure you want to delete "${group.name}"?',
-                                onConfirm: () => confirmed = true,
+                            return Dismissible(
+                              key: ValueKey<int>(group.id!),
+                              direction: DismissDirection.endToStart,
+                              background: Container(
+                                margin: const EdgeInsets.symmetric(vertical: 3.5),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 20),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: const [
+                                    Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                                    SizedBox(width: 6),
+                                    Icon(Icons.delete, color: Colors.white, size: 22),
+                                  ],
+                                ),
                               ),
-                            );
-                            return confirmed;
-                          },
-                          onDismissed: (direction) {
-                            notifier.deleteEstimationGroups({group.id!});
-                          },
-                          child: EstimationGroupCard(
+                              confirmDismiss: (direction) async {
+                                HapticFeedback.mediumImpact();
+                                bool confirmed = false;
+                                await showModalBottomSheet(
+                                  context: context,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (ctx) => DeleteConfirmationDialog(
+                                    title: 'Delete Estimation?',
+                                    text: 'Are you sure you want to delete "${group.name}"?',
+                                    onConfirm: () => confirmed = true,
+                                  ),
+                                );
+                                return confirmed;
+                              },
+                              onDismissed: (direction) {
+                                setState(() {
+                                  _dismissedIds.add(group.id!);
+                                });
+                                notifier.deleteEstimationGroups({group.id!});
+                              },
+                              child: EstimationGroupCard(
                             group: group,
                             resolution: uiState.moiUnitsResolution,
                             selected: isSelected,
@@ -408,10 +441,12 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                           ),
                         );
                       },
-                      childCount: uiState.estimationGroups.length,
+                      childCount: visibleGroups.length,
                     ),
                   ),
-                ),
+                );
+              },
+            ),
             ],
           ),
         ),
@@ -512,7 +547,7 @@ class EstimationGroupCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
                             color: swBg,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
                             children: [
@@ -534,7 +569,7 @@ class EstimationGroupCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
                             color: twBg,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
                             children: [
