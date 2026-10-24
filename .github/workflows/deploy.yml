@@ -43,9 +43,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Web Release
-        run: |
-          flutter build web --release --base-href /${{ github.event.repository.name }}/
-          touch ./build/web/.nojekyll
+        run: flutter build web --release --base-href /${{ github.event.repository.name }}/
 
       - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@v3

@@ -130,7 +130,7 @@ void unregisterWebMotionListenerImpl() {
     js_util.callMethod(_accelerometer!, 'stop', []);
     _accelerometer = null;
   }
-
+  
   if (_webMotionListener != null) {
     _removeEventListener('devicemotion', _webMotionListener!);
     _webMotionListener = null;
