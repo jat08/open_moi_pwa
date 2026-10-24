@@ -825,15 +825,23 @@ class MeasurementControlButton extends StatelessWidget {
         ),
       );
     } else if (state == OscillationState.WRONG_ORIENTATION) {
-      content = Container(
-        color: theme.colorScheme.errorContainer,
-        alignment: Alignment.center,
-        child: Text(
-          'Hold Phone at 45°',
-          style: TextStyle(
-            color: theme.colorScheme.onErrorContainer,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
+      content = Consumer(
+        builder: (context, ref, child) => InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            ref.read(moiProvider.notifier).requestPermission();
+          },
+          child: Container(
+            color: theme.colorScheme.errorContainer,
+            alignment: Alignment.center,
+            child: Text(
+              'Hold Phone at 45°',
+              style: TextStyle(
+                color: theme.colorScheme.onErrorContainer,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
           ),
         ),
       );

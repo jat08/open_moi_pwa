@@ -50,7 +50,7 @@ class OscillationDetector {
 
   bool applyOptimization = true;
 
-  static const double orientationThreshold = 10.0;
+  static const double orientationThreshold = 12.5;
   static const double targetAngle = 45.0;
   static const double nudgeThreshold = 0.3;
   static const int debounceNs = 100000000; // 0.1s hysteresis window
@@ -158,8 +158,8 @@ class OscillationDetector {
       return;
     }
 
-    // Must be facing upright/forward (not lying flat on back or face on a table)
-    final isFacingForward = z.abs() < (gMag * 0.6);
+    // Must be facing upright/forward (allows screen viewing tilt up to ~58 degrees)
+    final isFacingForward = z.abs() < (gMag * 0.85);
 
     // Roll angle in screen plane (X vs Y) as shown in 45-degree orientation diagram
     final rollAngle = (atan2(x.abs(), y.abs()) * 180.0 / pi);
