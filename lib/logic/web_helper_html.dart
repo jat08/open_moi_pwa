@@ -15,28 +15,45 @@ Future<bool> requestWebMotionPermissionImpl() async {
   }
 }
 
+extension type _DeviceMotionEvent(JSObject _) implements JSObject {
+  external _DeviceAcceleration? get accelerationIncludingGravity;
+  external _DeviceRotationRate? get rotationRate;
+  external double? get timeStamp;
+}
+
+extension type _DeviceAcceleration(JSObject _) implements JSObject {
+  external double? get x;
+  external double? get y;
+  external double? get z;
+}
+
+extension type _DeviceRotationRate(JSObject _) implements JSObject {
+  external double? get alpha;
+  external double? get beta;
+  external double? get gamma;
+}
+
 JSExportedDartFunction? _webMotionListener;
 
 void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz, double ax, double ay, double az, double timeStampMs) onMotion) {
   unregisterWebMotionListenerImpl();
 
-  final listener = ((web.Event event) {
-    final motionEvent = event as web.DeviceMotionEvent;
-    final rot = motionEvent.rotationRate;
-    final acc = motionEvent.accelerationIncludingGravity;
-    final ts = motionEvent.timeStamp.toDouble();
+  final listener = ((_DeviceMotionEvent event) {
+    final rot = event.rotationRate;
+    final acc = event.accelerationIncludingGravity;
+    final ts = event.timeStamp ?? 0.0;
 
-    final alpha = rot?.alpha?.toDouble() ?? 0.0;
-    final beta = rot?.beta?.toDouble() ?? 0.0;
-    final gamma = rot?.gamma?.toDouble() ?? 0.0;
+    final alpha = rot?.alpha ?? 0.0;
+    final beta = rot?.beta ?? 0.0;
+    final gamma = rot?.gamma ?? 0.0;
 
     final gx = (alpha * 3.141592653589793) / 180.0;
     final gy = (beta * 3.141592653589793) / 180.0;
     final gz = (gamma * 3.141592653589793) / 180.0;
 
-    final ax = acc?.x?.toDouble() ?? 0.0;
-    final ay = acc?.y?.toDouble() ?? 0.0;
-    final az = acc?.z?.toDouble() ?? 9.8;
+    final ax = acc?.x ?? 0.0;
+    final ay = acc?.y ?? 0.0;
+    final az = acc?.z ?? 9.8;
 
     onMotion(gx, gy, gz, ax, ay, az, ts);
   }).toJS;
