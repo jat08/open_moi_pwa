@@ -485,7 +485,7 @@ class MeasurementItem extends StatelessWidget {
     this.isPeriod = false,
     this.hideUnits = false,
     this.fitThreshold = 1.5,
-    this.margin = 0.003,
+    this.margin = 0.03,
     this.trimLast = false,
   });
 

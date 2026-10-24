@@ -37,27 +37,18 @@ extension type _DeviceRotationRate(JSObject _) implements JSObject {
 JSExportedDartFunction? _webMotionListener;
 JSExportedDartFunction? _webOrientationListener;
 
-double _latestAx = 0.0;
-double _latestAy = 0.0;
-double _latestAz = 9.8;
-double _latestGx = 0.0;
-double _latestGy = 0.0;
-double _latestGz = 0.0;
-bool _hasValidMotionAcc = false;
-
 void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz, double ax, double ay, double az, double timeStampMs) onMotion) {
   unregisterWebMotionListenerImpl();
 
-  _hasValidMotionAcc = false;
-  _latestAx = 0.0;
-  _latestAy = 0.0;
-  _latestAz = 9.8;
-  _latestGx = 0.0;
-  _latestGy = 0.0;
-  _latestGz = 0.0;
+  double latestGx = 0.0;
+  double latestGy = 0.0;
+  double latestGz = 0.0;
+  double latestAx = 0.0;
+  double latestAy = 0.0;
+  double latestAz = 9.81;
 
-  // 1. DeviceOrientation listener provides pitch (beta) and roll (gamma) angles natively
-  // on 100% of mobile browsers (Android Chrome & iOS Safari).
+  // 1. DeviceOrientation listener calculates orientation gravity vector from pitch (beta) and roll (gamma)
+  // Guaranteed accurate on 100% of mobile browsers (Android Chrome & iOS Safari).
   _webOrientationListener = ((web.Event event) {
     final orientEvent = event as web.DeviceOrientationEvent;
     final beta = orientEvent.beta?.toDouble() ?? 0.0;
@@ -67,22 +58,16 @@ void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz
     final rBeta = (beta * pi) / 180.0;
     final rGamma = (gamma * pi) / 180.0;
 
-    final orientAx = 9.81 * sin(rGamma);
-    final orientAy = 9.81 * sin(rBeta) * cos(rGamma);
-    final orientAz = 9.81 * cos(rBeta) * cos(rGamma);
+    latestAx = 9.81 * sin(rGamma);
+    latestAy = 9.81 * sin(rBeta) * cos(rGamma);
+    latestAz = 9.81 * cos(rBeta) * cos(rGamma);
 
-    if (!_hasValidMotionAcc) {
-      _latestAx = orientAx;
-      _latestAy = orientAy;
-      _latestAz = orientAz;
-    }
-
-    onMotion(_latestGx, _latestGy, _latestGz, _latestAx, _latestAy, _latestAz, ts);
+    onMotion(latestGx, latestGy, latestGz, latestAx, latestAy, latestAz, ts);
   }).toJS;
 
   web.window.addEventListener('deviceorientation', _webOrientationListener);
 
-  // 2. DeviceMotion listener provides rotation rate (gyroscope) and acceleration including gravity.
+  // 2. DeviceMotion listener provides rotation rates (gyroscope)
   _webMotionListener = ((_DeviceMotionEvent event) {
     final rot = event.rotationRate;
     final acc = event.accelerationIncludingGravity;
@@ -92,25 +77,24 @@ void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz
     final beta = rot?.beta ?? 0.0;
     final gamma = rot?.gamma ?? 0.0;
 
-    _latestGx = (alpha * pi) / 180.0;
-    _latestGy = (beta * pi) / 180.0;
-    _latestGz = (gamma * pi) / 180.0;
+    latestGx = (alpha * pi) / 180.0;
+    latestGy = (beta * pi) / 180.0;
+    latestGz = (gamma * pi) / 180.0;
 
+    // Check if DeviceMotion provides native acceleration including gravity
     final rawAx = acc?.x;
     final rawAy = acc?.y;
     final rawAz = acc?.z;
-
     if (rawAx != null && rawAy != null && rawAz != null) {
       final gMag = sqrt(rawAx * rawAx + rawAy * rawAy + rawAz * rawAz);
-      if (gMag > 1.0) {
-        _hasValidMotionAcc = true;
-        _latestAx = rawAx;
-        _latestAy = rawAy;
-        _latestAz = rawAz;
+      if (gMag > 2.0) {
+        latestAx = rawAx;
+        latestAy = rawAy;
+        latestAz = rawAz;
       }
     }
 
-    onMotion(_latestGx, _latestGy, _latestGz, _latestAx, _latestAy, _latestAz, ts);
+    onMotion(latestGx, latestGy, latestGz, latestAx, latestAy, latestAz, ts);
   }).toJS;
 
   web.window.addEventListener('devicemotion', _webMotionListener);

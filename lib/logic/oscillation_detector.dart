@@ -58,7 +58,7 @@ class OscillationDetector {
 
   static const double orientationThreshold = 10.0;
   static const double targetAngle = 45.0;
-  static const double nudgeThreshold = 0.3;
+  static const double nudgeThreshold = 0.08;
   static const int debounceNs = 100000000; // 0.1s hysteresis window
 
   int sampleCount = 0;
@@ -293,8 +293,12 @@ class OscillationDetector {
             (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
   }
 
-  List<double> _resampleUniformly(List<_GyroSample> samples, int startNs, int endNs) {
-    if (samples.isEmpty) return [];
+  List<double> _resampleUniformly(List<_GyroSample> rawSamples, int startNs, int endNs) {
+    final samples = rawSamples.where((s) => s.timestampNs >= startNs && s.timestampNs <= endNs).toList();
+    if (samples.isEmpty) {
+      if (rawSamples.isNotEmpty) return [rawSamples.first.value];
+      return [];
+    }
     if (samples.length == 1) return [samples.first.value];
 
     // Force a high-resolution uniform output (e.g. 200 points) to guarantee visual smoothness
