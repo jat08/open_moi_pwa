@@ -95,6 +95,8 @@ class OpenMOIApp extends ConsumerWidget {
   }
 }
 
+bool _hasRequestedWebMotionPermission = false;
+
 class MainNavigationScaffold extends ConsumerStatefulWidget {
   const MainNavigationScaffold({super.key});
 
@@ -103,8 +105,6 @@ class MainNavigationScaffold extends ConsumerStatefulWidget {
 }
 
 class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold> {
-  bool _hasRequestedWebMotionPermission = false;
-
   void _handleFirstUserTap() {
     if (kIsWeb && !_hasRequestedWebMotionPermission) {
       _hasRequestedWebMotionPermission = true;
@@ -183,6 +183,7 @@ class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold>
     }
 
     return Listener(
+      behavior: HitTestBehavior.translucent,
       onPointerDown: (_) => _handleFirstUserTap(),
       child: Scaffold(
         body: AnimatedSwitcher(
