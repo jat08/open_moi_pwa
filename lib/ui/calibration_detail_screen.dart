@@ -21,7 +21,6 @@ class CalibrationDetailScreen extends ConsumerStatefulWidget {
 
 class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScreen> {
   Set<int> selectedIds = {};
-  Set<int> _dismissedIds = {};
   bool isSelectionMode = false;
 
   @override
@@ -143,6 +142,7 @@ class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScree
                     preparationRemaining: uiState.preparationRemaining,
                     onStart: () => notifier.startMeasurement(),
                     onCancel: () => notifier.cancelMeasurement(),
+                    onRequestPermission: () => notifier.requestPermission(),
                   ),
           ),
         ),
@@ -191,69 +191,56 @@ class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScree
 
                 const SizedBox(height: 10),
 
-                Builder(
-                  builder: (context) {
-                    final visibleMeasurements = measurements.where((m) => !_dismissedIds.contains(m.id)).toList();
-                    if (visibleMeasurements.isEmpty) {
-                      final targetName = widget.target == CalibrationTarget.OBJECT_A
-                          ? 'Object A'
-                          : widget.target == CalibrationTarget.OBJECT_B
-                              ? 'Object B'
-                              : widget.target == CalibrationTarget.TARE_PB
-                                  ? 'Pickleball Tare Adapter'
-                                  : 'Twist Weight Tare Adapter';
-                      return Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          child: EmptyStateCard(
-                            icon: Icons.tune,
-                            title: 'No Calibration Readings',
-                            description: 'Mount $targetName on the physical rig and tap Start Measurement below to record period readings.',
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: measurements.length,
+                    itemBuilder: (context, index) {
+                      final m = measurements[index];
+                      final isSelected = selectedIds.contains(m.id);
+                      final mIndex = measurements.length - index;
+
+                      return Dismissible(
+                        key: ValueKey<int>(m.id!),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 2.0),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: const [
+                              Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                              SizedBox(width: 6),
+                              Icon(Icons.delete, color: Colors.white, size: 20),
+                            ],
                           ),
                         ),
-                      );
-                    }
-                    return Expanded(
-                      child: ListView.builder(
-                        itemCount: visibleMeasurements.length,
-                        itemBuilder: (context, index) {
-                          final m = visibleMeasurements[index];
-                          final isSelected = selectedIds.contains(m.id);
-
-                          final mIndex = visibleMeasurements.length - index;
-
-                          return Dismissible(
-                            key: ValueKey<int>(m.id!),
-                            direction: DismissDirection.endToStart,
-                            background: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 2.0),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.only(right: 20),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                                  SizedBox(width: 6),
-                                  Icon(Icons.delete, color: Colors.white, size: 20),
-                                ],
-                              ),
+                        confirmDismiss: (direction) async {
+                          HapticFeedback.mediumImpact();
+                          bool confirmed = false;
+                          await showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Colors.transparent,
+                            builder: (ctx) => DeleteConfirmationDialog(
+                              title: 'Delete Measurement?',
+                              text: 'Are you sure you want to delete measurement #$mIndex?',
+                              onConfirm: () => confirmed = true,
                             ),
-                            confirmDismiss: (direction) async {
-                              HapticFeedback.mediumImpact();
-                              return true;
-                            },
-                            onDismissed: (direction) {
-                              setState(() {
-                                _dismissedIds.add(m.id!);
-                                selectedIds.remove(m.id);
-                              });
-                              notifier.deleteMeasurement(m);
-                            },
-                            child: MeasurementItem(
+                          );
+                          return confirmed;
+                        },
+                        onDismissed: (direction) {
+                          notifier.deleteMeasurement(m);
+                          setState(() {
+                            selectedIds.clear();
+                            isSelectionMode = false;
+                          });
+                        },
+                        child: MeasurementItem(
                           measurement: m,
                           selected: isSelected,
                           index: mIndex,
@@ -295,9 +282,7 @@ class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScree
                       );
                     },
                   ),
-                );
-              },
-            ),
+                ),
               ],
             ),
           ),

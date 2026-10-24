@@ -106,18 +106,8 @@
         screen.orientation.lock('portrait-primary').catch(function() {});
       }
       if ('serviceWorker' in navigator) {
-        // Prevent legacy/deprecated flutter_service_worker.js registration from triggering reload loop
-        var origRegister = navigator.serviceWorker.register;
-        navigator.serviceWorker.register = function(scriptUrl, options) {
-          if (typeof scriptUrl === 'string' && scriptUrl.indexOf('flutter_service_worker.js') !== -1) {
-            console.log('Prevented deprecated flutter_service_worker.js registration.');
-            return Promise.reject(new Error('flutter_service_worker.js disabled in favor of custom sw.js'));
-          }
-          return origRegister.call(navigator.serviceWorker, scriptUrl, options);
-        };
-
         var baseHref = document.querySelector('base') ? document.querySelector('base').getAttribute('href') : './';
-        var swUrl = (baseHref.endsWith('/') ? baseHref : baseHref + '/') + 'sw.js?v=1.2.22';
+        var swUrl = (baseHref.endsWith('/') ? baseHref : baseHref + '/') + 'sw.js?v=1.2.9';
         navigator.serviceWorker.register(swUrl, { scope: baseHref })
           .then(function(reg) {
             console.log('PWA Service Worker registered with scope: ', reg.scope);

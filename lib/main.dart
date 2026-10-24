@@ -12,7 +12,6 @@ import 'providers/moi_provider.dart';
 import 'ui/calibration_detail_screen.dart';
 import 'ui/calibration_info_screen.dart';
 import 'ui/calibration_screen.dart';
-import 'ui/compare_groups_screen.dart';
 import 'ui/estimate_detail_screen.dart';
 import 'ui/estimate_screen.dart';
 import 'ui/group_attributes_screen.dart';
@@ -43,12 +42,11 @@ class OpenMOIApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final keepScreenOn = ref.watch(moiProvider.select((s) => s.keepScreenOn));
-    final appThemeMode = ref.watch(moiProvider.select((s) => s.themeMode));
+    final uiState = ref.watch(moiProvider);
 
     // Screen Wakelock management
     if (!kIsWeb) {
-      if (keepScreenOn) {
+      if (uiState.keepScreenOn) {
         try {
           WakelockPlus.enable();
         } catch (_) {}
@@ -60,7 +58,7 @@ class OpenMOIApp extends ConsumerWidget {
     }
 
     ThemeMode themeMode;
-    switch (appThemeMode) {
+    switch (uiState.themeMode) {
       case AppThemeMode.LIGHT:
         themeMode = ThemeMode.light;
         break;
@@ -95,8 +93,6 @@ class OpenMOIApp extends ConsumerWidget {
   }
 }
 
-bool _hasRequestedWebMotionPermission = false;
-
 class MainNavigationScaffold extends ConsumerStatefulWidget {
   const MainNavigationScaffold({super.key});
 
@@ -105,6 +101,8 @@ class MainNavigationScaffold extends ConsumerStatefulWidget {
 }
 
 class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold> {
+  bool _hasRequestedWebMotionPermission = false;
+
   void _handleFirstUserTap() {
     if (kIsWeb && !_hasRequestedWebMotionPermission) {
       _hasRequestedWebMotionPermission = true;
@@ -114,52 +112,39 @@ class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold>
 
   @override
   Widget build(BuildContext context) {
-    final activeTab = ref.watch(moiProvider.select((s) => s.activeTab));
-    final editingAttributesGroupId = ref.watch(moiProvider.select((s) => s.editingAttributesGroupId));
-    final currentAttributeGroup = ref.watch(moiProvider.select((s) => s.currentAttributeGroup));
-    final editingExpectedValueTarget = ref.watch(moiProvider.select((s) => s.editingExpectedValueTarget));
-    final selectedMeasurement = ref.watch(moiProvider.select((s) => s.selectedMeasurement));
-    final selectedGroupId = ref.watch(moiProvider.select((s) => s.selectedGroupId));
-    final selectedEstimationGroupId = ref.watch(moiProvider.select((s) => s.selectedEstimationGroupId));
-    final currentEstimationGroup = ref.watch(moiProvider.select((s) => s.currentEstimationGroup));
-    final selectedCalibrationTarget = ref.watch(moiProvider.select((s) => s.selectedCalibrationTarget));
-    final comparingGroups = ref.watch(moiProvider.select((s) => s.comparingGroups));
+    final uiState = ref.watch(moiProvider);
 
     // Navigation subview check to control bottom bar visibility
-    final showBottomBar = selectedGroupId == null &&
-        selectedCalibrationTarget == null &&
-        selectedEstimationGroupId == null &&
-        selectedMeasurement == null &&
-        editingAttributesGroupId == null &&
-        editingExpectedValueTarget == null &&
-        comparingGroups == null;
+    final showBottomBar = uiState.selectedGroupId == null &&
+        uiState.selectedCalibrationTarget == null &&
+        uiState.selectedEstimationGroupId == null &&
+        uiState.selectedMeasurement == null &&
+        uiState.editingAttributesGroupId == null &&
+        uiState.editingExpectedValueTarget == null;
 
     Widget body;
     String screenKey;
 
-    if (comparingGroups != null && comparingGroups.length == 2) {
-      body = CompareGroupsScreen(groups: comparingGroups);
-      screenKey = 'compare_groups';
-    } else if (editingAttributesGroupId != null && currentAttributeGroup != null) {
-      body = GroupAttributesScreen(group: currentAttributeGroup);
-      screenKey = 'attributes_$editingAttributesGroupId';
-    } else if (editingExpectedValueTarget != null) {
-      body = CalibrationInfoScreen(target: editingExpectedValueTarget);
-      screenKey = 'expected_$editingExpectedValueTarget';
-    } else if (selectedMeasurement != null) {
-      body = MeasurementDetailScreen(measurement: selectedMeasurement);
-      screenKey = 'measurement_${selectedMeasurement.id}';
-    } else if (selectedGroupId != null) {
-      body = GroupDetailScreen(groupId: selectedGroupId);
-      screenKey = 'group_$selectedGroupId';
-    } else if (selectedEstimationGroupId != null && currentEstimationGroup != null) {
-      body = EstimateDetailScreen(group: currentEstimationGroup);
-      screenKey = 'estimation_$selectedEstimationGroupId';
-    } else if (selectedCalibrationTarget != null) {
-      body = CalibrationDetailScreen(target: selectedCalibrationTarget);
-      screenKey = 'calibration_$selectedCalibrationTarget';
+    if (uiState.editingAttributesGroupId != null && uiState.currentAttributeGroup != null) {
+      body = GroupAttributesScreen(group: uiState.currentAttributeGroup!);
+      screenKey = 'attributes_${uiState.editingAttributesGroupId}';
+    } else if (uiState.editingExpectedValueTarget != null) {
+      body = CalibrationInfoScreen(target: uiState.editingExpectedValueTarget!);
+      screenKey = 'expected_${uiState.editingExpectedValueTarget}';
+    } else if (uiState.selectedMeasurement != null) {
+      body = MeasurementDetailScreen(measurement: uiState.selectedMeasurement!);
+      screenKey = 'measurement_${uiState.selectedMeasurement!.id}';
+    } else if (uiState.selectedGroupId != null) {
+      body = GroupDetailScreen(groupId: uiState.selectedGroupId!);
+      screenKey = 'group_${uiState.selectedGroupId}';
+    } else if (uiState.selectedEstimationGroupId != null && uiState.currentEstimationGroup != null) {
+      body = EstimateDetailScreen(group: uiState.currentEstimationGroup!);
+      screenKey = 'estimation_${uiState.selectedEstimationGroupId}';
+    } else if (uiState.selectedCalibrationTarget != null) {
+      body = CalibrationDetailScreen(target: uiState.selectedCalibrationTarget!);
+      screenKey = 'calibration_${uiState.selectedCalibrationTarget}';
     } else {
-      switch (activeTab) {
+      switch (uiState.activeTab) {
         case 0:
           body = const MeasureScreen();
           screenKey = 'tab_0';
@@ -183,55 +168,54 @@ class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold>
     }
 
     return Listener(
-      behavior: HitTestBehavior.translucent,
       onPointerDown: (_) => _handleFirstUserTap(),
       child: Scaffold(
         body: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
-          transitionBuilder: (Widget child, Animation<double> animation) {
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
-          },
-          child: KeyedSubtree(
-            key: ValueKey<String>(screenKey),
-            child: body,
-          ),
+        duration: const Duration(milliseconds: 220),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey<String>(screenKey),
+          child: body,
         ),
-        bottomNavigationBar: showBottomBar
-            ? NavigationBar(
-                selectedIndex: activeTab,
-                onDestinationSelected: (index) {
-                  HapticFeedback.selectionClick();
-                  ref.read(moiProvider.notifier).setTab(index);
-                },
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.timer_outlined),
-                    selectedIcon: Icon(Icons.timer),
-                    label: 'Measure',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.functions_outlined),
-                    selectedIcon: Icon(Icons.functions),
-                    label: 'Estimate',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.tune_outlined),
-                    selectedIcon: Icon(Icons.tune),
-                    label: 'Calibrate',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.settings_outlined),
-                    selectedIcon: Icon(Icons.settings),
-                    label: 'Settings',
-                  ),
-                ],
-              )
-            : null,
+      ),
+      bottomNavigationBar: showBottomBar
+          ? NavigationBar(
+              selectedIndex: uiState.activeTab,
+              onDestinationSelected: (index) {
+                HapticFeedback.selectionClick();
+                ref.read(moiProvider.notifier).setTab(index);
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.timer_outlined),
+                  selectedIcon: Icon(Icons.timer),
+                  label: 'Measure',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.functions_outlined),
+                  selectedIcon: Icon(Icons.functions),
+                  label: 'Estimate',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.tune_outlined),
+                  selectedIcon: Icon(Icons.tune),
+                  label: 'Calibrate',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.settings_outlined),
+                  selectedIcon: Icon(Icons.settings),
+                  label: 'Settings',
+                ),
+              ],
+            )
+          : null,
       ),
     );
   }

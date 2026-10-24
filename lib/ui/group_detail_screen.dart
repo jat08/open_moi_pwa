@@ -21,7 +21,6 @@ class GroupDetailScreen extends ConsumerStatefulWidget {
 
 class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   Set<int> selectedIds = {};
-  Set<int> _dismissedIds = {};
   bool isSelectionMode = false;
 
   @override
@@ -91,7 +90,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             ? 'TW'
             : 'None';
 
-    final measurements = uiState.selectedGroupMeasurements.where((m) => !_dismissedIds.contains(m.id)).toList();
+    final measurements = uiState.selectedGroupMeasurements;
     final swMeasurements = measurements.where((m) => m.moi >= 40).toList();
     final twMeasurements = measurements.where((m) => m.moi < 40).toList();
 
@@ -153,6 +152,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                     preparationRemaining: uiState.preparationRemaining,
                     onStart: () => notifier.startMeasurement(),
                     onCancel: () => notifier.cancelMeasurement(),
+                    onRequestPermission: () => notifier.requestPermission(),
                   ),
           ),
         ),
@@ -393,14 +393,24 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                             ),
                             confirmDismiss: (direction) async {
                               HapticFeedback.mediumImpact();
-                              return true;
+                              bool confirmed = false;
+                              await showModalBottomSheet(
+                                context: context,
+                                backgroundColor: Colors.transparent,
+                                builder: (ctx) => DeleteConfirmationDialog(
+                                  title: 'Delete Measurement?',
+                                  text: 'Are you sure you want to delete measurement #$mIndex?',
+                                  onConfirm: () => confirmed = true,
+                                ),
+                              );
+                              return confirmed;
                             },
                             onDismissed: (direction) {
-                              setState(() {
-                                _dismissedIds.add(m.id!);
-                                selectedIds.remove(m.id);
-                              });
                               notifier.deleteMeasurement(m);
+                              setState(() {
+                                selectedIds.clear();
+                                isSelectionMode = false;
+                              });
                             },
                             child: MeasurementItem(
                               measurement: m,
@@ -480,14 +490,24 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                             ),
                             confirmDismiss: (direction) async {
                               HapticFeedback.mediumImpact();
-                              return true;
+                              bool confirmed = false;
+                              await showModalBottomSheet(
+                                context: context,
+                                backgroundColor: Colors.transparent,
+                                builder: (ctx) => DeleteConfirmationDialog(
+                                  title: 'Delete Measurement?',
+                                  text: 'Are you sure you want to delete measurement #$mIndex?',
+                                  onConfirm: () => confirmed = true,
+                                ),
+                              );
+                              return confirmed;
                             },
                             onDismissed: (direction) {
-                              setState(() {
-                                _dismissedIds.add(m.id!);
-                                selectedIds.remove(m.id);
-                              });
                               notifier.deleteMeasurement(m);
+                              setState(() {
+                                selectedIds.clear();
+                                isSelectionMode = false;
+                              });
                             },
                             child: MeasurementItem(
                               measurement: m,
@@ -527,16 +547,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                             ),
                           );
                         }),
-                      ],
-                      if (swMeasurements.isEmpty && twMeasurements.isEmpty) ...[
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20),
-                          child: EmptyStateCard(
-                            icon: Icons.timer_outlined,
-                            title: 'No Measurements Recorded',
-                            description: 'Mount your paddle on the physical measurement rig and tap Start to record your first oscillation run.',
-                          ),
-                        ),
                       ],
                     ],
                   ),
