@@ -63,7 +63,6 @@ class UiState {
   final double fitResidualExclusion;
   final bool trimLastCycle;
   final int skipFirstCycles;
-  final bool applyOptimization;
 
   final int cycleReference;
   final bool keepScreenOn;
@@ -129,13 +128,12 @@ class UiState {
     this.twistTareOffset = 0.0,
     this.measuringDuration = 8.0,
     this.waitDuration = 2.0,
-    this.cyclesToMeasure = 5,
+    this.cyclesToMeasure = 4,
     this.swMargin = 0.003,
     this.twMargin = 0.01,
     this.fitResidualExclusion = 1.5,
     this.trimLastCycle = false,
     this.skipFirstCycles = 1,
-    this.applyOptimization = true,
     this.cycleReference = 0,
     this.keepScreenOn = true,
     this.preparationTime = 2,
@@ -203,7 +201,6 @@ class UiState {
     double? fitResidualExclusion,
     bool? trimLastCycle,
     int? skipFirstCycles,
-    bool? applyOptimization,
     int? cycleReference,
     bool? keepScreenOn,
     int? preparationTime,
@@ -270,7 +267,6 @@ class UiState {
       fitResidualExclusion: fitResidualExclusion ?? this.fitResidualExclusion,
       trimLastCycle: trimLastCycle ?? this.trimLastCycle,
       skipFirstCycles: skipFirstCycles ?? this.skipFirstCycles,
-      applyOptimization: applyOptimization ?? this.applyOptimization,
       cycleReference: cycleReference ?? this.cycleReference,
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
       preparationTime: preparationTime ?? this.preparationTime,
@@ -365,14 +361,12 @@ class MoiNotifier extends StateNotifier<UiState> {
       sortDirection: SortDirection.values.firstWhere((e) => e.name == _prefs.sortDirection, orElse: () => SortDirection.ASCENDING),
       trimLastCycle: _prefs.trimLastCycle,
       skipFirstCycles: _prefs.skipFirstCycles,
-      applyOptimization: _prefs.applyOptimization,
       cycleReference: _prefs.cycleReference,
     );
 
     _detector?.setMaxDuration(state.measuringDuration);
     _detector?.setRequiredCycles(state.cyclesToMeasure);
     _detector?.setSkipFirstCycles(state.skipFirstCycles);
-    _detector?.applyOptimization = state.applyOptimization;
   }
 
   AppPreferences get prefs => _prefs;
@@ -652,11 +646,6 @@ class MoiNotifier extends StateNotifier<UiState> {
   }
 
   Future<void> deleteGroups(Set<int> ids) async {
-    if (ids.isEmpty) return;
-
-    final updatedGroups = state.groups.where((g) => !ids.contains(g.group.id)).toList();
-    state = state.copyWith(groups: updatedGroups);
-
     await _db.deleteGroupsByIds(ids.toList());
     await refreshGroups();
   }
@@ -756,7 +745,6 @@ class MoiNotifier extends StateNotifier<UiState> {
     final kappa = state.deviceKappa;
     final deviceI = state.deviceInertia;
     final trimLast = state.trimLastCycle;
-    final applyOpt = state.applyOptimization;
 
     final rawCycles = result.cyclePeriods
         .split(',')
@@ -764,28 +752,17 @@ class MoiNotifier extends StateNotifier<UiState> {
         .map((s) => double.tryParse(s) ?? 0.0)
         .toList();
 
-    double rawPeriod = 0.0;
-    if (applyOpt) {
-      rawPeriod = result.averagePeriod;
-    } else if (rawCycles.isNotEmpty) {
-      rawPeriod = (trimLast && rawCycles.length > 1)
+    if (rawCycles.isNotEmpty) {
+      final rawPeriod = (trimLast && rawCycles.length > 1)
           ? rawCycles.sublist(0, rawCycles.length - 1).reduce((a, b) => a + b) / (rawCycles.length - 1)
           : rawCycles.reduce((a, b) => a + b) / rawCycles.length;
-    }
 
-    if (rawPeriod <= 0.0) {
-      debugPrint('Measurement invalid or optimization failed (rawPeriod <= 0). Skipping record.');
-      startCooldown();
-      return;
-    }
+      final uniformMeasuredCycles = List.filled(
+        rawCycles.length,
+        rawPeriod.toStringAsFixed(6),
+      ).join(',');
 
-    final cycleCount = rawCycles.isNotEmpty ? rawCycles.length : 1;
-    final uniformMeasuredCycles = List.filled(
-      cycleCount,
-      rawPeriod.toStringAsFixed(6),
-    ).join(',');
-
-    final residual = calculateFitResidual(result.rawData, rawPeriod, result.totalDuration);
+      final residual = calculateFitResidual(result.rawData, rawPeriod, result.totalDuration);
 
       final target = (state.selectedCalibrationTarget != null && state.selectedCalibrationTarget != CalibrationTarget.NONE)
           ? state.selectedCalibrationTarget!
@@ -876,6 +853,7 @@ class MoiNotifier extends StateNotifier<UiState> {
           state = state.copyWith(calculatedMOI: finalMoi);
           break;
       }
+    }
     startCooldown();
   }
 
@@ -964,44 +942,12 @@ class MoiNotifier extends StateNotifier<UiState> {
 
   Future<void> deleteMeasurement(Measurement measurement) async {
     if (measurement.id != null) {
-      await deleteMeasurements({measurement.id!});
+      await _db.deleteMeasurement(measurement.id!);
+      await refreshData();
     }
   }
 
   Future<void> deleteMeasurements(Set<int> ids) async {
-    if (ids.isEmpty) return;
-
-    final updatedGroupMeasurements = state.selectedGroupMeasurements.where((m) => !ids.contains(m.id)).toList();
-    final updatedA = state.measurementsA.where((m) => !ids.contains(m.id)).toList();
-    final updatedB = state.measurementsB.where((m) => !ids.contains(m.id)).toList();
-    final updatedTarePB = state.measurementsTarePB.where((m) => !ids.contains(m.id)).toList();
-    final updatedTareTW = state.measurementsTareTW.where((m) => !ids.contains(m.id)).toList();
-
-    final swMeasurements = updatedGroupMeasurements.where((m) => m.moi >= 40).toList();
-    final twMeasurements = updatedGroupMeasurements.where((m) => m.moi < 40).toList();
-    final swStats = calculateStats(swMeasurements, state.fitResidualExclusion);
-    final twStats = calculateStats(twMeasurements, state.fitResidualExclusion);
-    final swPeriodStats = calculatePeriodStats(swMeasurements, state.fitResidualExclusion);
-    final twPeriodStats = calculatePeriodStats(twMeasurements, state.fitResidualExclusion);
-
-    state = state.copyWith(
-      selectedGroupMeasurements: updatedGroupMeasurements,
-      measurementsA: updatedA,
-      measurementsB: updatedB,
-      measurementsTarePB: updatedTarePB,
-      measurementsTareTW: updatedTareTW,
-      currentSWAverage: swStats.average,
-      currentSWStdDev: swStats.stdDev,
-      currentTWAverage: twStats.average,
-      currentTWStdDev: twStats.stdDev,
-      currentSWPeriodAverage: swPeriodStats.average,
-      currentSWPeriodStdDev: swPeriodStats.stdDev,
-      currentTWPeriodAverage: twPeriodStats.average,
-      currentTWPeriodStdDev: twPeriodStats.stdDev,
-    );
-
-    updateCalibrationStats();
-
     await _db.deleteMeasurementsByIds(ids.toList());
     await refreshData();
   }
@@ -1058,12 +1004,6 @@ class MoiNotifier extends StateNotifier<UiState> {
     refreshEstimationGroups();
   }
 
-  void setApplyOptimization(bool apply) {
-    _prefs.saveApplyOptimization(apply);
-    state = state.copyWith(applyOptimization: apply);
-    _detector?.applyOptimization = apply;
-  }
-
   void selectEstimationGroup(int? groupId) async {
     if (groupId == null) {
       state = state.copyWith(
@@ -1088,11 +1028,6 @@ class MoiNotifier extends StateNotifier<UiState> {
   }
 
   Future<void> deleteEstimationGroups(Set<int> ids) async {
-    if (ids.isEmpty) return;
-
-    final updatedEst = state.estimationGroups.where((g) => !ids.contains(g.id)).toList();
-    state = state.copyWith(estimationGroups: updatedEst);
-
     await _db.deleteEstimationGroupsByIds(ids.toList());
     await refreshEstimationGroups();
   }

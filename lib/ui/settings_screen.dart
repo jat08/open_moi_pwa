@@ -553,24 +553,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _settingLabel('Apply Optimization', 'When enabled, bypasses standard zero-crossing detection and uses a Levenberg-Marquardt non-linear least squares optimizer to fit the recorded gyroscope data to a damped sine wave, analytically yielding highly precise periods resistant to noise and phase shift.'),
-                              ItemWheelPicker<bool>(
-                                value: uiState.applyOptimization,
-                                options: const [true, false],
-                                displayLabel: (b) => b ? "Yes" : "No",
-                                onValueChange: (v) {
-                                  notifier.setApplyOptimization(v);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
                               _settingLabel('Preparation Time\n(seconds)', 'A countdown period in seconds after tapping Start before the device begins arming and detecting oscillations.'),
                               NumberWheelPicker(
                                 value: uiState.preparationTime.toDouble(),

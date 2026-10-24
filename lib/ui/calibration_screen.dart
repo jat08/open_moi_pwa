@@ -1,13 +1,10 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sensors_plus/sensors_plus.dart';
 import '../core/theme/page_typography.dart';
 import '../data/models.dart';
 import '../logic/moi_calculator.dart';
-import '../logic/web_helper.dart';
 import '../providers/moi_provider.dart';
 import 'calibration_detail_screen.dart';
 import 'calibration_info_screen.dart';
@@ -940,17 +937,6 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                       ),
                     ],
 
-                    const SizedBox(height: 14),
-
-                    _sectionHeader(
-                      context,
-                      'Sensor Warm-Up',
-                      'Runs high-frequency hardware motion sensors to warm up the device gyroscope ASIC to thermal equilibrium prior to taking high-precision calibration measurements.',
-                    ),
-                    const SizedBox(height: 4),
-
-                    const SensorWarmUpCard(),
-
                     const SizedBox(height: 28),
                   ],
                 ),
@@ -1179,204 +1165,6 @@ class CalibrationObjectCard extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class SensorWarmUpCard extends StatefulWidget {
-  const SensorWarmUpCard({super.key});
-
-  @override
-  State<SensorWarmUpCard> createState() => _SensorWarmUpCardState();
-}
-
-class _SensorWarmUpCardState extends State<SensorWarmUpCard> {
-  bool _isWarmingUp = false;
-  int _remainingSeconds = 30;
-  static const int _totalSeconds = 30;
-  Timer? _timer;
-  StreamSubscription<GyroscopeEvent>? _gyroSub;
-
-  void _startWarmUp() {
-    HapticFeedback.lightImpact();
-    setState(() {
-      _isWarmingUp = true;
-      _remainingSeconds = _totalSeconds;
-    });
-
-    if (kIsWeb) {
-      registerWebMotionListener((gx, gy, gz, ax, ay, az, ts) {});
-    } else {
-      _gyroSub = gyroscopeEventStream(samplingPeriod: SensorInterval.fastestInterval).listen(
-        (_) {},
-        onError: (_) {},
-        cancelOnError: false,
-      );
-    }
-
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) return;
-      setState(() {
-        _remainingSeconds--;
-      });
-
-      if (_remainingSeconds <= 0) {
-        _stopWarmUp(completed: true);
-      }
-    });
-  }
-
-  void _stopWarmUp({bool completed = false}) {
-    _timer?.cancel();
-    _timer = null;
-
-    if (kIsWeb) {
-      unregisterWebMotionListener();
-    } else {
-      _gyroSub?.cancel();
-      _gyroSub = null;
-    }
-
-    if (mounted) {
-      setState(() {
-        _isWarmingUp = false;
-        _remainingSeconds = _totalSeconds;
-      });
-
-      if (completed) {
-        HapticFeedback.mediumImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Sensor Warm-Up Complete! Gyroscope is at thermal equilibrium.'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    if (kIsWeb) {
-      unregisterWebMotionListener();
-    } else {
-      _gyroSub?.cancel();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final progress = (_totalSeconds - _remainingSeconds) / _totalSeconds;
-
-    return Card(
-      elevation: 0,
-      color: theme.colorScheme.surfaceContainerHighest,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Column(
-          children: [
-            if (!_isWarmingUp) ...[
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.whatshot, color: theme.colorScheme.primary, size: 24),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Sensor Warm-Up',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                        ),
-                        Text(
-                          '30s high-frequency sensor active warm-up',
-                          style: TextStyle(fontSize: 12, color: theme.colorScheme.outline),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: kMultipurposeBarHeight,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kMultipurposeBarRadius)),
-                  ),
-                  icon: const Icon(Icons.whatshot, size: 20),
-                  label: const Text(
-                    'Sensor Warm-Up',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  onPressed: _startWarmUp,
-                ),
-              ),
-            ] else ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.whatshot, color: theme.colorScheme.primary, size: 22),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Warming Up Sensors...',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    '${_remainingSeconds}s',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: progress.clamp(0.0, 1.0),
-                  minHeight: 8,
-                  backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
-                  valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 42,
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
-                  ),
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    _stopWarmUp(completed: false);
-                  },
-                  child: const Text('Cancel Warm-Up'),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 }

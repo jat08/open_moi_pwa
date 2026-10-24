@@ -255,28 +255,18 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                             });
                           },
                           onDelete: () {
-                            showModalBottomSheet(
-                              context: context,
-                              backgroundColor: Colors.transparent,
-                              builder: (ctx) => DeleteConfirmationDialog(
-                                title: 'Delete Selected Groups?',
-                                text: 'Are you sure you want to delete ${selectedIds.length} selected group(s) and all their measurements?',
-                                onConfirm: () {
-                                  notifier.deleteGroups(selectedIds);
-                                  setState(() {
-                                    selectedIds.clear();
-                                    isSelectionMode = false;
-                                  });
-                                },
-                              ),
-                            );
+                            notifier.deleteGroups(selectedIds);
+                            setState(() {
+                              selectedIds.clear();
+                              isSelectionMode = false;
+                            });
                           },
                         )
                       : Row(
                           children: [
                             Expanded(
                               child: SizedBox(
-                                height: kMultipurposeBarHeight,
+                                height: 48,
                                 child: TextField(
                                   onChanged: (query) => notifier.setSearchQuery(query),
                                   style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15),
@@ -287,29 +277,29 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                                     filled: true,
                                     fillColor: theme.colorScheme.surfaceContainerHighest,
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
+                                      borderRadius: BorderRadius.circular(24),
                                       borderSide: BorderSide.none,
                                     ),
                                     enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
+                                      borderRadius: BorderRadius.circular(24),
                                       borderSide: BorderSide.none,
                                     ),
                                     focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
+                                      borderRadius: BorderRadius.circular(24),
                                       borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
                                     ),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
                                   ),
                                 ),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Container(
-                              width: kMultipurposeBarHeight,
-                              height: kMultipurposeBarHeight,
+                              width: 48,
+                              height: 48,
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
+                                borderRadius: BorderRadius.circular(24),
                               ),
                               child: IconButton(
                                 padding: EdgeInsets.zero,
