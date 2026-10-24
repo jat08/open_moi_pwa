@@ -1277,77 +1277,104 @@ class _SensorWarmUpCardState extends State<SensorWarmUpCard> {
       color: theme.colorScheme.surfaceContainerHighest,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: SizedBox(
-          width: double.infinity,
-          height: kMultipurposeBarHeight,
-          child: !_isWarmingUp
-              ? ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Column(
+          children: [
+            if (!_isWarmingUp) ...[
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
                     ),
+                    child: Icon(Icons.whatshot, color: theme.colorScheme.primary, size: 24),
                   ),
-                  icon: const Icon(Icons.whatshot, size: 20),
-                  label: const Text(
-                    'Start 30s Warm-Up',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  onPressed: _startWarmUp,
-                )
-              : Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      _stopWarmUp(completed: false);
-                    },
-                    child: Stack(
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(color: theme.colorScheme.primary.withOpacity(0.15)),
-                        FractionallySizedBox(
-                          widthFactor: progress.clamp(0.0, 1.0),
-                          child: Container(color: theme.colorScheme.primary.withOpacity(0.35)),
+                        Text(
+                          'Sensor Warm-Up',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
                         ),
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Warming Up (${_remainingSeconds}s)...',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Tap to Cancel',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: theme.colorScheme.primary.withOpacity(0.8),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                        Text(
+                          '30s high-frequency sensor active warm-up',
+                          style: TextStyle(fontSize: 12, color: theme.colorScheme.outline),
                         ),
                       ],
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: kMultipurposeBarHeight,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kMultipurposeBarRadius)),
+                  ),
+                  icon: const Icon(Icons.whatshot, size: 20),
+                  label: const Text(
+                    'Sensor Warm-Up',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: _startWarmUp,
                 ),
+              ),
+            ] else ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.whatshot, color: theme.colorScheme.primary, size: 22),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Warming Up Sensors...',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    '${_remainingSeconds}s',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: progress.clamp(0.0, 1.0),
+                  minHeight: 8,
+                  backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+                  valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 42,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
+                  ),
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    _stopWarmUp(completed: false);
+                  },
+                  child: const Text('Cancel Warm-Up'),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

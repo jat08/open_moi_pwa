@@ -1,6 +1,6 @@
-import 'dart:math';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,7 +27,7 @@ class OneUiDragHandle extends StatelessWidget {
       height: 4.5,
       margin: const EdgeInsets.only(top: 10, bottom: 12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.outline.withOpacity(0.35),
+        color: theme.colorScheme.outline.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(2.25),
       ),
     );
@@ -295,7 +295,6 @@ class SelectionTopBar extends StatelessWidget {
   final VoidCallback onToggleAll;
   final VoidCallback onClear;
   final VoidCallback onDelete;
-  final VoidCallback? onCompare;
 
   const SelectionTopBar({
     super.key,
@@ -305,7 +304,6 @@ class SelectionTopBar extends StatelessWidget {
     required this.onToggleAll,
     required this.onClear,
     required this.onDelete,
-    this.onCompare,
   });
 
   @override
@@ -315,138 +313,54 @@ class SelectionTopBar extends StatelessWidget {
 
     return Container(
       height: kMultipurposeBarHeight,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Checkbox(
-            tristate: true,
-            value: checkboxValue,
-            onChanged: (val) {
-              HapticFeedback.lightImpact();
-              onToggleAll();
-            },
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: Checkbox(
+              value: checkboxValue,
+              tristate: true,
+              activeColor: theme.colorScheme.primary,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              onChanged: (_) {
+                HapticFeedback.selectionClick();
+                onToggleAll();
+              },
+            ),
           ),
+          const SizedBox(width: 8),
           IconButton(
-            icon: const Icon(Icons.close, size: 20),
-            color: theme.colorScheme.onPrimaryContainer,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            icon: const Icon(Icons.close, size: 22),
             onPressed: () {
               HapticFeedback.lightImpact();
               onClear();
             },
           ),
-          const SizedBox(width: 4),
+          const Spacer(),
           Text(
             '$count Selected',
             style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onPrimaryContainer, fontSize: 15),
           ),
           const Spacer(),
-          if (onCompare != null) ...[
-            TextButton.icon(
-              style: TextButton.styleFrom(
-                foregroundColor: theme.colorScheme.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              icon: const Icon(Icons.compare_arrows, size: 18),
-              label: const Text(
-                'Compare',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                onCompare!();
-              },
-            ),
-            const SizedBox(width: 4),
-          ],
           IconButton(
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            icon: const Icon(Icons.delete, size: 22, color: Colors.red),
+            icon: const Icon(Icons.delete, color: Colors.red, size: 22),
             onPressed: () {
               HapticFeedback.mediumImpact();
               onDelete();
             },
           ),
         ],
-      ),
-    );
-  }
-}
-
-class TopSearchBar extends StatelessWidget {
-  final String query;
-  final ValueChanged<String> onChanged;
-
-  const TopSearchBar({
-    super.key,
-    required this.query,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final fill = isDark ? const Color(0xFF2B333E) : const Color(0xFFE9F1F8);
-
-    return Container(
-      height: kMultipurposeBarHeight,
-      decoration: BoxDecoration(
-        color: fill,
-        borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
-      ),
-      child: TextField(
-        controller: TextEditingController(text: query)..selection = TextSelection.collapsed(offset: query.length),
-        onChanged: onChanged,
-        style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface),
-        decoration: InputDecoration(
-          hintText: 'Search...',
-          hintStyle: TextStyle(fontSize: 15, color: theme.colorScheme.outline),
-          prefixIcon: Icon(Icons.search, size: 20, color: theme.colorScheme.outline),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
-          suffixIcon: query.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear, size: 18),
-                  onPressed: () => onChanged(''),
-                )
-              : null,
-        ),
-      ),
-    );
-  }
-}
-
-class SortIconButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const SortIconButton({super.key, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final fill = isDark ? const Color(0xFF2B333E) : const Color(0xFFE9F1F8);
-
-    return Container(
-      width: kMultipurposeBarHeight,
-      height: kMultipurposeBarHeight,
-      decoration: BoxDecoration(
-        color: fill,
-        shape: BoxShape.circle,
-      ),
-      child: IconButton(
-        icon: Icon(Icons.sort, color: theme.colorScheme.primary, size: 22),
-        onPressed: () {
-          HapticFeedback.lightImpact();
-          onTap();
-        },
       ),
     );
   }
@@ -479,13 +393,13 @@ class MeasurementItem extends StatelessWidget {
     this.resolution = 1,
     this.periodResolution = 4,
     this.averageVal = 0.0,
-    required this.index,
+    this.index = 0,
     this.showType = true,
     this.isPeriod = false,
     this.hideUnits = false,
-    this.fitThreshold = 1.5,
-    this.margin = 0.003,
-    this.trimLast = false,
+    this.fitThreshold = 1.0,
+    this.margin = 0.07,
+    this.trimLast = true,
   });
 
   @override
@@ -493,288 +407,139 @@ class MeasurementItem extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final isFitOutlier = measurement.fitResidual >= fitThreshold;
-    final isStatisticalOutlier = averageVal > 0 &&
-        (measurement.moi - averageVal).abs() / averageVal > margin;
-
-    final displayVal = isPeriod ? measurement.period : measurement.moi;
-    final displayRes = isPeriod ? periodResolution : resolution;
-    final unitStr = isPeriod ? 's' : 'kg·cm²';
-
-    final valueText = '${displayVal.toStringAsFixed(displayRes)}${hideUnits ? '' : ' $unitStr'}';
-
-    final cardBg = selected
-        ? theme.colorScheme.primaryContainer
-        : (isFitOutlier || isStatisticalOutlier
-            ? (isDark ? const Color(0xFF3E2424) : const Color(0xFFFFF0F0))
-            : theme.colorScheme.surfaceContainerHighest);
-
-    final borderColor = selected
-        ? theme.colorScheme.primary
-        : (isFitOutlier || isStatisticalOutlier
-            ? Colors.red.withOpacity(0.5)
-            : BorderSide.none.color);
-
-    return Card(
-      elevation: 0,
-      color: cardBg,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: selected || isFitOutlier || isStatisticalOutlier
-            ? BorderSide(color: borderColor, width: selected ? 2 : 1)
-            : BorderSide.none,
-      ),
-      margin: const EdgeInsets.symmetric(vertical: 3.5),
-      child: InkWell(
-        onTap: onClick,
-        onLongPress: onLongClick,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Row(
-            children: [
-              Text(
-                '#$index',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.outline,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          valueText,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                            color: isFitOutlier || isStatisticalOutlier
-                                ? Colors.red
-                                : theme.colorScheme.onSurface,
-                          ),
-                        ),
-                        if (isFitOutlier || isStatisticalOutlier) ...[
-                          const SizedBox(width: 6),
-                          Icon(Icons.warning_amber_rounded, size: 18, color: Colors.red),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Period: ${measurement.period.toStringAsFixed(periodResolution)} s  •  Residual: ${measurement.fitResidual.toStringAsFixed(2)}',
-                      style: TextStyle(fontSize: 12, color: theme.colorScheme.outline),
-                    ),
-                  ],
-                ),
-              ),
-              if (measurement.rawData.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                MiniSparklineWidget(
-                  rawData: measurement.rawData,
-                  color: measurement.moi >= 40 ? theme.colorScheme.primary : theme.colorScheme.secondary,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class EmptyStateCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String description;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  const EmptyStateCard({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.description,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      elevation: 0,
-      color: theme.colorScheme.surfaceContainerHighest,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 32, color: theme.colorScheme.primary),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: theme.colorScheme.outline,
-                height: 1.35,
-              ),
-            ),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 18),
-              SizedBox(
-                height: 44,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                  ),
-                  icon: const Icon(Icons.add, size: 20),
-                  label: Text(
-                    actionLabel!,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                  ),
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    onAction!();
-                  },
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class MiniSparklineWidget extends StatelessWidget {
-  final String rawData;
-  final Color color;
-  final double height;
-
-  const MiniSparklineWidget({
-    super.key,
-    required this.rawData,
-    required this.color,
-    this.height = 24.0,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final points = rawData
+    final cycles = measurement.cyclePeriods
         .split(',')
         .where((s) => s.isNotEmpty)
         .map((s) => double.tryParse(s) ?? 0.0)
         .toList();
 
-    if (points.isEmpty) return const SizedBox.shrink();
-
-    List<double> sampled = points;
-    if (points.length > 60) {
-      final step = points.length / 60;
-      sampled = List.generate(60, (i) => points[(i * step).floor()]);
+    double avgMeasured = measurement.period;
+    if (cycles.isNotEmpty) {
+      if (trimLast && cycles.length > 1) {
+        avgMeasured = cycles.sublist(0, cycles.length - 1).reduce((a, b) => a + b) / (cycles.length - 1);
+      } else {
+        avgMeasured = cycles.reduce((a, b) => a + b) / cycles.length;
+      }
     }
 
-    final maxVal = sampled.map((d) => d.abs()).fold(0.01, max);
+    final value = isPeriod ? avgMeasured : measurement.moi;
+    final diff = averageVal > 0 ? (value - averageVal).abs() / averageVal : 0.0;
+    final isOutlier = averageVal > 0 && diff > margin;
+    final isFitError = measurement.fitResidual >= fitThreshold;
 
-    return SizedBox(
-      height: height,
-      width: 50,
-      child: CustomPaint(
-        painter: _MiniSparklinePainter(
-          points: sampled,
-          maxVal: maxVal,
-          color: color,
+    final containerColor = selected
+        ? theme.colorScheme.primaryContainer
+        : AppColors.getCardBackgroundColor(
+            context: context,
+            isSelected: selected,
+            isError: isFitError,
+            isOutlier: isOutlier,
+          );
+
+    final valueText = isPeriod
+        ? '${avgMeasured.toStringAsFixed(periodResolution)}s'
+        : (hideUnits ? value.toStringAsFixed(resolution) : '${value.toStringAsFixed(resolution)} kg·cm²');
+
+    final typeMarking = measurement.moi >= 40 ? 'SW' : 'TW';
+
+    final timeStr = DateFormat('h:mm a').format(DateTime.fromMillisecondsSinceEpoch(measurement.timestamp));
+    final dateStr = DateFormat('M/d/yy').format(DateTime.fromMillisecondsSinceEpoch(measurement.timestamp));
+
+    final valueColor = isFitError
+        ? (isDark ? AppColors.errorTextDark : AppColors.errorTextLight)
+        : theme.colorScheme.onSurface;
+
+    return Card(
+      elevation: 0,
+      color: containerColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: selected ? BorderSide(color: theme.colorScheme.primary, width: 2) : BorderSide.none,
+      ),
+      margin: const EdgeInsets.symmetric(vertical: 2.0),
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onClick();
+        },
+        onLongPress: () {
+          HapticFeedback.mediumImpact();
+          onLongClick();
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 26,
+                child: Text(
+                  '#$index',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: theme.colorScheme.outline),
+                ),
+              ),
+              if (showType && !isPeriod) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: measurement.moi >= 40 ? theme.colorScheme.primary : theme.colorScheme.secondary,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    typeMarking,
+                    style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      valueText,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: valueColor,
+                        height: 1.15,
+                      ),
+                    ),
+                    if (!isPeriod) ...[
+                      Text(
+                        'Period: ${avgMeasured.toStringAsFixed(periodResolution)}s  •  Tare: ${measurement.tareMode}',
+                        style: TextStyle(fontSize: 11.5, color: theme.colorScheme.outline, height: 1.15),
+                      ),
+                    ],
+                    Text(
+                      'Fit Residual: ${measurement.fitResidual.toStringAsFixed(3)}',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: isFitError ? FontWeight.bold : FontWeight.normal,
+                        color: isFitError
+                            ? (isDark ? AppColors.errorTextDark : AppColors.errorTextLight)
+                            : theme.colorScheme.outline,
+                        height: 1.15,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(timeStr, style: TextStyle(fontSize: 11.5, color: theme.colorScheme.outline, height: 1.15)),
+                  Text(dateStr, style: TextStyle(fontSize: 11.5, color: theme.colorScheme.outline, height: 1.15)),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
-  }
-}
-
-class _MiniSparklinePainter extends CustomPainter {
-  final List<double> points;
-  final double maxVal;
-  final Color color;
-
-  _MiniSparklinePainter({
-    required this.points,
-    required this.maxVal,
-    required this.color,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (points.length < 2) return;
-
-    final linePaint = Paint()
-      ..color = color
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final fillPaint = Paint()
-      ..color = color.withOpacity(0.15)
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    final fillPath = Path();
-
-    final stepX = size.width / (points.length - 1);
-    final midY = size.height / 2.0;
-
-    fillPath.moveTo(0, midY);
-
-    for (int i = 0; i < points.length; i++) {
-      final x = i * stepX;
-      final normY = (points[i] / maxVal).clamp(-1.0, 1.0);
-      final y = midY - (normY * (size.height / 2.0 - 2.0));
-
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-      fillPath.lineTo(x, y);
-    }
-
-    fillPath.lineTo(size.width, midY);
-    fillPath.close();
-
-    canvas.drawPath(fillPath, fillPaint);
-    canvas.drawPath(path, linePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _MiniSparklinePainter oldDelegate) {
-    return oldDelegate.points != points || oldDelegate.color != color;
   }
 }
 
@@ -786,39 +551,45 @@ class MeasurementControlButton extends StatelessWidget {
   final int preparationRemaining;
   final VoidCallback onStart;
   final VoidCallback? onCancel;
+  final VoidCallback? onRequestPermission;
 
   const MeasurementControlButton({
     super.key,
     required this.state,
     required this.progress,
-    required this.isCalibrated,
+    this.isCalibrated = true,
     this.cooldownRemaining = 0.0,
     this.preparationRemaining = 0,
     required this.onStart,
     this.onCancel,
+    this.onRequestPermission,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     Widget content;
 
     if (!isCalibrated) {
-      content = Consumer(
-        builder: (context, ref, child) => InkWell(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            ref.read(moiProvider.notifier).navigateToCalibrate();
-          },
-          child: Container(
-            color: theme.colorScheme.errorContainer,
-            alignment: Alignment.center,
-            child: Text(
-              'Calibrate Device First',
-              style: TextStyle(
-                color: theme.colorScheme.onErrorContainer,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+      content = SizedBox(
+        height: 52,
+        child: Consumer(
+          builder: (context, ref, child) => InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              ref.read(moiProvider.notifier).navigateToCalibrate();
+            },
+            child: Container(
+              color: theme.colorScheme.errorContainer,
+              alignment: Alignment.center,
+              child: Text(
+                'Calibrate Device First',
+                style: TextStyle(
+                  color: theme.colorScheme.onErrorContainer,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
@@ -826,7 +597,12 @@ class MeasurementControlButton extends StatelessWidget {
       );
     } else if (state == OscillationState.WRONG_ORIENTATION) {
       content = Container(
-        color: theme.colorScheme.errorContainer,
+        height: 52,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(28),
+        ),
         alignment: Alignment.center,
         child: Text(
           'Hold Phone at 45°',
@@ -838,59 +614,63 @@ class MeasurementControlButton extends StatelessWidget {
         ),
       );
     } else if (preparationRemaining > 0) {
-      content = InkWell(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onCancel?.call();
-        },
-        child: Container(
-          color: Colors.grey.shade700,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Waiting $preparationRemaining Seconds to be Ready',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                ),
-                const Text(
-                  'Tap to Cancel',
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
+      content = SizedBox(
+        height: 52,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onCancel?.call();
+          },
+          child: Container(
+            color: Colors.grey.shade700,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Waiting $preparationRemaining s to be Ready',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const Text(
+                    'Tap to Cancel',
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       );
     } else if (cooldownRemaining > 0) {
-      content = InkWell(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onCancel?.call();
-        },
-        child: Container(
-          color: Colors.grey.shade700,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Waiting ${cooldownRemaining.toInt()} seconds',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                ),
-                const Text(
-                  'Tap to Cancel',
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
+      content = SizedBox(
+        height: 52,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onCancel?.call();
+          },
+          child: Container(
+            color: Colors.grey.shade700,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Waiting ${cooldownRemaining.toInt()} seconds',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const Text(
+                    'Tap to Cancel',
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -898,45 +678,50 @@ class MeasurementControlButton extends StatelessWidget {
     } else {
       switch (state) {
         case OscillationState.READY:
-          content = ElevatedButton(
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              onStart();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          content = SizedBox(
+            height: 52,
+            child: ElevatedButton(
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                onStart();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+              ),
+              child: const Text('Start Measurement', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
             ),
-            child: const Text('Start Measurement', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
           );
           break;
         case OscillationState.ARMED:
-          content = InkWell(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              onCancel?.call();
-            },
-            child: Container(
-              color: theme.colorScheme.primary.withOpacity(0.2),
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Ready - Waiting for Oscillations',
-                      style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 15),
-                    ),
-                    Text(
-                      'Tap to Cancel',
-                      style: TextStyle(color: theme.colorScheme.primary.withOpacity(0.7), fontSize: 11),
-                    ),
-                  ],
+          content = SizedBox(
+            height: 52,
+            child: InkWell(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                onCancel?.call();
+              },
+              child: Container(
+                color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Ready - Waiting for Oscillations',
+                        style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      Text(
+                        'Tap to Cancel',
+                        style: TextStyle(color: theme.colorScheme.primary.withValues(alpha: 0.7), fontSize: 11),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -946,41 +731,47 @@ class MeasurementControlButton extends StatelessWidget {
         case OscillationState.ACTIVE_COUNTING:
           final label = state == OscillationState.SETTLING ? 'Settling...' : 'Measuring...';
           final pct = (progress * 100).toInt().clamp(0, 100);
-          content = InkWell(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              onCancel?.call();
-            },
-            child: Stack(
-              children: [
-                Container(color: theme.colorScheme.primary.withOpacity(0.15)),
-                FractionallySizedBox(
-                  widthFactor: progress.clamp(0.0, 1.0),
-                  child: Container(color: theme.colorScheme.primary.withOpacity(0.35)),
-                ),
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '$label $pct%',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-                          ),
-                          Text(
-                            'Tap to Cancel',
-                            style: TextStyle(fontSize: 11, color: theme.colorScheme.primary.withOpacity(0.8), fontWeight: FontWeight.w500),
-                          ),
-                        ],
+          content = SizedBox(
+            height: 52,
+            child: InkWell(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                onCancel?.call();
+              },
+              child: Stack(
+                children: [
+                  Container(color: theme.colorScheme.primary.withValues(alpha: 0.15)),
+                  FractionallySizedBox(
+                    widthFactor: progress.clamp(0.0, 1.0),
+                    child: Container(color: theme.colorScheme.primary.withValues(alpha: 0.35)),
+                  ),
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '$label $pct%',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                            Text(
+                              'Tap to Cancel',
+                              style: TextStyle(fontSize: 11, color: theme.colorScheme.primary.withValues(alpha: 0.8), fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
           break;
@@ -989,13 +780,12 @@ class MeasurementControlButton extends StatelessWidget {
       }
     }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(kMultipurposeBarRadius),
-      child: SizedBox(
-        height: kMultipurposeBarHeight,
-        width: double.infinity,
-        child: content,
-      ),
+    return Container(
+      height: kMultipurposeBarHeight,
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(kMultipurposeBarRadius)),
+      child: content,
     );
   }
 }
@@ -1036,18 +826,22 @@ class SummaryHeaderLarge extends StatelessWidget {
     final typo = PageTypography.of(context);
 
     final hasSW = avgSW > 0;
-    final hasTW = avgTW > 0;
-
-    final swVal = hasSW ? '${avgSW.toStringAsFixed(moiResolution)} kg·cm²' : 'No Data';
+    final swVal = hasSW ? avgSW.toStringAsFixed(moiResolution) : 'No Data';
     final swTol = hasSW ? '± ${stdDevSW.toStringAsFixed(moiResolution)} kg·cm²' : '';
-    final twVal = hasTW ? '${avgTW.toStringAsFixed(moiResolution)} kg·cm²' : 'No Data';
+
+    final hasTW = avgTW > 0;
+    final twVal = hasTW ? avgTW.toStringAsFixed(moiResolution) : 'No Data';
     final twTol = hasTW ? '± ${stdDevTW.toStringAsFixed(moiResolution)} kg·cm²' : '';
 
-    final periodSWText = hasSW ? 'Period: ${avgPeriodSW.toStringAsFixed(periodResolution)} ± ${stdDevPeriodSW.toStringAsFixed(periodResolution)} s' : 'Period: No Data';
-    final periodTWText = hasTW ? 'Period: ${avgPeriodTW.toStringAsFixed(periodResolution)} ± ${stdDevPeriodTW.toStringAsFixed(periodResolution)} s' : 'Period: No Data';
+    final periodSWText = avgPeriodSW > 0 ? 'Period: ${avgPeriodSW.toStringAsFixed(periodResolution)}s' : 'Period: No Data';
+    final periodTWText = avgPeriodTW > 0 ? 'Period: ${avgPeriodTW.toStringAsFixed(periodResolution)}s' : 'Period: No Data';
 
-    final bpVal = calculatedBP != null && calculatedBP! > 0 ? '${calculatedBP!.toStringAsFixed(moiResolution)} cm' : null;
-    final bpTol = calculatedBP != null && calculatedBP! > 0 && stdDevBP != null ? '± ${stdDevBP!.toStringAsFixed(moiResolution)} cm' : null;
+    String? bpVal;
+    String? bpTol;
+    if (calculatedBP != null && calculatedBP! > 0) {
+      bpVal = calculatedBP!.toStringAsFixed(moiResolution);
+      bpTol = (stdDevBP != null && stdDevBP! > 0) ? '± ${stdDevBP!.toStringAsFixed(moiResolution)} cm' : 'cm';
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1113,7 +907,7 @@ class SummaryHeaderLarge extends StatelessWidget {
                                       style: TextStyle(
                                         fontSize: typo.cardTitleSize(15),
                                         fontWeight: FontWeight.bold,
-                                        color: theme.colorScheme.primary.withOpacity(0.85),
+                                        color: theme.colorScheme.primary.withValues(alpha: 0.85),
                                         height: 1.1,
                                       ),
                                     ),
@@ -1148,7 +942,7 @@ class SummaryHeaderLarge extends StatelessWidget {
                     Container(
                       width: 1,
                       height: 110,
-                      color: theme.colorScheme.outline.withOpacity(0.25),
+                      color: theme.colorScheme.outline.withValues(alpha: 0.25),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -1193,7 +987,7 @@ class SummaryHeaderLarge extends StatelessWidget {
                                       style: TextStyle(
                                         fontSize: typo.cardTitleSize(15),
                                         fontWeight: FontWeight.bold,
-                                        color: theme.colorScheme.secondary.withOpacity(0.85),
+                                        color: theme.colorScheme.secondary.withValues(alpha: 0.85),
                                         height: 1.1,
                                       ),
                                     ),
@@ -1228,7 +1022,7 @@ class SummaryHeaderLarge extends StatelessWidget {
                   ],
                 ),
                 if (bpVal != null) ...[
-                  Divider(height: 20, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.25)),
+                  Divider(height: 20, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                   GestureDetector(
                     onLongPress: () {
                       HapticFeedback.lightImpact();
@@ -1377,7 +1171,7 @@ class SingleSummaryHeader extends StatelessWidget {
                                   const SizedBox(height: 4),
                                   Text(
                                     tol1,
-                                    style: TextStyle(fontSize: typo.cardTitleSize(15), fontWeight: FontWeight.bold, color: theme.colorScheme.primary.withOpacity(0.85), height: 1.1),
+                                    style: TextStyle(fontSize: typo.cardTitleSize(15), fontWeight: FontWeight.bold, color: theme.colorScheme.primary.withValues(alpha: 0.85), height: 1.1),
                                   ),
                                 ],
                               ],
@@ -1390,7 +1184,7 @@ class SingleSummaryHeader extends StatelessWidget {
                       Container(
                         width: 1,
                         height: 80,
-                        color: theme.colorScheme.outline.withOpacity(0.25),
+                        color: theme.colorScheme.outline.withValues(alpha: 0.25),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -1429,7 +1223,7 @@ class SingleSummaryHeader extends StatelessWidget {
                                     const SizedBox(height: 4),
                                     Text(
                                       tol2,
-                                      style: TextStyle(fontSize: typo.cardTitleSize(15), fontWeight: FontWeight.bold, color: theme.colorScheme.secondary.withOpacity(0.85), height: 1.1),
+                                      style: TextStyle(fontSize: typo.cardTitleSize(15), fontWeight: FontWeight.bold, color: theme.colorScheme.secondary.withValues(alpha: 0.85), height: 1.1),
                                     ),
                                   ],
                                 ],
@@ -1442,7 +1236,7 @@ class SingleSummaryHeader extends StatelessWidget {
                   ],
                 ),
                 if (note != null && note.isNotEmpty) ...[
-                  Divider(height: 20, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.25)),
+                  Divider(height: 20, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -1550,7 +1344,7 @@ class EstimationInputField extends StatelessWidget {
                     fillColor: theme.colorScheme.surface,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                     contentPadding: const EdgeInsets.only(left: 6, right: 6, top: 0, bottom: 0),
-                    prefixIcon: locked ? Icon(Icons.lock, size: 18, color: theme.colorScheme.outline) : null,
+                    prefixIcon: locked ? Icon(Icons.lock_outline, size: 16, color: theme.colorScheme.outline) : null,
                     prefixIconConstraints: locked ? const BoxConstraints(minWidth: 28, minHeight: 0) : null,
                   ),
                   onChanged: onValueChange,
@@ -1838,7 +1632,6 @@ class NumberWheelPicker extends StatelessWidget {
   final List<double> range;
   final String format;
   final double multiplyBy;
-  final String? title;
   final ValueChanged<double> onValueChange;
 
   const NumberWheelPicker({
@@ -1847,7 +1640,6 @@ class NumberWheelPicker extends StatelessWidget {
     required this.range,
     this.format = '%.1f',
     this.multiplyBy = 1.0,
-    this.title,
     required this.onValueChange,
   });
 
@@ -1877,7 +1669,6 @@ class NumberWheelPicker extends StatelessWidget {
             initialValue: value,
             range: range,
             formatVal: _formatVal,
-            title: title,
             onConfirm: onValueChange,
           ),
         );
@@ -1904,7 +1695,6 @@ class ItemWheelPicker<T> extends StatelessWidget {
   final T value;
   final List<T> options;
   final String Function(T) displayLabel;
-  final String? title;
   final ValueChanged<T> onValueChange;
 
   const ItemWheelPicker({
@@ -1912,7 +1702,6 @@ class ItemWheelPicker<T> extends StatelessWidget {
     required this.value,
     required this.options,
     required this.displayLabel,
-    this.title,
     required this.onValueChange,
   });
 
@@ -1931,7 +1720,6 @@ class ItemWheelPicker<T> extends StatelessWidget {
             initialValue: value,
             options: options,
             displayLabel: displayLabel,
-            title: title,
             onConfirm: onValueChange,
           ),
         );
@@ -1958,14 +1746,12 @@ class _ItemWheelDialog<T> extends StatefulWidget {
   final T initialValue;
   final List<T> options;
   final String Function(T) displayLabel;
-  final String? title;
   final ValueChanged<T> onConfirm;
 
   const _ItemWheelDialog({
     required this.initialValue,
     required this.options,
     required this.displayLabel,
-    this.title,
     required this.onConfirm,
   });
 
@@ -1999,7 +1785,7 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
 
     final dialogBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
     final wheelBg = isDark ? const Color(0xFF1E242C) : const Color(0xFFF4F9FF);
-    final highlightBg = isDark ? theme.colorScheme.primary.withOpacity(0.25) : const Color(0xFFE2F0FE);
+    final highlightBg = isDark ? theme.colorScheme.primary.withValues(alpha: 0.25) : const Color(0xFFE2F0FE);
     final primaryBlue = isDark ? theme.colorScheme.primary : const Color(0xFF2B9DF0);
 
     return Container(
@@ -2014,9 +1800,9 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
           children: [
             const OneUiDragHandle(),
             const SizedBox(height: 4),
-            Text(
-              widget.title?.replaceAll('\n', ' ') ?? 'Select Value',
-              style: const TextStyle(
+            const Text(
+              'Select Value',
+              style: TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.bold,
               ),
@@ -2042,73 +1828,57 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  ShaderMask(
-                    shaderCallback: (rect) {
-                      return const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black,
-                          Colors.black,
-                          Colors.transparent,
-                        ],
-                        stops: [0.0, 0.20, 0.80, 1.0],
-                      ).createShader(rect);
+                  ListWheelScrollView.useDelegate(
+                    controller: _controller,
+                    itemExtent: 44,
+                    perspective: 0.003,
+                    physics: const FixedExtentScrollPhysics(),
+                    onSelectedItemChanged: (index) {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _selectedIndex = index;
+                      });
                     },
-                    blendMode: BlendMode.dstIn,
-                    child: ListWheelScrollView.useDelegate(
-                      controller: _controller,
-                      itemExtent: 44,
-                      perspective: 0.003,
-                      physics: const FixedExtentScrollPhysics(),
-                      onSelectedItemChanged: (index) {
-                        HapticFeedback.selectionClick();
-                        setState(() {
-                          _selectedIndex = index;
-                        });
-                      },
-                      childDelegate: ListWheelChildBuilderDelegate(
-                        childCount: widget.options.length,
-                        builder: (context, index) {
-                          final isSelected = index == _selectedIndex;
-                          final item = widget.options[index];
-                          return GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () async {
-                              if (_isSelecting) return;
-                              _isSelecting = true;
-                              HapticFeedback.lightImpact();
-                              if (index == _selectedIndex) {
-                                if (context.mounted) {
-                                  Navigator.of(context).pop();
-                                  widget.onConfirm(item);
-                                }
-                              } else {
-                                await _controller.animateToItem(
-                                  index,
-                                  duration: const Duration(milliseconds: 250),
-                                  curve: Curves.easeOutCubic,
-                                );
-                                if (context.mounted) {
-                                  Navigator.of(context).pop();
-                                  widget.onConfirm(item);
-                                }
+                    childDelegate: ListWheelChildBuilderDelegate(
+                      childCount: widget.options.length,
+                      builder: (context, index) {
+                        final isSelected = index == _selectedIndex;
+                        final item = widget.options[index];
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () async {
+                            if (_isSelecting) return;
+                            _isSelecting = true;
+                            HapticFeedback.lightImpact();
+                            if (index == _selectedIndex) {
+                              if (context.mounted) {
+                                Navigator.of(context).pop();
+                                widget.onConfirm(item);
                               }
-                            },
-                            child: Center(
-                              child: Text(
-                                widget.displayLabel(item),
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  color: isSelected ? primaryBlue : (isDark ? Colors.grey : const Color(0xFF889098)),
-                                ),
+                            } else {
+                              await _controller.animateToItem(
+                                index,
+                                duration: const Duration(milliseconds: 250),
+                                curve: Curves.easeOutCubic,
+                              );
+                              if (context.mounted) {
+                                Navigator.of(context).pop();
+                                widget.onConfirm(item);
+                              }
+                            }
+                          },
+                          child: Center(
+                            child: Text(
+                              widget.displayLabel(item),
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                color: isSelected ? primaryBlue : (isDark ? Colors.grey : const Color(0xFF889098)),
                               ),
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -2153,14 +1923,12 @@ class _NumberWheelDialog extends StatefulWidget {
   final double initialValue;
   final List<double> range;
   final String Function(double) formatVal;
-  final String? title;
   final ValueChanged<double> onConfirm;
 
   const _NumberWheelDialog({
     required this.initialValue,
     required this.range,
     required this.formatVal,
-    this.title,
     required this.onConfirm,
   });
 
@@ -2194,7 +1962,7 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
 
     final dialogBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
     final wheelBg = isDark ? const Color(0xFF1E242C) : const Color(0xFFF4F9FF);
-    final highlightBg = isDark ? theme.colorScheme.primary.withOpacity(0.25) : const Color(0xFFE2F0FE);
+    final highlightBg = isDark ? theme.colorScheme.primary.withValues(alpha: 0.25) : const Color(0xFFE2F0FE);
     final primaryBlue = isDark ? theme.colorScheme.primary : const Color(0xFF2B9DF0);
 
     return Container(
@@ -2209,9 +1977,9 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
           children: [
             const OneUiDragHandle(),
             const SizedBox(height: 4),
-            Text(
-              widget.title?.replaceAll('\n', ' ') ?? 'Select Value',
-              style: const TextStyle(
+            const Text(
+              'Select Value',
+              style: TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.bold,
               ),
@@ -2237,73 +2005,57 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  ShaderMask(
-                    shaderCallback: (rect) {
-                      return const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black,
-                          Colors.black,
-                          Colors.transparent,
-                        ],
-                        stops: [0.0, 0.20, 0.80, 1.0],
-                      ).createShader(rect);
+                  ListWheelScrollView.useDelegate(
+                    controller: _controller,
+                    itemExtent: 44,
+                    perspective: 0.003,
+                    physics: const FixedExtentScrollPhysics(),
+                    onSelectedItemChanged: (index) {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _selectedIndex = index;
+                      });
                     },
-                    blendMode: BlendMode.dstIn,
-                    child: ListWheelScrollView.useDelegate(
-                      controller: _controller,
-                      itemExtent: 44,
-                      perspective: 0.003,
-                      physics: const FixedExtentScrollPhysics(),
-                      onSelectedItemChanged: (index) {
-                        HapticFeedback.selectionClick();
-                        setState(() {
-                          _selectedIndex = index;
-                        });
-                      },
-                      childDelegate: ListWheelChildBuilderDelegate(
-                        childCount: widget.range.length,
-                        builder: (context, index) {
-                          final isSelected = index == _selectedIndex;
-                          final item = widget.range[index];
-                          return GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () async {
-                              if (_isSelecting) return;
-                              _isSelecting = true;
-                              HapticFeedback.lightImpact();
-                              if (index == _selectedIndex) {
-                                if (context.mounted) {
-                                  Navigator.of(context).pop();
-                                  widget.onConfirm(item);
-                                }
-                              } else {
-                                await _controller.animateToItem(
-                                  index,
-                                  duration: const Duration(milliseconds: 250),
-                                  curve: Curves.easeOutCubic,
-                                );
-                                if (context.mounted) {
-                                  Navigator.of(context).pop();
-                                  widget.onConfirm(item);
-                                }
+                    childDelegate: ListWheelChildBuilderDelegate(
+                      childCount: widget.range.length,
+                      builder: (context, index) {
+                        final isSelected = index == _selectedIndex;
+                        final item = widget.range[index];
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () async {
+                            if (_isSelecting) return;
+                            _isSelecting = true;
+                            HapticFeedback.lightImpact();
+                            if (index == _selectedIndex) {
+                              if (context.mounted) {
+                                Navigator.of(context).pop();
+                                widget.onConfirm(item);
                               }
-                            },
-                            child: Center(
-                              child: Text(
-                                widget.formatVal(item),
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  color: isSelected ? primaryBlue : (isDark ? Colors.grey : const Color(0xFF889098)),
-                                ),
+                            } else {
+                              await _controller.animateToItem(
+                                index,
+                                duration: const Duration(milliseconds: 250),
+                                curve: Curves.easeOutCubic,
+                              );
+                              if (context.mounted) {
+                                Navigator.of(context).pop();
+                                widget.onConfirm(item);
+                              }
+                            }
+                          },
+                          child: Center(
+                            child: Text(
+                              widget.formatVal(item),
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                color: isSelected ? primaryBlue : (isDark ? Colors.grey : const Color(0xFF889098)),
                               ),
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -2373,6 +2125,8 @@ class SortDialog extends StatelessWidget {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           child: SafeArea(
+            top: false,
+            bottom: true,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -2461,7 +2215,7 @@ class SortDialog extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
               ],
             ),
           ),

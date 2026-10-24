@@ -5,9 +5,8 @@ import 'dart:math';
 /// y(t) = A * exp(-d*t) * sin(w*t + phi) + C
 class CurveFitter {
   final List<Point<double>> dataPoints; // x: time in seconds, y: gyro value
-  final double? initialPeriodHint; // Optional zero-crossing period estimate
 
-  CurveFitter(this.dataPoints, {this.initialPeriodHint});
+  CurveFitter(this.dataPoints);
 
   /// Analyzes the dataset using Levenberg-Marquardt non-linear curve fitting
   /// and returns the analytically optimized period (in seconds), or null if fitting fails.
@@ -48,22 +47,10 @@ class CurveFitter {
     double A = max(0.01, (yMax - yMin) / 2.0);    // Initial Amplitude seed
     double d = 0.05;                              // Initial Damping factor seed
 
-    double w;
-    if (initialPeriodHint != null && initialPeriodHint! > 0) {
-      w = (2 * pi) / initialPeriodHint!;
-    } else {
-      double cycles = zeroCrossings / 2.0;
-      if (cycles < 0.25) cycles = 1.0;            // Fallback if zero crossings are sparse
-      w = (cycles / duration) * 2 * pi;            // Initial Angular Frequency seed
-    }
-
-    // Initial Phase seed: estimated from initial data point relative to offset C
-    double y0 = normPoints.first.y - C;
-    double ratio = (y0 / A).clamp(-1.0, 1.0);
-    double phi = asin(ratio);
-    if (normPoints.length > 1 && normPoints[1].y < normPoints[0].y) {
-      phi = pi - phi;
-    }
+    double cycles = zeroCrossings / 2.0;
+    if (cycles < 0.25) cycles = 1.0;              // Fallback if zero crossings are sparse
+    double w = (cycles / duration) * 2 * pi;      // Initial Angular Frequency seed
+    double phi = 0.0;                             // Initial Phase shift seed
 
     // Parameters vector: [A, d, w, phi, C]
     List<double> params = [A, d, w, phi, C];

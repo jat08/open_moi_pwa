@@ -16,7 +16,6 @@ class MeasureScreen extends ConsumerStatefulWidget {
 
 class _MeasureScreenState extends ConsumerState<MeasureScreen> {
   Set<int> selectedIds = {};
-  Set<int> _dismissedIds = {};
   bool isSelectionMode = false;
 
   void _showNewGroupBottomSheet(BuildContext context, UiState uiState, MoiNotifier notifier) {
@@ -78,16 +77,25 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                             elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                           ),
-                          onPressed: () {
+                          onPressed: () async {
                             final text = controller.text.trim();
                             if (text.isNotEmpty) {
                               HapticFeedback.lightImpact();
+                              final messenger = ScaffoldMessenger.of(context);
                               Navigator.of(ctx).pop();
-                              notifier.addGroup(text);
-                              setState(() {
-                                selectedIds.clear();
-                                isSelectionMode = false;
-                              });
+                              try {
+                                await notifier.addGroup(text);
+                                if (mounted) {
+                                  setState(() {
+                                    selectedIds.clear();
+                                    isSelectionMode = false;
+                                  });
+                                }
+                              } catch (e) {
+                                messenger.showSnackBar(
+                                  SnackBar(content: Text('Error creating group: $e')),
+                                );
+                              }
                             }
                           },
                           child: const Text('Create', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -263,28 +271,6 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                               ),
                             );
                           },
-                          onCompare: () {
-                            final visible = uiState.groups.where((g) => !_dismissedIds.contains(g.group.id)).toList();
-                            final selected = visible.where((g) => selectedIds.contains(g.group.id)).toList();
-
-                            if (selected.length > 2) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Please select only 2 groups to compare (remove extra selections).'),
-                                  duration: Duration(seconds: 3),
-                                ),
-                              );
-                            } else if (selected.length < 2) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Please select 1 more group to compare.'),
-                                  duration: Duration(seconds: 3),
-                                ),
-                              );
-                            } else {
-                              notifier.openComparison(selected);
-                            }
-                          },
                         )
                       : Row(
                           children: [
@@ -332,6 +318,8 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                                   HapticFeedback.lightImpact();
                                   showModalBottomSheet(
                                     context: context,
+                                    isScrollControlled: true,
+                                    useSafeArea: true,
                                     backgroundColor: Colors.transparent,
                                     builder: (ctx) => SortDialog(
                                       currentType: uiState.sortType,
@@ -347,70 +335,59 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                 ),
               ),
 
-              if (uiState.groups.where((g) => !_dismissedIds.contains(g.group.id)).isEmpty)
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                  sliver: SliverToBoxAdapter(
-                    child: const EmptyStateCard(
-                      icon: Icons.speed,
-                      title: 'No Paddle Groups Yet',
-                      description: 'Create your first paddle group to organize measurements, compute real-time SW and TW averages, and track balance points.',
-                    ),
+              if (uiState.groups.isEmpty)
+                const SliverFillRemaining(
+                  child: Center(
+                    child: Text('No groups found.', style: TextStyle(color: Colors.grey, fontSize: 15)),
                   ),
                 )
               else
-                Builder(
-                  builder: (context) {
-                    final visibleGroups = uiState.groups.where((g) => !_dismissedIds.contains(g.group.id)).toList();
-                    return SliverPadding(
-                      padding: const EdgeInsets.only(left: 16, right: 16, top: 10, bottom: 80),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final summary = visibleGroups[index];
-                            final isSelected = selectedIds.contains(summary.group.id);
+                SliverPadding(
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 10, bottom: 80),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final summary = uiState.groups[index];
+                        final isSelected = selectedIds.contains(summary.group.id);
 
-                            return Dismissible(
-                              key: ValueKey<int>(summary.group.id!),
-                              direction: DismissDirection.endToStart,
-                              background: Container(
-                                margin: const EdgeInsets.symmetric(vertical: 3.5),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 20),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: const [
-                                    Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                                    SizedBox(width: 6),
-                                    Icon(Icons.delete, color: Colors.white, size: 22),
-                                  ],
-                                ),
+                        return Dismissible(
+                          key: ValueKey<int>(summary.group.id!),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 3.5),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 20),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: const [
+                                Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                                SizedBox(width: 6),
+                                Icon(Icons.delete, color: Colors.white, size: 22),
+                              ],
+                            ),
+                          ),
+                          confirmDismiss: (direction) async {
+                            HapticFeedback.mediumImpact();
+                            bool confirmed = false;
+                            await showModalBottomSheet(
+                              context: context,
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) => DeleteConfirmationDialog(
+                                title: 'Delete Group?',
+                                text: 'Are you sure you want to delete "${summary.group.name}" and all its measurements?',
+                                onConfirm: () => confirmed = true,
                               ),
-                              confirmDismiss: (direction) async {
-                                HapticFeedback.mediumImpact();
-                                bool confirmed = false;
-                                await showModalBottomSheet(
-                                  context: context,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (ctx) => DeleteConfirmationDialog(
-                                    title: 'Delete Group?',
-                                    text: 'Are you sure you want to delete "${summary.group.name}" and all its measurements?',
-                                    onConfirm: () => confirmed = true,
-                                  ),
-                                );
-                                return confirmed;
-                              },
-                              onDismissed: (direction) {
-                                setState(() {
-                                  _dismissedIds.add(summary.group.id!);
-                                });
-                                notifier.deleteGroups({summary.group.id!});
-                              },
-                              child: GroupItemCard(
+                            );
+                            return confirmed;
+                          },
+                          onDismissed: (direction) {
+                            notifier.deleteGroups({summary.group.id!});
+                          },
+                          child: GroupItemCard(
                             summary: summary,
                             resolution: uiState.moiUnitsResolution,
                             selected: isSelected,
@@ -441,12 +418,10 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                           ),
                         );
                       },
-                      childCount: visibleGroups.length,
+                      childCount: uiState.groups.length,
                     ),
                   ),
-                );
-              },
-            ),
+                ),
             ],
           ),
         ),
@@ -546,7 +521,7 @@ class GroupItemCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
                             color: swBg,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           child: Row(
                             children: [
@@ -568,7 +543,7 @@ class GroupItemCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
                             color: twBg,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           child: Row(
                             children: [
