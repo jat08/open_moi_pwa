@@ -101,7 +101,7 @@ class OscillationDetector {
           handleAccelerometer(event);
         },
         onError: (err) {
-          debugPrint('Accelerometer stream error: $err');
+          print('Accelerometer stream error: $err');
         },
         cancelOnError: false,
       );
@@ -112,7 +112,7 @@ class OscillationDetector {
           handleGyroscope(event);
         },
         onError: (err) {
-          debugPrint('Gyroscope stream error: $err');
+          print('Gyroscope stream error: $err');
         },
         cancelOnError: false,
       );

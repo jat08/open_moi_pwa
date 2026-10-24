@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:js_interop';
-import 'dart:math';
+import 'dart:js_util' as js_util;
 import 'package:web/web.dart' as web;
 
 @JS('requestMotionPermission')
@@ -16,96 +16,123 @@ Future<bool> requestWebMotionPermissionImpl() async {
   }
 }
 
-JSExportedDartFunction? _webMotionListener;
-JSExportedDartFunction? _webOrientationListener;
+@JS('window.addEventListener')
+external void _addEventListener(String type, JSFunction listener);
 
-double _latestAx = 0.0;
-double _latestAy = 0.0;
-double _latestAz = 9.8;
-double _latestGx = 0.0;
-double _latestGy = 0.0;
-double _latestGz = 0.0;
-bool _hasValidMotionAcc = false;
+@JS('window.removeEventListener')
+external void _removeEventListener(String type, JSFunction listener);
+
+extension type _DeviceMotionEvent(JSObject _) implements JSObject {
+  external _DeviceAcceleration? get accelerationIncludingGravity;
+  external _DeviceRotationRate? get rotationRate;
+  external double? get timeStamp;
+}
+
+extension type _DeviceAcceleration(JSObject _) implements JSObject {
+  external double? get x;
+  external double? get y;
+  external double? get z;
+}
+
+extension type _DeviceRotationRate(JSObject _) implements JSObject {
+  external double? get alpha;
+  external double? get beta;
+  external double? get gamma;
+}
+
+@JS('Gyroscope')
+external JSFunction get _gyroscopeConstructor;
+
+@JS('Accelerometer')
+external JSFunction get _accelerometerConstructor;
+
+JSFunction? _webMotionListener;
+JSObject? _gyroscope;
+JSObject? _accelerometer;
 
 void registerWebMotionListenerImpl(void Function(double gx, double gy, double gz, double ax, double ay, double az, double timeStampMs) onMotion) {
   unregisterWebMotionListenerImpl();
 
-  _hasValidMotionAcc = false;
-  _latestAx = 0.0;
-  _latestAy = 0.0;
-  _latestAz = 9.8;
-  _latestGx = 0.0;
-  _latestGy = 0.0;
-  _latestGz = 0.0;
+  // Feature detection for Generic Sensor API (Supported in Chrome/Android, not Safari/iOS)
+  bool hasGenericSensors = js_util.hasProperty(web.window, 'Gyroscope') && 
+                           js_util.hasProperty(web.window, 'Accelerometer');
 
-  // 1. DeviceOrientation listener provides pitch (beta) and roll (gamma) angles natively
-  // on 100% of mobile browsers (Android Chrome & iOS Safari).
-  _webOrientationListener = ((web.Event event) {
-    final orientEvent = event as web.DeviceOrientationEvent;
-    final beta = orientEvent.beta?.toDouble() ?? 0.0;
-    final gamma = orientEvent.gamma?.toDouble() ?? 0.0;
-    final ts = orientEvent.timeStamp.toDouble();
+  if (hasGenericSensors) {
+    try {
+      final config = js_util.jsify({'frequency': 100});
+      _gyroscope = js_util.callConstructor(_gyroscopeConstructor, [config]) as JSObject;
+      _accelerometer = js_util.callConstructor(_accelerometerConstructor, [config]) as JSObject;
 
-    final rBeta = (beta * pi) / 180.0;
-    final rGamma = (gamma * pi) / 180.0;
+      double ax = 0.0;
+      double ay = 0.0;
+      double az = 9.8;
 
-    final orientAx = 9.81 * sin(rGamma);
-    final orientAy = 9.81 * sin(rBeta) * cos(rGamma);
-    final orientAz = 9.81 * cos(rBeta) * cos(rGamma);
+      final accListener = ((web.Event e) {
+        if (_accelerometer != null) {
+          ax = js_util.getProperty(_accelerometer!, 'x') as double? ?? 0.0;
+          ay = js_util.getProperty(_accelerometer!, 'y') as double? ?? 0.0;
+          az = js_util.getProperty(_accelerometer!, 'z') as double? ?? 9.8;
+        }
+      }).toJS;
+      (_accelerometer as web.EventTarget).addEventListener('reading', accListener);
+      js_util.callMethod(_accelerometer!, 'start', []);
 
-    if (!_hasValidMotionAcc) {
-      _latestAx = orientAx;
-      _latestAy = orientAy;
-      _latestAz = orientAz;
+      final gyroListener = ((web.Event e) {
+        if (_gyroscope != null) {
+          final gx = js_util.getProperty(_gyroscope!, 'x') as double? ?? 0.0;
+          final gy = js_util.getProperty(_gyroscope!, 'y') as double? ?? 0.0;
+          final gz = js_util.getProperty(_gyroscope!, 'z') as double? ?? 0.0;
+          final ts = js_util.getProperty(_gyroscope!, 'timestamp') as double? ?? 0.0;
+
+          onMotion(gx, gy, gz, ax, ay, az, ts);
+        }
+      }).toJS;
+      (_gyroscope as web.EventTarget).addEventListener('reading', gyroListener);
+      js_util.callMethod(_gyroscope!, 'start', []);
+
+      _webMotionListener = null; // Mark that we aren't using DeviceMotionEvent
+      return;
+    } catch (e) {
+      // Fallback if sensor creation fails (e.g. strict Permissions-Policy)
     }
+  }
 
-    onMotion(_latestGx, _latestGy, _latestGz, _latestAx, _latestAy, _latestAz, ts);
+  // Fallback to DeviceMotionEvent (Used by iOS Safari)
+  _webMotionListener = ((_DeviceMotionEvent event) {
+    final rot = event.rotationRate;
+    final acc = event.accelerationIncludingGravity;
+    final ts = event.timeStamp ?? 0.0;
+
+    final alpha = rot?.alpha ?? 0.0;
+    final beta = rot?.beta ?? 0.0;
+    final gamma = rot?.gamma ?? 0.0;
+
+    final gx = (alpha * 3.141592653589793) / 180.0;
+    final gy = (beta * 3.141592653589793) / 180.0;
+    final gz = (gamma * 3.141592653589793) / 180.0;
+
+    final ax = acc?.x ?? 0.0;
+    final ay = acc?.y ?? 0.0;
+    final az = acc?.z ?? 9.8;
+
+    onMotion(gx, gy, gz, ax, ay, az, ts);
   }).toJS;
 
-  web.window.addEventListener('deviceorientation', _webOrientationListener);
-
-  // 2. DeviceMotion listener provides rotation rate (gyroscope) and acceleration including gravity.
-  _webMotionListener = ((web.Event event) {
-    final motionEvent = event as web.DeviceMotionEvent;
-    final rot = motionEvent.rotationRate;
-    final acc = motionEvent.accelerationIncludingGravity;
-    final ts = motionEvent.timeStamp.toDouble();
-
-    final alpha = rot?.alpha?.toDouble() ?? 0.0;
-    final beta = rot?.beta?.toDouble() ?? 0.0;
-    final gamma = rot?.gamma?.toDouble() ?? 0.0;
-
-    _latestGx = (alpha * pi) / 180.0;
-    _latestGy = (beta * pi) / 180.0;
-    _latestGz = (gamma * pi) / 180.0;
-
-    final rawAx = acc?.x?.toDouble();
-    final rawAy = acc?.y?.toDouble();
-    final rawAz = acc?.z?.toDouble();
-
-    if (rawAx != null && rawAy != null && rawAz != null) {
-      final gMag = sqrt(rawAx * rawAx + rawAy * rawAy + rawAz * rawAz);
-      if (gMag > 1.0) {
-        _hasValidMotionAcc = true;
-        _latestAx = rawAx;
-        _latestAy = rawAy;
-        _latestAz = rawAz;
-      }
-    }
-
-    onMotion(_latestGx, _latestGy, _latestGz, _latestAx, _latestAy, _latestAz, ts);
-  }).toJS;
-
-  web.window.addEventListener('devicemotion', _webMotionListener);
+  _addEventListener('devicemotion', _webMotionListener!);
 }
 
 void unregisterWebMotionListenerImpl() {
-  if (_webMotionListener != null) {
-    web.window.removeEventListener('devicemotion', _webMotionListener);
-    _webMotionListener = null;
+  if (_gyroscope != null) {
+    js_util.callMethod(_gyroscope!, 'stop', []);
+    _gyroscope = null;
   }
-  if (_webOrientationListener != null) {
-    web.window.removeEventListener('deviceorientation', _webOrientationListener);
-    _webOrientationListener = null;
+  if (_accelerometer != null) {
+    js_util.callMethod(_accelerometer!, 'stop', []);
+    _accelerometer = null;
+  }
+
+  if (_webMotionListener != null) {
+    _removeEventListener('devicemotion', _webMotionListener!);
+    _webMotionListener = null;
   }
 }
