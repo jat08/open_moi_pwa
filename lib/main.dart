@@ -12,6 +12,7 @@ import 'providers/moi_provider.dart';
 import 'ui/calibration_detail_screen.dart';
 import 'ui/calibration_info_screen.dart';
 import 'ui/calibration_screen.dart';
+import 'ui/compare_groups_screen.dart';
 import 'ui/estimate_detail_screen.dart';
 import 'ui/estimate_screen.dart';
 import 'ui/group_attributes_screen.dart';
@@ -120,12 +121,16 @@ class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold>
         uiState.selectedEstimationGroupId == null &&
         uiState.selectedMeasurement == null &&
         uiState.editingAttributesGroupId == null &&
-        uiState.editingExpectedValueTarget == null;
+        uiState.editingExpectedValueTarget == null &&
+        uiState.comparisonGroups == null;
 
     Widget body;
     String screenKey;
 
-    if (uiState.editingAttributesGroupId != null && uiState.currentAttributeGroup != null) {
+    if (uiState.comparisonGroups != null) {
+      body = CompareGroupsScreen(groups: uiState.comparisonGroups!);
+      screenKey = 'compare_groups';
+    } else if (uiState.editingAttributesGroupId != null && uiState.currentAttributeGroup != null) {
       body = GroupAttributesScreen(group: uiState.currentAttributeGroup!);
       screenKey = 'attributes_${uiState.editingAttributesGroupId}';
     } else if (uiState.editingExpectedValueTarget != null) {

@@ -343,6 +343,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ItemWheelPicker<AppThemeMode>(
                                 value: uiState.themeMode,
                                 options: AppThemeMode.values,
+                                title: 'Theme Mode',
                                 displayLabel: (mode) {
                                   switch (mode) {
                                     case AppThemeMode.SYSTEM:
@@ -371,6 +372,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ItemWheelPicker<int>(
                                 value: uiState.moiUnitsResolution,
                                 options: const [0, 1, 2, 3, 4],
+                                title: 'SW Resolution',
                                 displayLabel: (res) {
                                   if (res == 0) return '0';
                                   return '0.${'0' * res}';
@@ -393,6 +395,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ItemWheelPicker<int>(
                                 value: uiState.periodUnitsResolution,
                                 options: const [1, 2, 3, 4, 5, 6],
+                                title: 'TW Resolution',
                                 displayLabel: (res) {
                                   return '0.${'0' * res}';
                                 },
@@ -414,6 +417,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ItemWheelPicker<bool>(
                                 value: uiState.keepScreenOn,
                                 options: const [true, false],
+                                title: 'Keep Screen On',
                                 displayLabel: (val) => val ? 'Yes' : 'No',
                                 onValueChange: (val) {
                                   notifier.prefs.saveKeepScreenOn(val);
@@ -449,6 +453,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               NumberWheelPicker(
                                 value: uiState.measuringDuration,
                                 range: durationRange,
+                                title: 'Measurement Duration',
                                 onValueChange: (v) {
                                   notifier.prefs.saveMeasuringDuration(v);
                                   notifier.loadPreferences();
@@ -468,6 +473,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 value: uiState.waitDuration,
                                 range: waitRange,
                                 format: '%.0f',
+                                title: 'Wait After Measurement',
                                 onValueChange: (v) {
                                   notifier.prefs.saveWaitDuration(v);
                                   notifier.loadPreferences();
@@ -487,6 +493,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 value: uiState.cyclesToMeasure.toDouble(),
                                 range: cyclesRange,
                                 format: '%.0f',
+                                title: 'Cycles to Measure',
                                 onValueChange: (v) {
                                   notifier.prefs.saveCyclesToMeasure(v.toInt());
                                   notifier.loadPreferences();
@@ -505,6 +512,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ItemWheelPicker<bool>(
                                 value: uiState.trimLastCycle,
                                 options: const [true, false],
+                                title: 'Trim Last Cycle',
                                 displayLabel: (val) => val ? 'Yes' : 'No',
                                 onValueChange: (val) {
                                   notifier.prefs.saveTrimLastCycle(val);
@@ -525,6 +533,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 value: uiState.skipFirstCycles.toDouble(),
                                 range: skipRange,
                                 format: '%.0f',
+                                title: 'Skip First Cycles',
                                 onValueChange: (v) {
                                   notifier.prefs.saveSkipFirstCycles(v.toInt());
                                   notifier.loadPreferences();
@@ -544,6 +553,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 value: uiState.cycleReference.toDouble(),
                                 range: List.generate(uiState.cyclesToMeasure + 1, (i) => i.toDouble()),
                                 format: '%.0f',
+                                title: 'Cycle Reference',
                                 onValueChange: (v) {
                                   notifier.prefs.saveCycleReference(v.toInt());
                                   notifier.loadPreferences();
@@ -563,6 +573,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 value: uiState.preparationTime.toDouble(),
                                 range: prepRange,
                                 format: '%.0f',
+                                title: 'Preparation Delay',
                                 onValueChange: (v) {
                                   notifier.prefs.savePreparationTime(v.toInt());
                                   notifier.loadPreferences();
@@ -583,6 +594,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 range: marginRange,
                                 format: '%.1f%%',
                                 multiplyBy: 100.0,
+                                title: 'SW Margin Threshold',
                                 onValueChange: (v) {
                                   notifier.prefs.saveSwMargin(v);
                                   notifier.loadPreferences();
@@ -603,6 +615,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 range: marginRange,
                                 format: '%.1f%%',
                                 multiplyBy: 100.0,
+                                title: 'TW Margin Threshold',
                                 onValueChange: (v) {
                                   notifier.prefs.saveTwMargin(v);
                                   notifier.loadPreferences();
@@ -622,6 +635,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 value: uiState.fitResidualExclusion,
                                 range: fitExclusionRange,
                                 format: '%.1f',
+                                title: 'Fit Exclusion Threshold',
                                 onValueChange: (v) {
                                   notifier.prefs.saveFitResidualExclusion(v);
                                   notifier.loadPreferences();

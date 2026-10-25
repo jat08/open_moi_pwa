@@ -261,6 +261,14 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                               isSelectionMode = false;
                             });
                           },
+                          onCompare: () {
+                            final selectedGroups = uiState.estimationGroups
+                                .where((g) => selectedIds.contains(g.id))
+                                .toList();
+                            if (selectedGroups.length == 2) {
+                              notifier.openComparison(selectedGroups);
+                            }
+                          },
                         )
                       : Row(
                           children: [
@@ -326,9 +334,11 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
               ),
 
               if (uiState.estimationGroups.isEmpty)
-                const SliverFillRemaining(
-                  child: Center(
-                    child: Text('No estimation groups found.', style: TextStyle(color: Colors.grey, fontSize: 15)),
+                const SliverToBoxAdapter(
+                  child: EmptyStateCard(
+                    icon: Icons.functions_outlined,
+                    title: 'No Estimation Groups Found',
+                    subtitle: 'Tap the + button to create an estimation group',
                   ),
                 )
               else

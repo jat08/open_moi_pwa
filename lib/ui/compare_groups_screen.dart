@@ -28,7 +28,6 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
   // --- Conversion Helpers ---
   double _convertMass(double val, String fromUnit, String toUnit) {
     if (val <= 0) return 0.0;
-    // Convert to oz first
     double oz;
     switch (fromUnit.toLowerCase()) {
       case 'g':
@@ -45,7 +44,6 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
         oz = val;
     }
 
-    // Convert oz to toUnit
     switch (toUnit.toLowerCase()) {
       case 'g':
         return oz * 28.349523125;
@@ -61,7 +59,6 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
 
   double _convertDistance(double val, String fromUnit, String toUnit) {
     if (val <= 0) return 0.0;
-    // Convert to inches first
     double inches = fromUnit.toLowerCase() == 'cm' ? val / 2.54 : val;
     return toUnit.toLowerCase() == 'cm' ? inches * 2.54 : inches;
   }
@@ -75,7 +72,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
     if (g.groupType == 'Pickleball Paddle') {
       final lInches = g.lengthUnit == 'cm' ? g.length / 2.54 : g.length;
       final bpInches = (sw - (492.0045 * massKg) - (6.8663 * lInches) + 259.5087) / 6.2811;
-      return bpInches * 2.54; // Return in cm
+      return bpInches; // In inches
     } else {
       final lCm = g.lengthUnit == 'in' ? g.length * 2.54 : g.length;
       final tOffset = (g.groupType == 'Racquet' || g.groupType == 'MOI-10') ? 10.0 : 5.0;
@@ -83,7 +80,8 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
 
       final insideSqrt = (sw / massKg) - (pow(lCm, 2) / 12.0) - (pow(r, 2) / 4.0);
       if (insideSqrt >= 0) {
-        return sqrt(insideSqrt) + tOffset; // In cm
+        final rootCm = sqrt(insideSqrt) + tOffset; // cm
+        return rootCm / 2.54; // Return in inches
       }
     }
     return null;
@@ -96,11 +94,13 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
     final notifier = ref.read(moiProvider.notifier);
 
     final res = uiState.moiUnitsResolution;
-
     final isMeasure = widget.groups.first is GroupSummary;
 
     String g1Name = '';
     String g2Name = '';
+    String g1Type = 'Pickleball Paddle';
+    String g2Type = 'Pickleball Paddle';
+
     double g1SW = 0.0;
     double g2SW = 0.0;
     double g1TW = 0.0;
@@ -122,9 +122,9 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
     String g2WidthUnit = 'in';
 
     double? g1BP;
-    String g1BPUnit = 'cm';
+    String g1BPUnit = 'in';
     double? g2BP;
-    String g2BPUnit = 'cm';
+    String g2BPUnit = 'in';
 
     if (isMeasure) {
       final s1 = widget.groups[0] as GroupSummary;
@@ -132,6 +132,9 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
 
       g1Name = s1.group.name;
       g2Name = s2.group.name;
+      g1Type = s1.group.groupType;
+      g2Type = s2.group.groupType;
+
       g1SW = s1.avgSW;
       g2SW = s2.avgSW;
       g1TW = s1.avgTW;
@@ -153,15 +156,18 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
       g2WidthUnit = s2.group.widthUnit;
 
       g1BP = _calculateBpForGroup(s1.group, g1SW);
-      g1BPUnit = 'cm';
+      g1BPUnit = 'in';
       g2BP = _calculateBpForGroup(s2.group, g2SW);
-      g2BPUnit = 'cm';
+      g2BPUnit = 'in';
     } else {
       final e1 = widget.groups[0] as EstimationGroup;
       final e2 = widget.groups[1] as EstimationGroup;
 
       g1Name = e1.name;
       g2Name = e2.name;
+      g1Type = e1.type;
+      g2Type = e2.type;
+
       g1SW = e1.resultSW;
       g2SW = e2.resultSW;
       g1TW = e1.resultTW;
@@ -188,7 +194,6 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
       g2BPUnit = e2.bpUnit;
     }
 
-    // Convert values to selected display units
     final c1Mass = _convertMass(g1Mass, g1MassUnit, _massDisplayUnit);
     final c2Mass = _convertMass(g2Mass, g2MassUnit, _massDisplayUnit);
 
@@ -214,6 +219,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     IconButton(
@@ -223,10 +229,11 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
                         notifier.closeComparison();
                       },
                     ),
-                    Expanded(
-                      child: DynamicTitleText(
-                        text: 'Group Comparison',
-                        maxFontSize: 22,
+                    const SizedBox(width: 4),
+                    Text(
+                      'Group Comparison',
+                      style: TextStyle(
+                        fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.onSurface,
                       ),
@@ -236,144 +243,215 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
 
                 const SizedBox(height: 12),
 
-                // Group Headers Side-by-Side
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          g1Name,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onPrimaryContainer,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.secondaryContainer,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          g2Name,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onSecondaryContainer,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 14),
-
                 Expanded(
                   child: SingleChildScrollView(
                     child: Card(
                       color: theme.colorScheme.surfaceContainerHighest,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
-                            // SW Row
-                            _CompareDataRow(
-                              title: 'SW (kg·cm²)',
+                            // Header Row with Group Names
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    g1Name,
+                                    textAlign: TextAlign.left,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    g2Name,
+                                    textAlign: TextAlign.right,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+                            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.2)),
+
+                            // Swing Weight Row
+                            _CompareRow(
+                              title: 'Swing Weight',
+                              unitBadge: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'kg·cm²',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                              ),
                               val1: g1SW > 0 ? g1SW.toStringAsFixed(res) : 'N/A',
                               val2: g2SW > 0 ? g2SW.toStringAsFixed(res) : 'N/A',
-                              delta: (g1SW > 0 && g2SW > 0)
-                                  ? '${(g1SW - g2SW) > 0 ? "+" : ""}${(g1SW - g2SW).toStringAsFixed(res)}'
-                                  : null,
+                              num1: g1SW > 0 ? g1SW : null,
+                              num2: g2SW > 0 ? g2SW : null,
+                              decimals: res,
                             ),
 
-                            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.25)),
+                            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.2)),
 
-                            // TW Row
-                            _CompareDataRow(
-                              title: 'TW (kg·cm²)',
+                            // Twist Weight Row
+                            _CompareRow(
+                              title: 'Twist Weight',
+                              unitBadge: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'kg·cm²',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                              ),
                               val1: g1TW > 0 ? g1TW.toStringAsFixed(res) : 'N/A',
                               val2: g2TW > 0 ? g2TW.toStringAsFixed(res) : 'N/A',
-                              delta: (g1TW > 0 && g2TW > 0)
-                                  ? '${(g1TW - g2TW) > 0 ? "+" : ""}${(g1TW - g2TW).toStringAsFixed(res)}'
-                                  : null,
+                              num1: g1TW > 0 ? g1TW : null,
+                              num2: g2TW > 0 ? g2TW : null,
+                              decimals: res,
                             ),
 
-                            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.25)),
+                            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.2)),
 
-                            // Weight / Mass Row with Unit Picklist
-                            _CompareDataRowWithUnit(
+                            // Weight Row
+                            _CompareRow(
                               title: 'Weight',
-                              currentUnit: _massDisplayUnit,
-                              units: const ['oz', 'g', 'lb', 'kg'],
+                              unitBadge: UnitPicklist(
+                                current: _massDisplayUnit,
+                                units: const ['oz', 'g', 'lb', 'kg'],
+                                onSelect: (u) => setState(() => _massDisplayUnit = u),
+                                width: 68,
+                              ),
                               val1: c1Mass > 0 ? c1Mass.toStringAsFixed(_massDisplayUnit == 'g' ? 1 : 2) : 'N/A',
                               val2: c2Mass > 0 ? c2Mass.toStringAsFixed(_massDisplayUnit == 'g' ? 1 : 2) : 'N/A',
-                              delta: (c1Mass > 0 && c2Mass > 0)
-                                  ? '${(c1Mass - c2Mass) > 0 ? "+" : ""}${(c1Mass - c2Mass).toStringAsFixed(_massDisplayUnit == 'g' ? 1 : 2)}'
-                                  : null,
-                              onUnitSelect: (u) => setState(() => _massDisplayUnit = u),
+                              num1: c1Mass > 0 ? c1Mass : null,
+                              num2: c2Mass > 0 ? c2Mass : null,
+                              decimals: _massDisplayUnit == 'g' ? 1 : 2,
                             ),
 
-                            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.25)),
+                            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.2)),
 
-                            // Length Row with Unit Picklist
-                            _CompareDataRowWithUnit(
+                            // Length Row
+                            _CompareRow(
                               title: 'Length',
-                              currentUnit: _lengthDisplayUnit,
-                              units: const ['in', 'cm'],
+                              unitBadge: UnitPicklist(
+                                current: _lengthDisplayUnit,
+                                units: const ['in', 'cm'],
+                                onSelect: (u) => setState(() => _lengthDisplayUnit = u),
+                                width: 62,
+                              ),
                               val1: c1Length > 0 ? c1Length.toStringAsFixed(_lengthDisplayUnit == 'cm' ? 1 : 2) : 'N/A',
                               val2: c2Length > 0 ? c2Length.toStringAsFixed(_lengthDisplayUnit == 'cm' ? 1 : 2) : 'N/A',
-                              delta: (c1Length > 0 && c2Length > 0)
-                                  ? '${(c1Length - c2Length) > 0 ? "+" : ""}${(c1Length - c2Length).toStringAsFixed(_lengthDisplayUnit == 'cm' ? 1 : 2)}'
-                                  : null,
-                              onUnitSelect: (u) => setState(() => _lengthDisplayUnit = u),
+                              num1: c1Length > 0 ? c1Length : null,
+                              num2: c2Length > 0 ? c2Length : null,
+                              decimals: _lengthDisplayUnit == 'cm' ? 1 : 2,
                             ),
 
-                            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.25)),
+                            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.2)),
 
-                            // Width Row with Unit Picklist
-                            _CompareDataRowWithUnit(
+                            // Width Row
+                            _CompareRow(
                               title: 'Width',
-                              currentUnit: _widthDisplayUnit,
-                              units: const ['in', 'cm'],
+                              unitBadge: UnitPicklist(
+                                current: _widthDisplayUnit,
+                                units: const ['in', 'cm'],
+                                onSelect: (u) => setState(() => _widthDisplayUnit = u),
+                                width: 62,
+                              ),
                               val1: c1Width > 0 ? c1Width.toStringAsFixed(_widthDisplayUnit == 'cm' ? 1 : 2) : 'N/A',
                               val2: c2Width > 0 ? c2Width.toStringAsFixed(_widthDisplayUnit == 'cm' ? 1 : 2) : 'N/A',
-                              delta: (c1Width > 0 && c2Width > 0)
-                                  ? '${(c1Width - c2Width) > 0 ? "+" : ""}${(c1Width - c2Width).toStringAsFixed(_widthDisplayUnit == 'cm' ? 1 : 2)}'
-                                  : null,
-                              onUnitSelect: (u) => setState(() => _widthDisplayUnit = u),
+                              num1: c1Width > 0 ? c1Width : null,
+                              num2: c2Width > 0 ? c2Width : null,
+                              decimals: _widthDisplayUnit == 'cm' ? 1 : 2,
                             ),
 
-                            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withOpacity(0.25)),
+                            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.2)),
 
-                            // BP Row with Unit Picklist
-                            _CompareDataRowWithUnit(
-                              title: 'BP',
-                              currentUnit: _bpDisplayUnit,
-                              units: const ['in', 'cm'],
+                            // Balance Point Row
+                            _CompareRow(
+                              title: 'Balance Point',
+                              unitBadge: UnitPicklist(
+                                current: _bpDisplayUnit,
+                                units: const ['in', 'cm'],
+                                onSelect: (u) => setState(() => _bpDisplayUnit = u),
+                                width: 62,
+                              ),
                               val1: c1BP != null && c1BP > 0 ? c1BP.toStringAsFixed(_bpDisplayUnit == 'cm' ? 1 : 2) : 'N/A',
                               val2: c2BP != null && c2BP > 0 ? c2BP.toStringAsFixed(_bpDisplayUnit == 'cm' ? 1 : 2) : 'N/A',
-                              delta: (c1BP != null && c2BP != null && c1BP > 0 && c2BP > 0)
-                                  ? '${(c1BP - c2BP) > 0 ? "+" : ""}${(c1BP - c2BP).toStringAsFixed(_bpDisplayUnit == 'cm' ? 1 : 2)}'
-                                  : null,
-                              onUnitSelect: (u) => setState(() => _bpDisplayUnit = u),
+                              num1: c1BP != null && c1BP > 0 ? c1BP : null,
+                              num2: c2BP != null && c2BP > 0 ? c2BP : null,
+                              decimals: _bpDisplayUnit == 'cm' ? 1 : 2,
+                            ),
+
+                            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.2)),
+
+                            // Type Row
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'Type',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.colorScheme.outline,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        g1Type,
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      Text(
+                                        g2Type,
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -390,151 +468,135 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
   }
 }
 
-class _CompareDataRow extends StatelessWidget {
+class _CompareRow extends StatelessWidget {
   final String title;
+  final Widget unitBadge;
   final String val1;
   final String val2;
-  final String? delta;
+  final double? num1;
+  final double? num2;
+  final int decimals;
 
-  const _CompareDataRow({
+  const _CompareRow({
     required this.title,
+    required this.unitBadge,
     required this.val1,
     required this.val2,
-    this.delta,
+    this.num1,
+    this.num2,
+    this.decimals = 2,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-              ),
-              if (delta != null) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    'Δ $delta',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  val1,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                ),
-              ),
-              Container(width: 1, height: 20, color: theme.colorScheme.outline.withOpacity(0.25)),
-              Expanded(
-                child: Text(
-                  val2,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                ),
-              ),
-            ],
-          ),
-        ],
+  Widget _buildDeltaBadge(double diff) {
+    final isPositive = diff > 0;
+    final isZero = diff.abs() < 1e-6;
+
+    final bgColor = isZero
+        ? const Color(0xFFF0F4F8)
+        : (isPositive ? const Color(0xFFE8F8EE) : const Color(0xFFFFF3E0));
+    final textColor = isZero
+        ? const Color(0xFF70787D)
+        : (isPositive ? const Color(0xFF287D41) : const Color(0xFFD97706));
+
+    final signStr = isZero ? '' : (isPositive ? '+' : '-');
+    final formattedVal = diff.abs().toStringAsFixed(decimals);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        'Δ: $signStr$formattedVal',
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: textColor,
+        ),
       ),
     );
   }
-}
-
-class _CompareDataRowWithUnit extends StatelessWidget {
-  final String title;
-  final String currentUnit;
-  final List<String> units;
-  final String val1;
-  final String val2;
-  final String? delta;
-  final ValueChanged<String> onUnitSelect;
-
-  const _CompareDataRowWithUnit({
-    required this.title,
-    required this.currentUnit,
-    required this.units,
-    required this.val1,
-    required this.val2,
-    this.delta,
-    required this.onUnitSelect,
-  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    Widget? leftDelta;
+    Widget? rightDelta;
+
+    if (num1 != null && num2 != null) {
+      final diffLeft = num1! - num2!;
+      final diffRight = num2! - num1!;
+
+      leftDelta = _buildDeltaBadge(diffLeft);
+      rightDelta = _buildDeltaBadge(diffRight);
+    }
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Center Title and Unit Badge
+          Column(
             children: [
-              Row(
-                children: [
-                  Text(
-                    '$title ($currentUnit)',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-                  ),
-                  const SizedBox(width: 8),
-                  UnitPicklist(
-                    current: currentUnit,
-                    units: units,
-                    onSelect: onUnitSelect,
-                    width: 62,
-                  ),
-                ],
-              ),
-              if (delta != null) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    'Δ $delta $currentUnit',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-                  ),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.outline,
                 ),
-              ],
+              ),
+              const SizedBox(height: 4),
+              unitBadge,
             ],
           ),
+
           const SizedBox(height: 8),
+
+          // Values + Deltas Row
           Row(
             children: [
+              // Left side value + delta
               Expanded(
-                child: Text(
-                  val1,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      val1,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    if (leftDelta != null) ...[
+                      const SizedBox(width: 6),
+                      leftDelta,
+                    ],
+                  ],
                 ),
               ),
-              Container(width: 1, height: 20, color: theme.colorScheme.outline.withOpacity(0.25)),
+
+              // Right side delta + value
               Expanded(
-                child: Text(
-                  val2,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (rightDelta != null) ...[
+                      rightDelta,
+                      const SizedBox(width: 6),
+                    ],
+                    Text(
+                      val2,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

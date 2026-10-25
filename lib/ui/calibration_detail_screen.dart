@@ -192,8 +192,14 @@ class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScree
                 const SizedBox(height: 10),
 
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: measurements.length,
+                  child: measurements.isEmpty
+                      ? const EmptyStateCard(
+                          icon: Icons.tune_outlined,
+                          title: 'No Calibration Runs',
+                          subtitle: 'Tap Start Measurement below to record data',
+                        )
+                      : ListView.builder(
+                          itemCount: measurements.length,
                     itemBuilder: (context, index) {
                       final m = measurements[index];
                       final isSelected = selectedIds.contains(m.id);

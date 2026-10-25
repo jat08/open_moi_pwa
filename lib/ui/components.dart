@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -25,6 +26,67 @@ class OneUiDragHandle extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.outline.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(2.25),
+      ),
+    );
+  }
+}
+
+class EmptyStateCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+
+  const EmptyStateCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Card(
+        elevation: 0,
+        color: theme.colorScheme.surfaceContainerHighest,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 48,
+                color: theme.colorScheme.primary.withValues(alpha: 0.7),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  subtitle!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: theme.colorScheme.outline,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -291,6 +353,7 @@ class SelectionTopBar extends StatelessWidget {
   final VoidCallback onToggleAll;
   final VoidCallback onClear;
   final VoidCallback onDelete;
+  final VoidCallback? onCompare;
 
   const SelectionTopBar({
     super.key,
@@ -300,6 +363,7 @@ class SelectionTopBar extends StatelessWidget {
     required this.onToggleAll,
     required this.onClear,
     required this.onDelete,
+    this.onCompare,
   });
 
   @override
@@ -340,6 +404,22 @@ class SelectionTopBar extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onPrimaryContainer, fontSize: 15),
           ),
           const Spacer(),
+          if (count == 2 && onCompare != null) ...[
+            TextButton.icon(
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                onCompare!();
+              },
+              icon: const Icon(Icons.compare_arrows, size: 18),
+              label: const Text('Compare', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            ),
+            const SizedBox(width: 4),
+          ],
           IconButton(
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
@@ -354,6 +434,50 @@ class SelectionTopBar extends StatelessWidget {
       ),
     );
   }
+}
+
+class MiniSparklinePainter extends CustomPainter {
+  final List<double> dataPoints;
+  final Color color;
+
+  MiniSparklinePainter({required this.dataPoints, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (dataPoints.length < 2) return;
+
+    final minVal = dataPoints.reduce(min);
+    final maxVal = dataPoints.reduce(max);
+    final range = (maxVal - minVal).abs() > 1e-6 ? (maxVal - minVal) : 1.0;
+
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final path = Path();
+    final dx = size.width / (dataPoints.length - 1);
+
+    for (int i = 0; i < dataPoints.length; i++) {
+      final x = i * dx;
+      final normalizedY = (dataPoints[i] - minVal) / range;
+      final y = size.height - (normalizedY * (size.height - 4) + 2);
+
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant MiniSparklinePainter oldDelegate) =>
+      oldDelegate.dataPoints != dataPoints || oldDelegate.color != color;
 }
 
 class MeasurementItem extends StatelessWidget {
@@ -412,6 +536,12 @@ class MeasurementItem extends StatelessWidget {
       }
     }
 
+    final rawPoints = measurement.rawData
+        .split(',')
+        .where((s) => s.trim().isNotEmpty)
+        .map((s) => double.tryParse(s.trim()) ?? 0.0)
+        .toList();
+
     final value = isPeriod ? avgMeasured : measurement.moi;
     final diff = averageVal > 0 ? (value - averageVal).abs() / averageVal : 0.0;
     final isOutlier = averageVal > 0 && diff > margin;
@@ -443,10 +573,10 @@ class MeasurementItem extends StatelessWidget {
       elevation: 0,
       color: containerColor,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         side: selected ? BorderSide(color: theme.colorScheme.primary, width: 2) : BorderSide.none,
       ),
-      margin: const EdgeInsets.symmetric(vertical: 2.0),
+      margin: const EdgeInsets.symmetric(vertical: 2.5),
       child: InkWell(
         onTap: () {
           HapticFeedback.lightImpact();
@@ -456,9 +586,9 @@ class MeasurementItem extends StatelessWidget {
           HapticFeedback.mediumImpact();
           onLongClick();
         },
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -517,6 +647,16 @@ class MeasurementItem extends StatelessWidget {
                   ],
                 ),
               ),
+              if (rawPoints.length >= 2) ...[
+                CustomPaint(
+                  size: const Size(48, 22),
+                  painter: MiniSparklinePainter(
+                    dataPoints: rawPoints,
+                    color: AppColors.blueCore,
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
@@ -559,11 +699,19 @@ class MeasurementControlButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    Widget content;
+    String titleText = '';
+    String? subtitleText;
+    double progressFactor = 0.0;
+    bool isInteractiveButton = false;
+    Color buttonBg = theme.colorScheme.primary;
+    Color textColor = theme.colorScheme.onPrimary;
 
     if (!isCalibrated) {
-      content = SizedBox(
+      return Container(
         height: 52,
+        width: double.infinity,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(28)),
         child: Consumer(
           builder: (context, ref, child) => InkWell(
             onTap: () {
@@ -586,7 +734,7 @@ class MeasurementControlButton extends StatelessWidget {
         ),
       );
     } else if (state == OscillationState.WRONG_ORIENTATION) {
-      content = Container(
+      return Container(
         height: 52,
         width: double.infinity,
         decoration: BoxDecoration(
@@ -604,178 +752,110 @@ class MeasurementControlButton extends StatelessWidget {
         ),
       );
     } else if (preparationRemaining > 0) {
-      content = SizedBox(
-        height: 52,
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            onCancel?.call();
-          },
-          child: Container(
-            color: Colors.grey.shade700,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Waiting $preparationRemaining s to be Ready',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const Text(
-                    'Tap to Cancel',
-                    style: TextStyle(color: Colors.white70, fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
+      titleText = 'Waiting $preparationRemaining s to be Ready';
+      subtitleText = 'Tap to Cancel';
+      progressFactor = 1.0 - (preparationRemaining / 10.0).clamp(0.0, 1.0);
     } else if (cooldownRemaining > 0) {
-      content = SizedBox(
-        height: 52,
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            onCancel?.call();
-          },
-          child: Container(
-            color: Colors.grey.shade700,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Waiting ${cooldownRemaining.toInt()} seconds',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const Text(
-                    'Tap to Cancel',
-                    style: TextStyle(color: Colors.white70, fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
+      titleText = 'Waiting ${cooldownRemaining.toInt()} seconds';
+      subtitleText = 'Tap to Cancel';
+      progressFactor = 1.0 - (cooldownRemaining / 10.0).clamp(0.0, 1.0);
     } else {
       switch (state) {
         case OscillationState.READY:
-          content = SizedBox(
-            height: 52,
-            child: ElevatedButton(
-              onPressed: () {
-                HapticFeedback.mediumImpact();
-                onStart();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-              ),
-              child: const Text('Start Measurement', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-            ),
-          );
+          isInteractiveButton = true;
+          titleText = 'Start Measurement';
           break;
         case OscillationState.ARMED:
-          content = SizedBox(
-            height: 52,
-            child: InkWell(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                onCancel?.call();
-              },
-              child: Container(
-                color: theme.colorScheme.primary.withValues(alpha: 0.2),
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Ready - Waiting for Oscillations',
-                        style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      Text(
-                        'Tap to Cancel',
-                        style: TextStyle(color: theme.colorScheme.primary.withValues(alpha: 0.7), fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
+          titleText = 'Ready - Waiting for Oscillations';
+          subtitleText = 'Tap to Cancel';
+          progressFactor = 0.0;
           break;
         case OscillationState.SETTLING:
         case OscillationState.ACTIVE_COUNTING:
           final label = state == OscillationState.SETTLING ? 'Settling...' : 'Measuring...';
           final pct = (progress * 100).toInt().clamp(0, 100);
-          content = SizedBox(
-            height: 52,
-            child: InkWell(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                onCancel?.call();
-              },
-              child: Stack(
-                children: [
-                  Container(color: theme.colorScheme.primary.withValues(alpha: 0.15)),
-                  FractionallySizedBox(
-                    widthFactor: progress.clamp(0.0, 1.0),
-                    child: Container(color: theme.colorScheme.primary.withValues(alpha: 0.35)),
-                  ),
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '$label $pct%',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
-                            Text(
-                              'Tap to Cancel',
-                              style: TextStyle(fontSize: 11, color: theme.colorScheme.primary.withValues(alpha: 0.8), fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
+          titleText = '$label $pct%';
+          subtitleText = 'Tap to Cancel';
+          progressFactor = progress.clamp(0.0, 1.0);
           break;
         default:
-          content = const SizedBox.shrink();
+          titleText = 'Start Measurement';
+          isInteractiveButton = true;
       }
     }
 
+    if (isInteractiveButton) {
+      return SizedBox(
+        height: 52,
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            onStart();
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: buttonBg,
+            foregroundColor: textColor,
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          ),
+          child: Text(titleText, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        ),
+      );
+    }
+
     return Container(
-      constraints: const BoxConstraints(minHeight: 52),
+      height: 52,
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(28)),
-      child: content,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onCancel?.call();
+        },
+        child: Stack(
+          children: [
+            if (progressFactor > 0)
+              FractionallySizedBox(
+                widthFactor: progressFactor,
+                child: Container(color: theme.colorScheme.primary.withValues(alpha: 0.35)),
+              ),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      titleText,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    if (subtitleText != null)
+                      Text(
+                        subtitleText,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: theme.colorScheme.primary.withValues(alpha: 0.75),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1622,6 +1702,7 @@ class NumberWheelPicker extends StatelessWidget {
   final List<double> range;
   final String format;
   final double multiplyBy;
+  final String? title;
   final ValueChanged<double> onValueChange;
 
   const NumberWheelPicker({
@@ -1630,6 +1711,7 @@ class NumberWheelPicker extends StatelessWidget {
     required this.range,
     this.format = '%.1f',
     this.multiplyBy = 1.0,
+    this.title,
     required this.onValueChange,
   });
 
@@ -1658,6 +1740,7 @@ class NumberWheelPicker extends StatelessWidget {
           builder: (ctx) => _NumberWheelDialog(
             initialValue: value,
             range: range,
+            title: title,
             formatVal: _formatVal,
             onConfirm: onValueChange,
           ),
@@ -1685,6 +1768,7 @@ class ItemWheelPicker<T> extends StatelessWidget {
   final T value;
   final List<T> options;
   final String Function(T) displayLabel;
+  final String? title;
   final ValueChanged<T> onValueChange;
 
   const ItemWheelPicker({
@@ -1692,6 +1776,7 @@ class ItemWheelPicker<T> extends StatelessWidget {
     required this.value,
     required this.options,
     required this.displayLabel,
+    this.title,
     required this.onValueChange,
   });
 
@@ -1710,6 +1795,7 @@ class ItemWheelPicker<T> extends StatelessWidget {
             initialValue: value,
             options: options,
             displayLabel: displayLabel,
+            title: title,
             onConfirm: onValueChange,
           ),
         );
@@ -1736,12 +1822,14 @@ class _ItemWheelDialog<T> extends StatefulWidget {
   final T initialValue;
   final List<T> options;
   final String Function(T) displayLabel;
+  final String? title;
   final ValueChanged<T> onConfirm;
 
   const _ItemWheelDialog({
     required this.initialValue,
     required this.options,
     required this.displayLabel,
+    this.title,
     required this.onConfirm,
   });
 
@@ -1790,9 +1878,9 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
           children: [
             const OneUiDragHandle(),
             const SizedBox(height: 4),
-            const Text(
-              'Select Value',
-              style: TextStyle(
+            Text(
+              widget.title ?? 'Select Value',
+              style: const TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.bold,
               ),
@@ -1818,57 +1906,74 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  ListWheelScrollView.useDelegate(
-                    controller: _controller,
-                    itemExtent: 44,
-                    perspective: 0.003,
-                    physics: const FixedExtentScrollPhysics(),
-                    onSelectedItemChanged: (index) {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        _selectedIndex = index;
-                      });
+                  ShaderMask(
+                    shaderCallback: (rect) {
+                      return const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black,
+                          Colors.transparent,
+                          Colors.transparent,
+                          Colors.black,
+                        ],
+                        stops: [0.0, 0.15, 0.85, 1.0],
+                      ).createShader(rect);
                     },
-                    childDelegate: ListWheelChildBuilderDelegate(
-                      childCount: widget.options.length,
-                      builder: (context, index) {
-                        final isSelected = index == _selectedIndex;
-                        final item = widget.options[index];
-                        return GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () async {
-                            if (_isSelecting) return;
-                            _isSelecting = true;
-                            HapticFeedback.lightImpact();
-                            if (index == _selectedIndex) {
-                              if (context.mounted) {
-                                Navigator.of(context).pop();
-                                widget.onConfirm(item);
+                    blendMode: BlendMode.dstOut,
+                    child: ListWheelScrollView.useDelegate(
+                      controller: _controller,
+                      itemExtent: 44,
+                      perspective: 0.003,
+                      diameterRatio: 1.2,
+                      physics: const FixedExtentScrollPhysics(),
+                      onSelectedItemChanged: (index) {
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          _selectedIndex = index;
+                        });
+                      },
+                      childDelegate: ListWheelChildBuilderDelegate(
+                        childCount: widget.options.length,
+                        builder: (context, index) {
+                          final isSelected = index == _selectedIndex;
+                          final item = widget.options[index];
+                          return GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () async {
+                              if (_isSelecting) return;
+                              _isSelecting = true;
+                              HapticFeedback.lightImpact();
+                              if (index == _selectedIndex) {
+                                if (context.mounted) {
+                                  Navigator.of(context).pop();
+                                  widget.onConfirm(item);
+                                }
+                              } else {
+                                await _controller.animateToItem(
+                                  index,
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeOutCubic,
+                                );
+                                if (context.mounted) {
+                                  Navigator.of(context).pop();
+                                  widget.onConfirm(item);
+                                }
                               }
-                            } else {
-                              await _controller.animateToItem(
-                                index,
-                                duration: const Duration(milliseconds: 250),
-                                curve: Curves.easeOutCubic,
-                              );
-                              if (context.mounted) {
-                                Navigator.of(context).pop();
-                                widget.onConfirm(item);
-                              }
-                            }
-                          },
-                          child: Center(
-                            child: Text(
-                              widget.displayLabel(item),
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                color: isSelected ? primaryBlue : (isDark ? Colors.grey : const Color(0xFF889098)),
+                            },
+                            child: Center(
+                              child: Text(
+                                widget.displayLabel(item),
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected ? primaryBlue : (isDark ? Colors.grey : const Color(0xFF889098)),
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],
@@ -1912,12 +2017,14 @@ class _ItemWheelDialogState<T> extends State<_ItemWheelDialog<T>> {
 class _NumberWheelDialog extends StatefulWidget {
   final double initialValue;
   final List<double> range;
+  final String? title;
   final String Function(double) formatVal;
   final ValueChanged<double> onConfirm;
 
   const _NumberWheelDialog({
     required this.initialValue,
     required this.range,
+    this.title,
     required this.formatVal,
     required this.onConfirm,
   });
@@ -1967,9 +2074,9 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
           children: [
             const OneUiDragHandle(),
             const SizedBox(height: 4),
-            const Text(
-              'Select Value',
-              style: TextStyle(
+            Text(
+              widget.title ?? 'Select Value',
+              style: const TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.bold,
               ),
@@ -1995,57 +2102,74 @@ class _NumberWheelDialogState extends State<_NumberWheelDialog> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  ListWheelScrollView.useDelegate(
-                    controller: _controller,
-                    itemExtent: 44,
-                    perspective: 0.003,
-                    physics: const FixedExtentScrollPhysics(),
-                    onSelectedItemChanged: (index) {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        _selectedIndex = index;
-                      });
+                  ShaderMask(
+                    shaderCallback: (rect) {
+                      return const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black,
+                          Colors.transparent,
+                          Colors.transparent,
+                          Colors.black,
+                        ],
+                        stops: [0.0, 0.15, 0.85, 1.0],
+                      ).createShader(rect);
                     },
-                    childDelegate: ListWheelChildBuilderDelegate(
-                      childCount: widget.range.length,
-                      builder: (context, index) {
-                        final isSelected = index == _selectedIndex;
-                        final item = widget.range[index];
-                        return GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () async {
-                            if (_isSelecting) return;
-                            _isSelecting = true;
-                            HapticFeedback.lightImpact();
-                            if (index == _selectedIndex) {
-                              if (context.mounted) {
-                                Navigator.of(context).pop();
-                                widget.onConfirm(item);
+                    blendMode: BlendMode.dstOut,
+                    child: ListWheelScrollView.useDelegate(
+                      controller: _controller,
+                      itemExtent: 44,
+                      perspective: 0.003,
+                      diameterRatio: 1.2,
+                      physics: const FixedExtentScrollPhysics(),
+                      onSelectedItemChanged: (index) {
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          _selectedIndex = index;
+                        });
+                      },
+                      childDelegate: ListWheelChildBuilderDelegate(
+                        childCount: widget.range.length,
+                        builder: (context, index) {
+                          final isSelected = index == _selectedIndex;
+                          final item = widget.range[index];
+                          return GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () async {
+                              if (_isSelecting) return;
+                              _isSelecting = true;
+                              HapticFeedback.lightImpact();
+                              if (index == _selectedIndex) {
+                                if (context.mounted) {
+                                  Navigator.of(context).pop();
+                                  widget.onConfirm(item);
+                                }
+                              } else {
+                                await _controller.animateToItem(
+                                  index,
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeOutCubic,
+                                );
+                                if (context.mounted) {
+                                  Navigator.of(context).pop();
+                                  widget.onConfirm(item);
+                                }
                               }
-                            } else {
-                              await _controller.animateToItem(
-                                index,
-                                duration: const Duration(milliseconds: 250),
-                                curve: Curves.easeOutCubic,
-                              );
-                              if (context.mounted) {
-                                Navigator.of(context).pop();
-                                widget.onConfirm(item);
-                              }
-                            }
-                          },
-                          child: Center(
-                            child: Text(
-                              widget.formatVal(item),
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                color: isSelected ? primaryBlue : (isDark ? Colors.grey : const Color(0xFF889098)),
+                            },
+                            child: Center(
+                              child: Text(
+                                widget.formatVal(item),
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected ? primaryBlue : (isDark ? Colors.grey : const Color(0xFF889098)),
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],

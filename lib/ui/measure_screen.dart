@@ -261,6 +261,14 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                               isSelectionMode = false;
                             });
                           },
+                          onCompare: () {
+                            final selectedSummaries = uiState.groups
+                                .where((g) => selectedIds.contains(g.group.id))
+                                .toList();
+                            if (selectedSummaries.length == 2) {
+                              notifier.openComparison(selectedSummaries);
+                            }
+                          },
                         )
                       : Row(
                           children: [
@@ -326,9 +334,11 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
               ),
 
               if (uiState.groups.isEmpty)
-                const SliverFillRemaining(
-                  child: Center(
-                    child: Text('No groups found.', style: TextStyle(color: Colors.grey, fontSize: 15)),
+                const SliverToBoxAdapter(
+                  child: EmptyStateCard(
+                    icon: Icons.folder_open_outlined,
+                    title: 'No Groups Found',
+                    subtitle: 'Tap the + button to create a measurement group',
                   ),
                 )
               else

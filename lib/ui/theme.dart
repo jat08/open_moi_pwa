@@ -13,6 +13,12 @@ class AppTheme {
         borderRadius: BorderRadius.circular(24),
       ),
     ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+      ),
+    ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
@@ -71,6 +77,12 @@ class AppTheme {
     cardTheme: CardThemeData(
       elevation: 0,
       color: AppColors.darkColorScheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+      ),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: const Color(0xFF242C35),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
       ),

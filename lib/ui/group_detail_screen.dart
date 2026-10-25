@@ -355,6 +355,12 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                 Expanded(
                   child: ListView(
                     children: [
+                      if (measurements.isEmpty)
+                        const EmptyStateCard(
+                          icon: Icons.timer_outlined,
+                          title: 'No Measurements Yet',
+                          subtitle: 'Tap Start Measurement below to record data',
+                        ),
                       if (swMeasurements.isNotEmpty) ...[
                         Text(
                           'Swing Weight (kg·cm²)',

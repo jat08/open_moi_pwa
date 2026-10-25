@@ -89,6 +89,7 @@ class UiState {
 
   final String? importError;
   final int activeTab;
+  final List<dynamic>? comparisonGroups;
 
   UiState({
     this.detectorState = OscillationState.WRONG_ORIENTATION,
@@ -155,6 +156,7 @@ class UiState {
     this.currentEstimationGroup,
     this.importError,
     this.activeTab = 0,
+    this.comparisonGroups,
   });
 
   UiState copyWith({
@@ -222,6 +224,7 @@ class UiState {
     EstimationGroup? Function()? currentEstimationGroup,
     String? Function()? importError,
     int? activeTab,
+    List<dynamic>? Function()? comparisonGroups,
   }) {
     return UiState(
       detectorState: detectorState ?? this.detectorState,
@@ -288,6 +291,7 @@ class UiState {
       currentEstimationGroup: currentEstimationGroup != null ? currentEstimationGroup() : this.currentEstimationGroup,
       importError: importError != null ? importError() : this.importError,
       activeTab: activeTab ?? this.activeTab,
+      comparisonGroups: comparisonGroups != null ? comparisonGroups() : this.comparisonGroups,
     );
   }
 }
@@ -577,7 +581,16 @@ class MoiNotifier extends StateNotifier<UiState> {
       currentAttributeGroup: () => null,
       editingExpectedValueTarget: () => null,
       calibrationTarget: CalibrationTarget.NONE,
+      comparisonGroups: () => null,
     );
+  }
+
+  void openComparison(List<dynamic> groups) {
+    state = state.copyWith(comparisonGroups: () => groups);
+  }
+
+  void closeComparison() {
+    state = state.copyWith(comparisonGroups: () => null);
   }
 
   void navigateToCalibrate() {
