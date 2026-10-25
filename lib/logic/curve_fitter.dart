@@ -6,70 +6,55 @@ import 'dart:math';
 class CurveFitter {
   final List<Point<double>> dataPoints; // x: time in seconds, y: gyro value
   final double? initialPeriodHint; // Optional zero-crossing period estimate
+  final double? tStart; // Exact integer cycle start timestamp
+  final double? tEnd; // Exact integer cycle end timestamp
 
-  CurveFitter(this.dataPoints, {this.initialPeriodHint});
+  CurveFitter(
+    this.dataPoints, {
+    this.initialPeriodHint,
+    this.tStart,
+    this.tEnd,
+  });
 
   /// Analyzes the dataset using Levenberg-Marquardt non-linear curve fitting
   /// and returns the analytically optimized period (in seconds), or null if fitting fails.
   double? optimizePeriod() {
-    if (dataPoints.length < 10) return null;
+    if (dataPoints.isEmpty) return null;
 
-    // 1. Initial Data Analysis & Time Normalization
-    double tStart = dataPoints.first.x;
-    double tEnd = dataPoints.last.x;
-    double duration = tEnd - tStart;
-    if (duration <= 0) return null;
-
-    // Normalize time points so t'_0 = 0.0 for numerical stability
-    List<Point<double>> normPoints = dataPoints
-        .map((p) => Point<double>(p.x - tStart, p.y))
-        .toList();
-
-    double yMax = -double.infinity;
-    double yMin = double.infinity;
-    double ySum = 0.0;
-
-    int zeroCrossings = 0;
-    bool wasPositive = normPoints.first.y > 0;
-
-    for (var p in normPoints) {
-      if (p.y > yMax) yMax = p.y;
-      if (p.y < yMin) yMin = p.y;
-      ySum += p.y;
-
-      bool isPositive = p.y > 0;
-      if (isPositive != wasPositive) {
-        zeroCrossings++;
-        wasPositive = isPositive;
+    // Rule 1: Truncate raw time-series gyro data to exact integer cycle boundaries [tStart, tEnd]
+    List<Point<double>> targetPoints = dataPoints;
+    if (tStart != null && tEnd != null && tEnd! > tStart!) {
+      final truncated = dataPoints
+          .where((p) => p.x >= tStart! && p.x <= tEnd!)
+          .toList();
+      // Fall back to the un-truncated raw dataset if fewer than 10 points remain
+      if (truncated.length >= 10) {
+        targetPoints = truncated;
       }
     }
 
-    double C = ySum / normPoints.length;           // Initial DC Bias seed
-    double A = max(0.01, (yMax - yMin) / 2.0);    // Initial Amplitude seed
-    double d = 0.05;                              // Initial Damping factor seed
+    if (targetPoints.length < 10) return null;
 
-    double w;
-    if (initialPeriodHint != null && initialPeriodHint! > 0) {
-      w = (2 * pi) / initialPeriodHint!;
-    } else {
-      double cycles = zeroCrossings / 2.0;
-      if (cycles < 0.25) cycles = 1.0;            // Fallback if zero crossings are sparse
-      w = (cycles / duration) * 2 * pi;            // Initial Angular Frequency seed
-    }
+    // Time normalization so t'_0 = 0.0 for numerical stability
+    final double startTime = targetPoints.first.x;
+    final double endTime = targetPoints.last.x;
+    final double duration = endTime - startTime;
+    if (duration <= 0) return null;
 
-    // Initial Phase seed: estimated from initial data point relative to offset C
-    double y0 = normPoints.first.y - C;
-    double ratio = (y0 / A).clamp(-1.0, 1.0);
-    double phi = asin(ratio);
-    if (normPoints.length > 1 && normPoints[1].y < normPoints[0].y) {
-      phi = pi - phi;
-    }
+    final List<Point<double>> normPoints = targetPoints
+        .map((p) => Point<double>(p.x - startTime, p.y))
+        .toList();
 
-    // Parameters vector: [A, d, w, phi, C]
-    List<double> params = [A, d, w, phi, C];
+    // Rule 2: Compute Initial Parameter Seeds [A, d, w, phi, C]
+    List<double> params = computeInitialSeeds(
+      normPoints,
+      duration: duration,
+      initialPeriodHint: initialPeriodHint,
+    );
+
     List<double> bestParams = List.from(params);
 
-    // 2. Levenberg-Marquardt Parameters
+    // Rule 3: Levenberg-Marquardt Optimization
     double lambda = 1e-3; // Initial Marquardt damping parameter
     int maxIterations = 100;
     double tolerance = 1e-8;
@@ -101,11 +86,11 @@ class CurveFitter {
         R[i] = y - yModel;
 
         // Partial Derivatives
-        J[i][0] = expPart * sinPart;                      // d/dA
-        J[i][1] = -pA * t * expPart * sinPart;            // d/dd
-        J[i][2] = pA * t * expPart * cosPart;             // d/dw
-        J[i][3] = pA * expPart * cosPart;                 // d/dphi
-        J[i][4] = 1.0;                                    // d/dC
+        J[i][0] = expPart * sinPart; // d/dA
+        J[i][1] = -pA * t * expPart * sinPart; // d/dd
+        J[i][2] = pA * t * expPart * cosPart; // d/dw
+        J[i][3] = pA * expPart * cosPart; // d/dphi
+        J[i][4] = 1.0; // d/dC
       }
 
       // Compute J^T * J (5x5) and J^T * R (5x1)
@@ -164,7 +149,7 @@ class CurveFitter {
           break; // Convergence reached
         }
       } else {
-        // Reject LM step and increase damping (shift towards Gradient Descent safety)
+        // Reject LM step and increase damping
         lambda *= 10.0;
         if (lambda > 1e12) break;
       }
@@ -175,6 +160,61 @@ class CurveFitter {
     if (finalW <= 0.1 || finalW > 200.0) return null;
 
     return (2 * pi) / finalW;
+  }
+
+  /// Rule 2 Initial Parameter Seeds Calculation [A, d, w, phi, C]
+  static List<double> computeInitialSeeds(
+    List<Point<double>> normPoints, {
+    required double duration,
+    double? initialPeriodHint,
+  }) {
+    double yMax = -double.infinity;
+    double yMin = double.infinity;
+    double ySum = 0.0;
+
+    int zeroCrossings = 0;
+    bool wasPositive = normPoints.first.y > 0;
+
+    for (var p in normPoints) {
+      if (p.y > yMax) yMax = p.y;
+      if (p.y < yMin) yMin = p.y;
+      ySum += p.y;
+
+      bool isPositive = p.y > 0;
+      if (isPositive != wasPositive) {
+        zeroCrossings++;
+        wasPositive = isPositive;
+      }
+    }
+
+    // C: Mean / baseline offset
+    double C = ySum / normPoints.length;
+
+    // A: Amplitude = max(0.01, (yMax - yMin) / 2.0)
+    double A = max(0.01, (yMax - yMin) / 2.0);
+
+    // d: Damping factor seeded at 0.05
+    double d = 0.05;
+
+    // w: Angular frequency seed
+    double w;
+    if (initialPeriodHint != null && initialPeriodHint > 0) {
+      w = (2 * pi) / initialPeriodHint;
+    } else {
+      double cycles = zeroCrossings / 2.0;
+      if (cycles < 0.25) cycles = 1.0;
+      w = (cycles / max(1e-6, duration)) * 2 * pi;
+    }
+
+    // phi: Phase shift estimated from first normalized point y0 relative to C
+    double y0 = normPoints.first.y;
+    double ratio = ((y0 - C) / A).clamp(-1.0, 1.0);
+    double phi = asin(ratio);
+    if (normPoints.length > 1 && normPoints[1].y < normPoints[0].y) {
+      phi = pi - phi;
+    }
+
+    return [A, d, w, phi, C];
   }
 
   double _calculateSse(List<Point<double>> pts, List<double> p) {

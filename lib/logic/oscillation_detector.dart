@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'curve_fitter.dart';
 import 'web_helper.dart';
 
 enum OscillationState {
@@ -341,8 +342,27 @@ class OscillationDetector {
       final actualCycleCount = _cycleDurations.length;
 
       if (actualCycleCount > 0) {
-        final avgPeriod = _cycleDurations.reduce((a, b) => a + b) / actualCycleCount;
+        var avgPeriod = _cycleDurations.reduce((a, b) => a + b) / actualCycleCount;
         final totalDurSec = durationNs / 1000000000.0;
+
+        if (_rawGyroSamples.length >= 10) {
+          final pts = _rawGyroSamples
+              .map((s) => Point<double>(s.timestampNs / 1000000000.0, s.value))
+              .toList();
+          final tStartSec = _tStartNs > 0 ? _tStartNs / 1000000000.0 : null;
+          final tEndSec = endTimeNs > 0 ? endTimeNs / 1000000000.0 : null;
+
+          final fitter = CurveFitter(
+            pts,
+            initialPeriodHint: avgPeriod,
+            tStart: tStartSec,
+            tEnd: tEndSec,
+          );
+          final fittedPeriod = fitter.optimizePeriod();
+          if (fittedPeriod != null && fittedPeriod > 0) {
+            avgPeriod = fittedPeriod;
+          }
+        }
 
         final uniformSamples = _resampleUniformly(_rawGyroSamples, _tStartNs, endTimeNs);
 

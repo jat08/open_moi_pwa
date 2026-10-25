@@ -1,4 +1,4 @@
-const CACHE_NAME = 'openmoi-pwa-v1.2.10';
+const CACHE_NAME = 'openmoi-pwa-v1.2.11';
 
 // Core resources to pre-cache immediately upon installation
 const PRECACHE_RESOURCES = [
