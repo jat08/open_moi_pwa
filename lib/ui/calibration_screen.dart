@@ -937,6 +937,17 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                       ),
                     ],
 
+                    const SizedBox(height: 14),
+
+                    _sectionHeader(
+                      context,
+                      'Sensor Warm-Up',
+                      'Performs a high-frequency polling routine of internal motion sensors to thermally warm up the gyroscope and accelerometer hardware for 30 seconds to reach thermal stability prior to calibration.',
+                    ),
+                    const SizedBox(height: 8),
+
+                    const SensorWarmUpCard(),
+
                     const SizedBox(height: 28),
                   ],
                 ),
@@ -1165,6 +1176,89 @@ class CalibrationObjectCard extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class SensorWarmUpCard extends ConsumerWidget {
+  const SensorWarmUpCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uiState = ref.watch(moiProvider);
+    final notifier = ref.read(moiProvider.notifier);
+    final theme = Theme.of(context);
+
+    final isWarming = uiState.isWarmingUp;
+    final remaining = uiState.warmUpRemaining;
+    final progressFactor = isWarming ? (1.0 - (remaining / 30.0)).clamp(0.0, 1.0) : 0.0;
+
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      margin: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Container(
+          height: 52,
+          width: double.infinity,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: isWarming ? theme.colorScheme.primary.withValues(alpha: 0.15) : theme.colorScheme.primary,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              if (isWarming) {
+                notifier.cancelWarmUp();
+              } else {
+                notifier.startWarmUp();
+              }
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
+              children: [
+                if (isWarming && progressFactor > 0)
+                  FractionallySizedBox(
+                    widthFactor: progressFactor,
+                    child: Container(color: theme.colorScheme.primary.withValues(alpha: 0.35)),
+                  ),
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          isWarming ? 'Warming Up Sensors (${remaining}s)' : 'Start Sensor Warm-Up (30s)',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: isWarming ? theme.colorScheme.primary : theme.colorScheme.onPrimary,
+                          ),
+                        ),
+                        if (isWarming)
+                          Text(
+                            'Tap to Cancel',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: theme.colorScheme.primary.withValues(alpha: 0.75),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

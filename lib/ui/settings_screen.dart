@@ -407,26 +407,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 8, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.25)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _settingLabel('Keep Screen On', 'Prevents your device screen from turning off or sleeping while using OpenMOI.'),
-                              ItemWheelPicker<bool>(
-                                value: uiState.keepScreenOn,
-                                options: const [true, false],
-                                title: 'Keep Screen On',
-                                displayLabel: (val) => val ? 'Yes' : 'No',
-                                onValueChange: (val) {
-                                  notifier.prefs.saveKeepScreenOn(val);
-                                  notifier.loadPreferences();
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
+
                       ],
                     ),
                   ),

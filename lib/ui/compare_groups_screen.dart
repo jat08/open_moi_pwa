@@ -72,7 +72,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
     if (g.groupType == 'Pickleball Paddle') {
       final lInches = g.lengthUnit == 'cm' ? g.length / 2.54 : g.length;
       final bpInches = (sw - (492.0045 * massKg) - (6.8663 * lInches) + 259.5087) / 6.2811;
-      return bpInches; // In inches
+      return bpInches;
     } else {
       final lCm = g.lengthUnit == 'in' ? g.length * 2.54 : g.length;
       final tOffset = (g.groupType == 'Racquet' || g.groupType == 'MOI-10') ? 10.0 : 5.0;
@@ -80,8 +80,8 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
 
       final insideSqrt = (sw / massKg) - (pow(lCm, 2) / 12.0) - (pow(r, 2) / 4.0);
       if (insideSqrt >= 0) {
-        final rootCm = sqrt(insideSqrt) + tOffset; // cm
-        return rootCm / 2.54; // Return in inches
+        final rootCm = sqrt(insideSqrt) + tOffset;
+        return rootCm / 2.54;
       }
     }
     return null;
@@ -206,6 +206,26 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
     final c1BP = g1BP != null ? _convertDistance(g1BP, g1BPUnit, _bpDisplayUnit) : null;
     final c2BP = g2BP != null ? _convertDistance(g2BP, g2BPUnit, _bpDisplayUnit) : null;
 
+    Widget buildStaticUnitBadge() {
+      return Container(
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          'kg·cm²',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+      );
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -219,11 +239,11 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface, size: 28),
+                      icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface, size: 26),
                       onPressed: () {
                         HapticFeedback.lightImpact();
                         notifier.closeComparison();
@@ -233,7 +253,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
                     Text(
                       'Group Comparison',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.onSurface,
                       ),
@@ -241,7 +261,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
                 Expanded(
                   child: SingleChildScrollView(
@@ -249,7 +269,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
                       color: theme.colorScheme.surfaceContainerHighest,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         child: Column(
                           children: [
                             // Header Row with Group Names
@@ -263,7 +283,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.bold,
                                       color: theme.colorScheme.onSurface,
                                     ),
@@ -277,7 +297,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.bold,
                                       color: theme.colorScheme.onSurface,
                                     ),
@@ -286,27 +306,13 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
                               ],
                             ),
 
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 10),
                             Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.2)),
 
                             // Swing Weight Row
                             _CompareRow(
                               title: 'Swing Weight',
-                              unitBadge: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'kg·cm²',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                ),
-                              ),
+                              unitBadge: buildStaticUnitBadge(),
                               val1: g1SW > 0 ? g1SW.toStringAsFixed(res) : 'N/A',
                               val2: g2SW > 0 ? g2SW.toStringAsFixed(res) : 'N/A',
                               num1: g1SW > 0 ? g1SW : null,
@@ -319,21 +325,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
                             // Twist Weight Row
                             _CompareRow(
                               title: 'Twist Weight',
-                              unitBadge: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'kg·cm²',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                ),
-                              ),
+                              unitBadge: buildStaticUnitBadge(),
                               val1: g1TW > 0 ? g1TW.toStringAsFixed(res) : 'N/A',
                               val2: g2TW > 0 ? g2TW.toStringAsFixed(res) : 'N/A',
                               num1: g1TW > 0 ? g1TW : null,
@@ -343,20 +335,20 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
 
                             Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.2)),
 
-                            // Weight Row
+                            // Weight Row (removed 'g')
                             _CompareRow(
                               title: 'Weight',
                               unitBadge: UnitPicklist(
                                 current: _massDisplayUnit,
-                                units: const ['oz', 'g', 'lb', 'kg'],
+                                units: const ['oz', 'lb', 'kg'],
                                 onSelect: (u) => setState(() => _massDisplayUnit = u),
-                                width: 68,
+                                width: 62,
                               ),
-                              val1: c1Mass > 0 ? c1Mass.toStringAsFixed(_massDisplayUnit == 'g' ? 1 : 2) : 'N/A',
-                              val2: c2Mass > 0 ? c2Mass.toStringAsFixed(_massDisplayUnit == 'g' ? 1 : 2) : 'N/A',
+                              val1: c1Mass > 0 ? c1Mass.toStringAsFixed(2) : 'N/A',
+                              val2: c2Mass > 0 ? c2Mass.toStringAsFixed(2) : 'N/A',
                               num1: c1Mass > 0 ? c1Mass : null,
                               num2: c2Mass > 0 ? c2Mass : null,
-                              decimals: _massDisplayUnit == 'g' ? 1 : 2,
+                              decimals: 2,
                             ),
 
                             Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.2)),
@@ -417,25 +409,25 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
 
                             // Type Row
                             Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Column(
                                 children: [
                                   Text(
                                     'Type',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                       color: theme.colorScheme.outline,
                                     ),
                                   ),
-                                  const SizedBox(height: 12),
+                                  const SizedBox(height: 6),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         g1Type,
                                         style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 14,
                                           fontWeight: FontWeight.bold,
                                           color: theme.colorScheme.onSurface,
                                         ),
@@ -443,7 +435,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
                                       Text(
                                         g2Type,
                                         style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 14,
                                           fontWeight: FontWeight.bold,
                                           color: theme.colorScheme.onSurface,
                                         ),
@@ -502,15 +494,15 @@ class _CompareRow extends StatelessWidget {
     final formattedVal = diff.abs().toStringAsFixed(decimals);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         'Δ: $signStr$formattedVal',
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.bold,
           color: textColor,
         ),
@@ -534,31 +526,28 @@ class _CompareRow extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Column(
         children: [
-          // Center Title and Unit Badge
           Column(
             children: [
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.outline,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               unitBadge,
             ],
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
 
-          // Values + Deltas Row
           Row(
             children: [
-              // Left side value + delta
               Expanded(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -566,32 +555,31 @@ class _CompareRow extends StatelessWidget {
                     Text(
                       val1,
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.onSurface,
                       ),
                     ),
                     if (leftDelta != null) ...[
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 4),
                       leftDelta,
                     ],
                   ],
                 ),
               ),
 
-              // Right side delta + value
               Expanded(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     if (rightDelta != null) ...[
                       rightDelta,
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 4),
                     ],
                     Text(
                       val2,
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.onSurface,
                       ),

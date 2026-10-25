@@ -255,11 +255,21 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                             });
                           },
                           onDelete: () {
-                            notifier.deleteGroups(selectedIds);
-                            setState(() {
-                              selectedIds.clear();
-                              isSelectionMode = false;
-                            });
+                            showModalBottomSheet(
+                              context: context,
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) => DeleteConfirmationDialog(
+                                title: 'Delete ${selectedIds.length} Groups?',
+                                text: 'Are you sure you want to delete the selected measurement groups?',
+                                onConfirm: () {
+                                  notifier.deleteGroups(selectedIds);
+                                  setState(() {
+                                    selectedIds.clear();
+                                    isSelectionMode = false;
+                                  });
+                                },
+                              ),
+                            );
                           },
                           onCompare: () {
                             final selectedSummaries = uiState.groups

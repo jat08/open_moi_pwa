@@ -90,6 +90,8 @@ class UiState {
   final String? importError;
   final int activeTab;
   final List<dynamic>? comparisonGroups;
+  final bool isWarmingUp;
+  final int warmUpRemaining;
 
   UiState({
     this.detectorState = OscillationState.WRONG_ORIENTATION,
@@ -140,6 +142,8 @@ class UiState {
     this.preparationTime = 2,
     this.preparationRemaining = 0,
     this.cooldownRemaining = 0.0,
+    this.isWarmingUp = false,
+    this.warmUpRemaining = 0,
     this.selectedMeasurement,
     this.editingAttributesGroupId,
     this.currentAttributeGroup,
@@ -208,6 +212,8 @@ class UiState {
     int? preparationTime,
     int? preparationRemaining,
     double? cooldownRemaining,
+    bool? isWarmingUp,
+    int? warmUpRemaining,
     Measurement? Function()? selectedMeasurement,
     int? Function()? editingAttributesGroupId,
     MeasurementGroup? Function()? currentAttributeGroup,
@@ -275,6 +281,8 @@ class UiState {
       preparationTime: preparationTime ?? this.preparationTime,
       preparationRemaining: preparationRemaining ?? this.preparationRemaining,
       cooldownRemaining: cooldownRemaining ?? this.cooldownRemaining,
+      isWarmingUp: isWarmingUp ?? this.isWarmingUp,
+      warmUpRemaining: warmUpRemaining ?? this.warmUpRemaining,
       selectedMeasurement: selectedMeasurement != null ? selectedMeasurement() : this.selectedMeasurement,
       editingAttributesGroupId: editingAttributesGroupId != null ? editingAttributesGroupId() : this.editingAttributesGroupId,
       currentAttributeGroup: currentAttributeGroup != null ? currentAttributeGroup() : this.currentAttributeGroup,
@@ -312,6 +320,7 @@ class MoiNotifier extends StateNotifier<UiState> {
   OscillationDetector? _detector;
   Timer? _cooldownTimer;
   Timer? _prepTimer;
+  Timer? _warmUpTimer;
 
   MoiNotifier() : super(UiState()) {
     _init();
@@ -591,6 +600,26 @@ class MoiNotifier extends StateNotifier<UiState> {
 
   void closeComparison() {
     state = state.copyWith(comparisonGroups: () => null);
+  }
+
+  void startWarmUp() {
+    _warmUpTimer?.cancel();
+    _detector?.startListening();
+    state = state.copyWith(isWarmingUp: true, warmUpRemaining: 30);
+    _warmUpTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final remaining = state.warmUpRemaining - 1;
+      if (remaining <= 0) {
+        timer.cancel();
+        state = state.copyWith(isWarmingUp: false, warmUpRemaining: 0);
+      } else {
+        state = state.copyWith(warmUpRemaining: remaining);
+      }
+    });
+  }
+
+  void cancelWarmUp() {
+    _warmUpTimer?.cancel();
+    state = state.copyWith(isWarmingUp: false, warmUpRemaining: 0);
   }
 
   void navigateToCalibrate() {
@@ -1339,6 +1368,7 @@ class MoiNotifier extends StateNotifier<UiState> {
   void dispose() {
     _prepTimer?.cancel();
     _cooldownTimer?.cancel();
+    _warmUpTimer?.cancel();
     _detector?.dispose();
     super.dispose();
   }

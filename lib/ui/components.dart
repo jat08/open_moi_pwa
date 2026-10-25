@@ -47,34 +47,36 @@ class EmptyStateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Card(
         elevation: 0,
         color: theme.colorScheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        margin: EdgeInsets.zero,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Icon(
                 icon,
-                size: 48,
+                size: 42,
                 color: theme.colorScheme.primary.withValues(alpha: 0.7),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Text(
                 title,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 17,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface,
                 ),
               ),
               if (subtitle != null) ...[
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   subtitle!,
                   textAlign: TextAlign.center,
@@ -372,7 +374,7 @@ class SelectionTopBar extends StatelessWidget {
     final bool? checkboxValue = isAllSelected ? true : (isPartialSelected ? null : false);
 
     return Container(
-      height: 48,
+      height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer,
