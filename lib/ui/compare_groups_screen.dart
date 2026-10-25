@@ -208,19 +208,23 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
 
     Widget buildStaticUnitBadge() {
       return Container(
+        width: 62,
         height: 24,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.center,
-        child: Text(
-          'kg·cm²',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'kg·cm²',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
+            ),
           ),
         ),
       );

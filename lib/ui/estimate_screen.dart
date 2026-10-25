@@ -284,7 +284,7 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                           children: [
                             Expanded(
                               child: SizedBox(
-                                height: 48,
+                                height: 52,
                                 child: TextField(
                                   onChanged: (query) => notifier.setEstimationSearchQuery(query),
                                   style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15),

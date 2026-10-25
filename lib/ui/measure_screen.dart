@@ -284,7 +284,7 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                           children: [
                             Expanded(
                               child: SizedBox(
-                                height: 48,
+                                height: 52,
                                 child: TextField(
                                   onChanged: (query) => notifier.setSearchQuery(query),
                                   style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15),

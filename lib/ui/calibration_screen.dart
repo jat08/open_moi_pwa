@@ -1240,10 +1240,11 @@ class SensorWarmUpCard extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
                               isWarming ? 'Warming Up Sensors (${remaining}s)' : 'Start Warm-Up',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
@@ -1253,6 +1254,7 @@ class SensorWarmUpCard extends ConsumerWidget {
                             if (isWarming)
                               Text(
                                 'Tap to Cancel',
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w500,
