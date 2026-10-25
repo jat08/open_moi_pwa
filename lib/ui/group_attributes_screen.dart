@@ -273,7 +273,6 @@ class _GroupAttributesScreenState extends ConsumerState<GroupAttributesScreen> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

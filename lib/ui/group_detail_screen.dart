@@ -538,7 +538,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

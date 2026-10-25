@@ -271,7 +271,6 @@ class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScree
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

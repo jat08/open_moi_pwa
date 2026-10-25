@@ -317,8 +317,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }
 

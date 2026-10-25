@@ -362,8 +362,7 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
 

@@ -453,8 +453,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }
 

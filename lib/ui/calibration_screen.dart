@@ -887,8 +887,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
 

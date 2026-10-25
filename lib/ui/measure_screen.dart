@@ -362,8 +362,7 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
 
