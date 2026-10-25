@@ -51,44 +51,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     final filename = getExportFilename(baseName);
 
-    if (kIsWeb) {
+    try {
       final bytes = Uint8List.fromList(utf8.encode(csvContent));
-      await Share.shareXFiles(
-        [XFile.fromData(bytes, name: filename, mimeType: 'text/csv')],
-        subject: filename,
+      final outputPath = await FilePicker.platform.saveFile(
+        dialogTitle: 'Export CSV',
+        fileName: filename,
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+        bytes: bytes,
       );
-      return;
-    }
 
-    bool savedToDownloads = false;
-
-    if (!kIsWeb && Platform.isAndroid) {
-      try {
-        final downloadDir = Directory('/storage/emulated/0/Download');
-        if (await downloadDir.exists()) {
-          final pubFile = File('${downloadDir.path}/$filename');
-          await pubFile.writeAsString(csvContent);
-          savedToDownloads = true;
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Saved to Downloads: $filename'),
-              ),
-            );
-          }
+      if (outputPath != null) {
+        if (!kIsWeb) {
+          final file = File(outputPath);
+          await file.writeAsString(csvContent);
         }
-      } catch (_) {}
+        final savedName = outputPath.contains(Platform.pathSeparator)
+            ? outputPath.split(Platform.pathSeparator).last
+            : filename;
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Exported CSV $savedName'),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Export canceled.'),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: ${e.toString()}'),
+          ),
+        );
+      }
     }
-
-    final tempDir = await getTemporaryDirectory();
-    final tempFile = File('${tempDir.path}/$filename');
-    await tempFile.writeAsString(csvContent);
-
-    await Share.shareXFiles(
-      [XFile(tempFile.path)],
-      subject: filename,
-      text: savedToDownloads ? 'Saved $filename to Downloads.' : 'Exported CSV $filename:',
-    );
   }
 
   Future<void> _importCsv(String type) async {
