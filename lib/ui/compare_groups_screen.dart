@@ -230,13 +230,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
       );
     }
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        notifier.closeComparison();
-      },
-      child: Scaffold(
+    return Scaffold(
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),

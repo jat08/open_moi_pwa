@@ -76,13 +76,7 @@ class _CalibrationInfoScreenState extends ConsumerState<CalibrationInfoScreen> {
     final isPeriod = widget.target == CalibrationTarget.OBJECT_A || widget.target == CalibrationTarget.OBJECT_B;
     final label = isPeriod ? 'Expected Period (s)' : 'Expected MOI (kg·cm²)';
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        notifier.selectEditingExpectedValue(null);
-      },
-      child: Scaffold(
+    return Scaffold(
         bottomNavigationBar: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
@@ -182,7 +176,6 @@ class _CalibrationInfoScreenState extends ConsumerState<CalibrationInfoScreen> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

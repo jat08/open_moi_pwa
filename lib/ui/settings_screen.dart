@@ -216,76 +216,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       });
     }
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        final shouldExit = await showModalBottomSheet<bool>(
-          context: context,
-          backgroundColor: Colors.transparent,
-          builder: (ctx) {
-            final isDark = theme.brightness == Brightness.dark;
-            final sheetBg = isDark ? const Color(0xFF242C35) : const Color(0xFFEFF6FF);
-            return Container(
-              decoration: BoxDecoration(
-                color: sheetBg,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              child: SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const OneUiDragHandle(),
-                    const SizedBox(height: 4),
-                    const Text('Exit OpenMOI?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    const Text('Are you sure you want to exit the app?', style: TextStyle(fontSize: 15)),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 48,
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                              ),
-                              onPressed: () => Navigator.of(ctx).pop(false),
-                              child: const Text('No'),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: SizedBox(
-                            height: 48,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: theme.colorScheme.primary,
-                                foregroundColor: theme.colorScheme.onPrimary,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                              ),
-                              onPressed: () => Navigator.of(ctx).pop(true),
-                              child: const Text('Yes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-        if (shouldExit == true) {
-          SystemNavigator.pop();
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         body: SafeArea(
           child: CustomScrollView(
             slivers: [

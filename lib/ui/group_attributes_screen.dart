@@ -78,13 +78,7 @@ class _GroupAttributesScreenState extends ConsumerState<GroupAttributesScreen> {
         ? '${calculatedBP.toStringAsFixed(res)} cm'
         : 'N/A';
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        notifier.selectEditingAttributesGroup(null);
-      },
-      child: Scaffold(
+    return Scaffold(
         bottomNavigationBar: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(

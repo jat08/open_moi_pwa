@@ -59,13 +59,7 @@ class _EstimateDetailScreenState extends ConsumerState<EstimateDetailScreen> {
 
     final isRadiusLocked = type == 'Pickleball Paddle' || type == 'Racquet';
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        notifier.selectEstimationGroup(null);
-      },
-      child: Scaffold(
+    return Scaffold(
         bottomNavigationBar: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(

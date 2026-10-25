@@ -94,20 +94,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     final swMeasurements = measurements.where((m) => m.moi >= 40).toList();
     final twMeasurements = measurements.where((m) => m.moi < 40).toList();
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        if (isSelectionMode) {
-          setState(() {
-            selectedIds.clear();
-            isSelectionMode = false;
-          });
-        } else {
-          notifier.selectGroup(null);
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         bottomNavigationBar: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(

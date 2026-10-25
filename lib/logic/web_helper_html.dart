@@ -20,28 +20,8 @@ external void _addEventListener(String type, JSFunction listener);
 @JS('window.removeEventListener')
 external void _removeEventListener(String type, JSFunction listener);
 
-@JS('window.history.pushState')
-external void _pushState(JSAny? state, String title, String? url);
-
 @JS('lockPortraitOrientation')
 external void jsLockPortraitOrientation();
-
-void pushWebHistoryStateImpl(String stateKey) {
-  try {
-    _pushState({'key': stateKey}.toJS, '', null);
-  } catch (_) {}
-}
-
-JSFunction? _popStateListener;
-
-void registerPopStateListenerImpl(void Function() onPop) {
-  try {
-    _popStateListener = (() {
-      onPop();
-    }).toJS;
-    _addEventListener('popstate', _popStateListener!);
-  } catch (_) {}
-}
 
 void lockPortraitOrientationImpl() {
   try {
