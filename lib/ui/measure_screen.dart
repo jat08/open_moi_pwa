@@ -312,30 +312,32 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                              child: IconButton(
-                                padding: EdgeInsets.zero,
-                                icon: Icon(Icons.swap_vert, size: 24, color: theme.colorScheme.primary),
-                                onPressed: () {
-                                  HapticFeedback.lightImpact();
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    useSafeArea: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (ctx) => SortDialog(
-                                      currentType: uiState.sortType,
-                                      currentDirection: uiState.sortDirection,
-                                      onApply: (type, dir) => notifier.setSortOrder(type, dir),
-                                    ),
-                                  );
-                                },
+                            SizedBox(
+                              width: 52,
+                              height: 52,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  icon: Icon(Icons.swap_vert, size: 24, color: theme.colorScheme.primary),
+                                  onPressed: () {
+                                    HapticFeedback.lightImpact();
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      useSafeArea: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (ctx) => SortDialog(
+                                        currentType: uiState.sortType,
+                                        currentDirection: uiState.sortDirection,
+                                        onApply: (type, dir) => notifier.setSortOrder(type, dir),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
                             ),
                           ],
@@ -346,6 +348,7 @@ class _MeasureScreenState extends ConsumerState<MeasureScreen> {
               if (uiState.groups.isEmpty)
                 const SliverToBoxAdapter(
                   child: EmptyStateCard(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     icon: Icons.folder_open_outlined,
                     title: 'No Groups Found',
                     subtitle: 'Tap the + button to create a measurement group',

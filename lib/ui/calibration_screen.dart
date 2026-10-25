@@ -1232,12 +1232,14 @@ class SensorWarmUpCard extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          isWarming ? Icons.hourglass_top : Icons.whatshot,
-                          size: 20,
-                          color: isWarming ? theme.colorScheme.primary : theme.colorScheme.onPrimary,
-                        ),
-                        const SizedBox(width: 8),
+                        if (!isWarming) ...[
+                          Icon(
+                            Icons.whatshot,
+                            size: 20,
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                          const SizedBox(width: 8),
+                        ],
                         Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
