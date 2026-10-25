@@ -1199,14 +1199,14 @@ class SensorWarmUpCard extends ConsumerWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       margin: const EdgeInsets.symmetric(vertical: 2.0),
       child: Padding(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Container(
           height: 52,
           width: double.infinity,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: isWarming ? theme.colorScheme.primary.withValues(alpha: 0.15) : theme.colorScheme.primary,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(26),
           ),
           child: InkWell(
             onTap: () {
@@ -1217,7 +1217,7 @@ class SensorWarmUpCard extends ConsumerWidget {
                 notifier.startWarmUp();
               }
             },
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(26),
             child: Stack(
               children: [
                 if (isWarming && progressFactor > 0)
@@ -1228,28 +1228,39 @@ class SensorWarmUpCard extends ConsumerWidget {
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    child: Column(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          isWarming ? 'Warming Up Sensors (${remaining}s)' : 'Start Sensor Warm-Up (30s)',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: isWarming ? theme.colorScheme.primary : theme.colorScheme.onPrimary,
-                          ),
+                        Icon(
+                          isWarming ? Icons.hourglass_top : Icons.whatshot,
+                          size: 20,
+                          color: isWarming ? theme.colorScheme.primary : theme.colorScheme.onPrimary,
                         ),
-                        if (isWarming)
-                          Text(
-                            'Tap to Cancel',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.primary.withValues(alpha: 0.75),
+                        const SizedBox(width: 8),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isWarming ? 'Warming Up Sensors (${remaining}s)' : 'Start Warm-Up',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: isWarming ? theme.colorScheme.primary : theme.colorScheme.onPrimary,
+                              ),
                             ),
-                          ),
+                            if (isWarming)
+                              Text(
+                                'Tap to Cancel',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.colorScheme.primary.withValues(alpha: 0.75),
+                                ),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
                   ),

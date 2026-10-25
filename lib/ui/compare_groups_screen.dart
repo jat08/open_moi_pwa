@@ -208,7 +208,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
 
     Widget buildStaticUnitBadge() {
       return Container(
-        height: 28,
+        height: 24,
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
@@ -239,7 +239,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Row(
                   children: [
                     IconButton(
@@ -261,7 +261,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
 
                 Expanded(
                   child: SingleChildScrollView(
@@ -269,7 +269,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
                       color: theme.colorScheme.surfaceContainerHighest,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         child: Column(
                           children: [
                             // Header Row with Group Names
@@ -306,7 +306,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
                               ],
                             ),
 
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 8),
                             Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline.withValues(alpha: 0.2)),
 
                             // Swing Weight Row
@@ -409,18 +409,18 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
 
                             // Type Row
                             Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              padding: const EdgeInsets.symmetric(vertical: 6),
                               child: Column(
                                 children: [
                                   Text(
                                     'Type',
                                     style: TextStyle(
-                                      fontSize: 13,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                       color: theme.colorScheme.outline,
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 4),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
@@ -526,7 +526,7 @@ class _CompareRow extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
         children: [
           Column(
@@ -534,17 +534,17 @@ class _CompareRow extends StatelessWidget {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.outline,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 1),
               unitBadge,
             ],
           ),
 
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
 
           Row(
             children: [
@@ -555,7 +555,7 @@ class _CompareRow extends StatelessWidget {
                     Text(
                       val1,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.onSurface,
                       ),
@@ -579,7 +579,7 @@ class _CompareRow extends StatelessWidget {
                     Text(
                       val2,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.onSurface,
                       ),
