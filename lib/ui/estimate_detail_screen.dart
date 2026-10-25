@@ -118,6 +118,7 @@ class _EstimateDetailScreenState extends ConsumerState<EstimateDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                PageBreadcrumb(paths: ['Estimate', group.name]),
                 Row(
                   children: [
                     IconButton(
@@ -165,16 +166,7 @@ class _EstimateDetailScreenState extends ConsumerState<EstimateDetailScreen> {
                   showTolerance: swStdDev > 0 || twStdDev > 0,
                 ),
 
-                const SizedBox(height: 10),
-
-                if (group.resultSW <= 0 && group.resultTW <= 0) ...[
-                  const EmptyStateCard(
-                    icon: Icons.functions_outlined,
-                    title: 'No Estimation Calculated',
-                    subtitle: 'Enter geometry below and tap Calculate',
-                  ),
-                  const SizedBox(height: 10),
-                ],
+                const SizedBox(height: 12),
 
                 Expanded(
                   child: SingleChildScrollView(

@@ -162,7 +162,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Bar
+                PageBreadcrumb(paths: ['Measure', group.name]),
                 Row(
                   children: [
                     IconButton(

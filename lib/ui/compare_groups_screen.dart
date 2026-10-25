@@ -243,7 +243,7 @@ class _CompareGroupsScreenState extends ConsumerState<CompareGroupsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 4),
+                PageBreadcrumb(paths: [isMeasure ? 'Measure' : 'Estimate', 'Compare']),
                 Row(
                   children: [
                     IconButton(

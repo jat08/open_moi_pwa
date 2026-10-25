@@ -318,7 +318,7 @@ class _EstimateScreenState extends ConsumerState<EstimateScreen> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: theme.colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(24),
+                                  shape: BoxShape.circle,
                                 ),
                                 child: IconButton(
                                   padding: EdgeInsets.zero,

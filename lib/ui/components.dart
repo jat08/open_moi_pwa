@@ -2345,3 +2345,49 @@ class SortDialog extends StatelessWidget {
     );
   }
 }
+
+class PageBreadcrumb extends StatelessWidget {
+  final List<String> paths;
+
+  const PageBreadcrumb({
+    super.key,
+    required this.paths,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 2, top: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (int i = 0; i < paths.length; i++) ...[
+            if (i > 0)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Icon(
+                  Icons.chevron_right,
+                  size: 14,
+                  color: theme.colorScheme.outline.withValues(alpha: 0.6),
+                ),
+              ),
+            Flexible(
+              child: Text(
+                paths[i],
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: i == paths.length - 1 ? FontWeight.w600 : FontWeight.w500,
+                  color: i == paths.length - 1
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.outline,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

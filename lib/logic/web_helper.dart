@@ -7,3 +7,9 @@ void registerWebMotionListener(void Function(double gx, double gy, double gz, do
     registerWebMotionListenerImpl(onMotion);
 
 void unregisterWebMotionListener() => unregisterWebMotionListenerImpl();
+
+void pushWebHistoryState(String stateKey) => pushWebHistoryStateImpl(stateKey);
+
+void registerPopStateListener(void Function() onPop) => registerPopStateListenerImpl(onPop);
+
+void lockPortraitOrientation() => lockPortraitOrientationImpl();

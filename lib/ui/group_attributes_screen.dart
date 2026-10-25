@@ -130,6 +130,7 @@ class _GroupAttributesScreenState extends ConsumerState<GroupAttributesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                PageBreadcrumb(paths: ['Measure', group.name, 'Attributes']),
                 Row(
                   children: [
                     IconButton(

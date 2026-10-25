@@ -152,6 +152,7 @@ class _CalibrationDetailScreenState extends ConsumerState<CalibrationDetailScree
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                PageBreadcrumb(paths: ['Calibrate', title]),
                 Row(
                   children: [
                     IconButton(

@@ -8,6 +8,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'core/app_version.dart';
 import 'data/app_preferences.dart';
+import 'logic/web_helper.dart';
 import 'providers/moi_provider.dart';
 import 'ui/calibration_detail_screen.dart';
 import 'ui/calibration_info_screen.dart';
@@ -103,11 +104,41 @@ class MainNavigationScaffold extends ConsumerStatefulWidget {
 
 class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold> {
   bool _hasRequestedWebMotionPermission = false;
+  String? _lastScreenKey;
+
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb) {
+      registerPopStateListener(() {
+        final notifier = ref.read(moiProvider.notifier);
+        final state = ref.read(moiProvider);
+        if (state.selectedMeasurement != null) {
+          notifier.selectMeasurement(null);
+        } else if (state.editingAttributesGroupId != null) {
+          notifier.selectEditingAttributesGroup(null);
+        } else if (state.editingExpectedValueTarget != null) {
+          notifier.selectEditingExpectedValue(null);
+        } else if (state.comparisonGroups != null) {
+          notifier.closeComparison();
+        } else if (state.selectedGroupId != null) {
+          notifier.selectGroup(null);
+        } else if (state.selectedEstimationGroupId != null) {
+          notifier.selectEstimationGroup(null);
+        } else if (state.selectedCalibrationTarget != null) {
+          notifier.selectCalibrationTarget(null);
+        }
+      });
+    }
+  }
 
   void _handleFirstUserTap() {
-    if (kIsWeb && !_hasRequestedWebMotionPermission) {
-      _hasRequestedWebMotionPermission = true;
-      ref.read(moiProvider.notifier).requestPermission();
+    if (kIsWeb) {
+      lockPortraitOrientation();
+      if (!_hasRequestedWebMotionPermission) {
+        _hasRequestedWebMotionPermission = true;
+        ref.read(moiProvider.notifier).requestPermission();
+      }
     }
   }
 
@@ -170,6 +201,13 @@ class _MainNavigationScaffoldState extends ConsumerState<MainNavigationScaffold>
           body = const MeasureScreen();
           screenKey = 'tab_0';
       }
+    }
+
+    if (kIsWeb && screenKey != _lastScreenKey) {
+      if (!showBottomBar) {
+        pushWebHistoryState(screenKey);
+      }
+      _lastScreenKey = screenKey;
     }
 
     return Listener(

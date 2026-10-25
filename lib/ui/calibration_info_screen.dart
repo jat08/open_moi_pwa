@@ -118,6 +118,7 @@ class _CalibrationInfoScreenState extends ConsumerState<CalibrationInfoScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                PageBreadcrumb(paths: ['Calibrate', targetName, 'Expected Value']),
                 Row(
                   children: [
                     IconButton(

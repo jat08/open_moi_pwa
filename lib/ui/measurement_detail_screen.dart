@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../core/theme/app_colors.dart';
 import '../data/models.dart';
 import '../providers/moi_provider.dart';
+import 'components.dart';
 
 class MeasurementDetailScreen extends ConsumerWidget {
   final Measurement measurement;
@@ -77,7 +78,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Bar
+                PageBreadcrumb(paths: [displayType, 'Run Details']),
                 Row(
                   children: [
                     IconButton(
