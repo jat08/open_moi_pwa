@@ -45,7 +45,7 @@ void main() {
       final double omega = 2 * pi / truePeriodSec;
       final double gyroVal = 1.5 * sin(omega * tSec);
 
-      await detector.handleGyroscope(GyroscopeEvent(gyroVal * 0.7071, gyroVal * 0.7071, 0.0, dt));
+      detector.handleGyroscope(GyroscopeEvent(gyroVal * 0.7071, gyroVal * 0.7071, 0.0, dt));
 
       if (result != null) break;
     }
@@ -85,7 +85,7 @@ void main() {
       for (int i = 0; i < 20; i++) {
         currentMicroseconds += dtMicroseconds;
         final dt = DateTime.fromMicrosecondsSinceEpoch(currentMicroseconds);
-        await detector.handleGyroscope(GyroscopeEvent(0.0, 0.0, 0.0, dt));
+        detector.handleGyroscope(GyroscopeEvent(0.0, 0.0, 0.0, dt));
       }
 
       // 3. Arm detector
@@ -103,7 +103,7 @@ void main() {
         // Damped sine wave
         final double gyroVal = 1.8 * exp(-0.04 * tRel) * sin(omega * tRel);
 
-        await detector.handleGyroscope(GyroscopeEvent(gyroVal * 0.7071, gyroVal * 0.7071, 0.0, dt));
+        detector.handleGyroscope(GyroscopeEvent(gyroVal * 0.7071, gyroVal * 0.7071, 0.0, dt));
 
         if (calculatedPeriods.length == run + 1) break;
       }
@@ -120,5 +120,100 @@ void main() {
     for (final p in calculatedPeriods) {
       expect((p - trueHighMoiPeriodSec).abs(), lessThan(0.0005));
     }
+  });
+
+  group('Gyroscope DC Bias Thermal Drift Tracking System', () {
+    test('Rule 1 & 3: Updates baseline using 95/5 EMA filter when strictly stationary (gyroMag < 0.02 rad/s) in READY state', () async {
+      final detector = OscillationDetector(
+        onStateChanged: (_) {},
+        onMeasurementComplete: (_) {},
+        onProgressUpdate: (_) {},
+      );
+
+      final dt0 = DateTime.fromMicrosecondsSinceEpoch(0);
+      detector.handleAccelerometer(AccelerometerEvent(6.93, 6.93, 0.0, dt0));
+      expect(detector.currentState, equals(OscillationState.READY));
+      expect(detector.gyroBaseline, equals(0.0));
+
+      // Small stationary rotation rate: gyroMag = sqrt(0.01^2 + 0.01^2) = ~0.01414 rad/s (< 0.02 rad/s)
+      final dt1 = DateTime.fromMicrosecondsSinceEpoch(10000);
+      final gyroEvent = GyroscopeEvent(0.01, 0.01, 0.0, dt1);
+      detector.handleGyroscope(gyroEvent);
+
+      // Expected vRot: (0.01*6.93 + 0.01*6.93) / 9.80 = ~0.014143
+      // Expected new_baseline = 0.95 * 0.0 + 0.05 * vRot
+      final gMag = sqrt(6.93 * 6.93 + 6.93 * 6.93);
+      final expectedVRot = (0.01 * 6.93 + 0.01 * 6.93) / gMag;
+      final expectedBaseline1 = 0.05 * expectedVRot;
+
+      expect(detector.gyroBaseline, closeTo(expectedBaseline1, 1e-6));
+
+      // Second stationary reading
+      final dt2 = DateTime.fromMicrosecondsSinceEpoch(20000);
+      detector.handleGyroscope(gyroEvent);
+
+      final expectedBaseline2 = 0.95 * expectedBaseline1 + 0.05 * expectedVRot;
+      expect(detector.gyroBaseline, closeTo(expectedBaseline2, 1e-6));
+    });
+
+    test('Rule 1: Does NOT update baseline when angular velocity magnitude >= 0.02 rad/s in READY state', () async {
+      final detector = OscillationDetector(
+        onStateChanged: (_) {},
+        onMeasurementComplete: (_) {},
+        onProgressUpdate: (_) {},
+      );
+
+      final dt0 = DateTime.fromMicrosecondsSinceEpoch(0);
+      detector.handleAccelerometer(AccelerometerEvent(6.93, 6.93, 0.0, dt0));
+      expect(detector.currentState, equals(OscillationState.READY));
+
+      // Motion exceeding stationary threshold: gyroMag = sqrt(0.05^2 + 0.05^2) = ~0.0707 rad/s (>= 0.02 rad/s)
+      final dt1 = DateTime.fromMicrosecondsSinceEpoch(10000);
+      detector.handleGyroscope(GyroscopeEvent(0.05, 0.05, 0.0, dt1));
+
+      // Baseline must remain 0.0
+      expect(detector.gyroBaseline, equals(0.0));
+    });
+
+    test('Rule 2: Baseline freezes as soon as system transitions to ARMED or active measurement states', () async {
+      final detector = OscillationDetector(
+        onStateChanged: (_) {},
+        onMeasurementComplete: (_) {},
+        onProgressUpdate: (_) {},
+      );
+
+      final dt0 = DateTime.fromMicrosecondsSinceEpoch(0);
+      detector.handleAccelerometer(AccelerometerEvent(6.93, 6.93, 0.0, dt0));
+      expect(detector.currentState, equals(OscillationState.READY));
+
+      // Establish baseline while stationary in READY state
+      final dt1 = DateTime.fromMicrosecondsSinceEpoch(10000);
+      detector.handleGyroscope(GyroscopeEvent(0.01, 0.01, 0.0, dt1));
+      final frozenBaseline = detector.gyroBaseline;
+      expect(frozenBaseline, greaterThan(0.0));
+
+      // Transition to ARMED state
+      detector.arm();
+      expect(detector.currentState, equals(OscillationState.ARMED));
+
+      // Send stationary gyro readings while in ARMED state
+      final dt2 = DateTime.fromMicrosecondsSinceEpoch(20000);
+      detector.handleGyroscope(GyroscopeEvent(0.01, 0.01, 0.0, dt2));
+
+      // Verify baseline remains strictly frozen
+      expect(detector.gyroBaseline, equals(frozenBaseline));
+
+      // Trigger nudge to transition ARMED -> SETTLING
+      final dt3 = DateTime.fromMicrosecondsSinceEpoch(30000);
+      detector.handleGyroscope(GyroscopeEvent(0.5, 0.5, 0.0, dt3));
+      expect(detector.currentState, equals(OscillationState.SETTLING));
+
+      // Send stationary gyro readings during SETTLING
+      final dt4 = DateTime.fromMicrosecondsSinceEpoch(40000);
+      detector.handleGyroscope(GyroscopeEvent(0.01, 0.01, 0.0, dt4));
+
+      // Verify baseline is still frozen
+      expect(detector.gyroBaseline, equals(frozenBaseline));
+    });
   });
 }

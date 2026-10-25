@@ -56,12 +56,14 @@ class OscillationDetector {
   static const double orientationThreshold = 10.0;
   static const double targetAngle = 45.0;
   static const double nudgeThreshold = 0.3;
+  static const double stationaryThreshold = 0.02; // Strictly stationary threshold in rad/s
   static const int debounceNs = 100000000; // 0.1s hysteresis window
 
   int sampleCount = 0;
 
   final List<double> _gravityVector = [0.0, 0.0, 9.8];
   double _gyroBaseline = 0.0; // Dynamically tracks DC bias
+  double get gyroBaseline => _gyroBaseline;
 
   final List<_GyroSample> _rawGyroSamples = [];
   final List<double> _cycleDurations = [];
@@ -196,18 +198,22 @@ class OscillationDetector {
       case OscillationState.WRONG_ORIENTATION:
         break;
       case OscillationState.READY:
+        // Rule 1 & 3: Continuously track gyro zero-rate DC bias baseline only when strictly stationary in READY state (gyroMag < 0.02 rad/s)
+        if (gyroMag < stationaryThreshold) {
+          _gyroBaseline = 0.95 * _gyroBaseline + 0.05 * vRot;
+        }
+        break;
       case OscillationState.ARMED:
-        if (_currentState == OscillationState.ARMED && gyroMag > nudgeThreshold) {
+        // Rule 2: Freeze baseline as soon as system transitions to ARMED state.
+        if (gyroMag > nudgeThreshold) {
           _resetMeasurement();
           _measurementStartTimeNs = timestampNs;
           _updateState(OscillationState.SETTLING);
-        } else if (gyroMag < 0.1) {
-          // Phone still: track gyro DC bias thermal drift
-          _gyroBaseline = 0.95 * _gyroBaseline + 0.05 * vRot;
         }
         break;
       case OscillationState.SETTLING:
       case OscillationState.ACTIVE_COUNTING:
+        // Rule 2: Freeze baseline during active measurement states.
         _detectZeroCrossing(vRot, timestampNs);
 
         if (_currentState == OscillationState.ACTIVE_COUNTING) {

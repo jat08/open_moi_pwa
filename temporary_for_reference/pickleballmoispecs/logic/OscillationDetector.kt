@@ -114,14 +114,18 @@ class OscillationDetector(
 
         when (currentState) {
             State.WRONG_ORIENTATION -> {}
-            State.READY, State.ARMED -> {
-                if (currentState == State.ARMED && gyroMag > nudgeThreshold) {
+            State.READY -> {
+                if (gyroMag < 0.02f) {
+                    // Track gyro DC bias thermal drift only when strictly stationary in READY state (gyroMag < 0.02 rad/s)
+                    gyroBaseline = 0.95f * gyroBaseline + 0.05f * vRot
+                }
+            }
+            State.ARMED -> {
+                // Freeze baseline as soon as system transitions to ARMED
+                if (gyroMag > nudgeThreshold) {
                     resetMeasurement()
                     measurementStartTimeNs = timestampNs
                     updateState(State.SETTLING)
-                } else if (gyroMag < 0.1f) {
-                    // When the phone is perfectly still, continuously track the gyro DC bias (thermal drift correction)
-                    gyroBaseline = (1f - 0.05f) * gyroBaseline + 0.05f * vRot
                 }
             }
             State.SETTLING, State.ACTIVE_COUNTING -> {
