@@ -285,16 +285,6 @@ class OscillationDetector {
     }
   }
 
-  double _catmullRom(double p0, double p1, double p2, double p3, double t) {
-    final t2 = t * t;
-    final t3 = t2 * t;
-    return 0.5 *
-        ((2 * p1) +
-            (-p0 + p2) * t +
-            (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
-            (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
-  }
-
   List<double> _resampleUniformly(List<_GyroSample> samples, int startNs, int endNs) {
     if (samples.isEmpty) return [];
     if (samples.length == 1) return [samples.first.value];
@@ -325,9 +315,29 @@ class OscillationDetector {
         if (dt <= 0) {
           resampled.add(s1.value);
         } else {
-          // Cubic Catmull-Rom spline interpolation for perfectly smooth curves
+          // Time-aware Cubic Hermite spline interpolation (Non-uniform Catmull-Rom)
+          // Avoids overshoots and loops caused by uneven sensor polling intervals
+          
+          double m1 = 0.0;
+          if (s2.timestampNs > s0.timestampNs) {
+            m1 = (s2.value - s0.value) / (s2.timestampNs - s0.timestampNs);
+          }
+          
+          double m2 = 0.0;
+          if (s3.timestampNs > s1.timestampNs) {
+            m2 = (s3.value - s1.value) / (s3.timestampNs - s1.timestampNs);
+          }
+          
           final t = (targetTime - s1.timestampNs) / dt;
-          final interp = _catmullRom(s0.value, s1.value, s2.value, s3.value, t);
+          final t2 = t * t;
+          final t3 = t2 * t;
+          
+          final h00 = 2 * t3 - 3 * t2 + 1;
+          final h10 = t3 - 2 * t2 + t;
+          final h01 = -2 * t3 + 3 * t2;
+          final h11 = t3 - t2;
+          
+          final interp = h00 * s1.value + h10 * dt * m1 + h01 * s2.value + h11 * dt * m2;
           resampled.add(interp);
         }
       }
