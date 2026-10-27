@@ -137,6 +137,8 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                     isCalibrated: uiState.isCalibrated,
                     cooldownRemaining: uiState.cooldownRemaining,
                     preparationRemaining: uiState.preparationRemaining,
+                    preparationTime: uiState.preparationTime,
+                    waitDuration: uiState.waitDuration,
                     onStart: () => notifier.startMeasurement(),
                     onCancel: () => notifier.cancelMeasurement(),
                     onRequestPermission: () => notifier.requestPermission(),

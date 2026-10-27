@@ -686,6 +686,8 @@ class MeasurementControlButton extends StatelessWidget {
   final bool isCalibrated;
   final double cooldownRemaining;
   final int preparationRemaining;
+  final int preparationTime;
+  final double waitDuration;
   final VoidCallback onStart;
   final VoidCallback? onCancel;
   final VoidCallback? onRequestPermission;
@@ -697,6 +699,8 @@ class MeasurementControlButton extends StatelessWidget {
     this.isCalibrated = true,
     this.cooldownRemaining = 0.0,
     this.preparationRemaining = 0,
+    this.preparationTime = 2,
+    this.waitDuration = 2.0,
     required this.onStart,
     this.onCancel,
     this.onRequestPermission,
@@ -761,11 +765,13 @@ class MeasurementControlButton extends StatelessWidget {
     } else if (preparationRemaining > 0) {
       titleText = 'Waiting $preparationRemaining s to be Ready';
       subtitleText = 'Tap to Cancel';
-      progressFactor = 1.0 - (preparationRemaining / 10.0).clamp(0.0, 1.0);
+      final totalPrep = preparationTime > 0 ? preparationTime : 1;
+      progressFactor = (1.0 - (preparationRemaining / totalPrep)).clamp(0.0, 1.0);
     } else if (cooldownRemaining > 0) {
       titleText = 'Waiting ${cooldownRemaining.toInt()} seconds';
       subtitleText = 'Tap to Cancel';
-      progressFactor = 1.0 - (cooldownRemaining / 10.0).clamp(0.0, 1.0);
+      final totalWait = waitDuration > 0 ? waitDuration : 1.0;
+      progressFactor = (1.0 - (cooldownRemaining / totalWait)).clamp(0.0, 1.0);
     } else {
       switch (state) {
         case OscillationState.READY:
