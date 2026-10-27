@@ -215,11 +215,13 @@ class OscillationDetector {
       case OscillationState.SETTLING:
       case OscillationState.ACTIVE_COUNTING:
         // Rule 2: Freeze baseline during active measurement states.
-        _detectZeroCrossing(vRot, timestampNs);
-
-        if (_currentState == OscillationState.ACTIVE_COUNTING) {
-          _rawGyroSamples.add(_GyroSample(timestampNs, vRot));
+        if (_currentState == OscillationState.SETTLING || _currentState == OscillationState.ACTIVE_COUNTING) {
+          if (_rawGyroSamples.isEmpty || timestampNs > _rawGyroSamples.last.timestampNs) {
+            _rawGyroSamples.add(_GyroSample(timestampNs, vRot));
+          }
         }
+        
+        _detectZeroCrossing(vRot, timestampNs);
 
         final elapsedNs = timestampNs - _measurementStartTimeNs;
 
