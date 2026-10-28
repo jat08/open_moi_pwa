@@ -765,13 +765,11 @@ class MeasurementControlButton extends StatelessWidget {
     } else if (preparationRemaining > 0) {
       titleText = 'Waiting $preparationRemaining s to be Ready';
       subtitleText = 'Tap to Cancel';
-      final totalPrep = preparationTime > 0 ? preparationTime : 1;
-      progressFactor = (1.0 - (preparationRemaining / totalPrep)).clamp(0.0, 1.0);
+      progressFactor = 0.0;
     } else if (cooldownRemaining > 0) {
       titleText = 'Waiting ${cooldownRemaining.toInt()} seconds';
       subtitleText = 'Tap to Cancel';
-      final totalWait = waitDuration > 0 ? waitDuration : 1.0;
-      progressFactor = (1.0 - (cooldownRemaining / totalWait)).clamp(0.0, 1.0);
+      progressFactor = 0.0;
     } else {
       switch (state) {
         case OscillationState.READY:
